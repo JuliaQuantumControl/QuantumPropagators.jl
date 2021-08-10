@@ -8,7 +8,7 @@ module TestNewton
         precision = 1e-10
 
         # Input
-        N = 10
+        N = 1000
 
         X = rand(ComplexF64, (N, N))
         H = Hermitian(X)
