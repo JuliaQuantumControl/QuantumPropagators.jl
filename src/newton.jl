@@ -1,7 +1,4 @@
 """Implementation of Newton-with-restarted-Arnoldi propagation routine."""
-module NewtonPropagator
-
-export NewtonWrk, newton!
 
 using LinearAlgebra
 using OffsetArrays
@@ -462,8 +459,5 @@ function newton!(Ψ, H, dt, wrk, func=(z -> exp(-1im*z));
     wrk.n_leja = n_leja
     wrk.n_a = n_a
     return Ψ
-
-end
-
 
 end

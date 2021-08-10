@@ -1,7 +1,4 @@
 """Implementation of the Chebychev propagator."""
-module ChebychevPropagator
-
-export cheby_coeffs, cheby_coeffs!, ChebyWrk, cheby!
 
 using SpecialFunctions
 using LinearAlgebra
@@ -162,8 +159,5 @@ function cheby!(Ψ, H, dt, wrk; E_min=nothing,
     end
 
     lmul!(exp(-im * β * dt), Ψ)
-
-end
-
 
 end
