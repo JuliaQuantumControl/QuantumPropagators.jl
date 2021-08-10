@@ -1,14 +1,14 @@
-module TestCheby
+module TestNewton
     using Test
     using LinearAlgebra
     using QuantumPropagators
 
-    @testset "Cheby (random state)" begin
+    @testset "Newton (random Hermitian state)" begin
 
         precision = 1e-10
 
         # Input
-        N = 1000
+        N = 10
 
         X = rand(ComplexF64, (N, N))
         H = Hermitian(X)
@@ -26,21 +26,11 @@ module TestCheby
         Ψ_out_expected = U * Ψ₀
         @test norm(Ψ_out_expected) ≈ 1
 
-        # Cheby result
-        evals = eigvals(H)
-
-        E_min = evals[1]
-        Δ = evals[end] - evals[1]
-
-        a = cheby_coeffs(Δ, dt)
-        b = zeros(20);
-        cheby_coeffs!(b, Δ, dt)
-        @test b[1:length(b)] ≈ a[1:length(b)]
-
         Ψ = copy(Ψ₀)
-        wrk = ChebyWrk(Ψ₀, Δ, E_min, dt)
-        cheby!(Ψ, H, dt, wrk)
+        wrk = NewtonWrk(Ψ₀, 5)
+        newton!(Ψ, H, dt, wrk)
         Ψ_out = copy(Ψ)
+        @test norm(Ψ_out) ≈ 1
 
         # Comparison
         @test norm(Ψ_out - Ψ_out_expected) < precision
@@ -48,3 +38,4 @@ module TestCheby
     end
 
 end
+
