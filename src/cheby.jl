@@ -69,22 +69,22 @@ initializes the workspace for the propagation of a state similar to Ψ under a
 Hamiltonian with eigenvalues between `E_min` and `E_min + Δ`, and a time step
 dt. Chebychev coefficients smaller than the given `limit` are discarded.
 """
-struct ChebyWrk{T}
+struct ChebyWrk{T, CFS, DEL, EM, TS, LIM}
     v0 :: T
     v1 :: T
     v2 :: T
-    coeffs :: Vector{Float64}
-    Δ :: Float64
-    E_min :: Float64
-    dt :: Float64
-    limit :: Float64
-    function ChebyWrk(Ψ::T, Δ::Float64, E_min::Float64, dt::Float64;
-                      limit::Float64=1e-12) where T
+    coeffs :: CFS
+    Δ :: DEL
+    E_min :: EM
+    dt :: TS
+    limit :: LIM
+    function ChebyWrk(Ψ::T, Δ::DEL, E_min::EM, dt::TS;
+                      limit::LIM=1e-12) where {T, DEL, EM, TS, LIM}
         v0::T = similar(Ψ)
         v1::T = similar(Ψ)
         v2::T = similar(Ψ)
         coeffs = cheby_coeffs(Δ, dt; limit=limit)
-        new{T}(v0, v1, v2, coeffs, Δ, E_min, dt, limit)
+        new{T, typeof(coeffs), DEL, EM, TS, LIM}(v0, v1, v2, coeffs, Δ, E_min, dt, limit)
     end
 end
 
@@ -105,11 +105,11 @@ The routine will not allocate any internal storage. This implementation
 requires `copyto!` `lmul!`, and `axpy!` to be implemented for `Ψ`, and the
 three-argument `mul!` for `Ψ` and `H`.
 """
-function cheby!(Ψ, H, dt, wrk; E_min::Union{Float64, Nothing}=nothing,
+function cheby!(Ψ, H, dt, wrk; E_min=nothing,
                 check_normalization=false)
 
     Δ = wrk.Δ
-    β :: Float64 = (Δ / 2) + wrk.E_min  # "normfactor"
+    β = (Δ / 2) + wrk.E_min  # "normfactor"
     if E_min ≠ nothing
         β = (Δ / 2) + E_min
     end
