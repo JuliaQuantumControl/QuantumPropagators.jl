@@ -6,7 +6,7 @@ DocMeta.setdocmeta!(QuantumPropagators, :DocTestSetup, :(using QuantumPropagator
 makedocs(;
     modules=[QuantumPropagators],
     authors="Michael Goerz <mail@michaelgoerz.net> and contributors",
-    repo="https://github.com/quantumcontrol-jl/QuantumPropagators.jl/blob/{commit}{path}#{line}",
+    repo="https://github.com/QuantumControl-jl/QuantumPropagators.jl/blob/{commit}{path}#{line}",
     sitename="QuantumPropagators.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
@@ -19,5 +19,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/quantumcontrol-jl/QuantumPropagators.jl",
+    repo="github.com/QuantumControl-jl/QuantumPropagators.jl",
 )
