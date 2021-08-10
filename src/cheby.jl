@@ -66,22 +66,22 @@ initializes the workspace for the propagation of a state similar to Ψ under a
 Hamiltonian with eigenvalues between `E_min` and `E_min + Δ`, and a time step
 dt. Chebychev coefficients smaller than the given `limit` are discarded.
 """
-struct ChebyWrk{T, CFS, DEL, EM, TS, LIM}
+struct ChebyWrk{T, CFS, FT<:AbstractFloat}
     v0 :: T
     v1 :: T
     v2 :: T
     coeffs :: CFS
-    Δ :: DEL
-    E_min :: EM
-    dt :: TS
-    limit :: LIM
-    function ChebyWrk(Ψ::T, Δ::DEL, E_min::EM, dt::TS;
-                      limit::LIM=1e-12) where {T, DEL, EM, TS, LIM}
+    Δ :: FT
+    E_min :: FT
+    dt :: FT
+    limit :: FT
+    function ChebyWrk(Ψ::T, Δ::FT, E_min::FT, dt::FT;
+                      limit::FT=1e-12) where {T, FT}
         v0::T = similar(Ψ)
         v1::T = similar(Ψ)
         v2::T = similar(Ψ)
         coeffs = cheby_coeffs(Δ, dt; limit=limit)
-        new{T, typeof(coeffs), DEL, EM, TS, LIM}(v0, v1, v2, coeffs, Δ, E_min, dt, limit)
+        new{T, typeof(coeffs), FT}(v0, v1, v2, coeffs, Δ, E_min, dt, limit)
     end
 end
 
@@ -106,7 +106,7 @@ function cheby!(Ψ, H, dt, wrk; E_min=nothing,
                 check_normalization=false)
 
     Δ = wrk.Δ
-    β = (Δ / 2) + wrk.E_min  # "normfactor"
+    β::typeof(wrk.E_min) = (Δ / 2) + wrk.E_min  # "normfactor"
     if E_min ≠ nothing
         β = (Δ / 2) + E_min
     end
