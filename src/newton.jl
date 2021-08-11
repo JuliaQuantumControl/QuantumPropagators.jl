@@ -69,8 +69,8 @@ matrix.
 
 Return the size `m` of the calculated Hessenberg matrix. This will usually be
 the input `m`, except when the Krylov dimension of `H` starting from `Ψ` is
-less then `m`. E.g., if `Ψ` is an eigenstate of `H`, the returned `m` will be
-1.
+less then `m`. E.g., if `Ψ` is an eigenstate of `H`, the returned `m` will
+be 1.
 
 See <http://en.wikipedia.org/wiki/Arnoldi_iteration> for a description of
 the algorithm.
@@ -328,7 +328,7 @@ Evaluate `Ψ = func(H*dt) Ψ` using a Newton-with-restarted-Arnoldi scheme.
 - `H`: Operator acting on `Ψ`. Together with `dt`, this is the argument to
   `func`
 - `dt`: Implicit time step. Together with `H`, this is the argument to `func`
-- `wkr`: Work array, initialized with [NewtonWrk](@ref)
+- `wkr`: Work array, initialized with [`NewtonWrk`](@ref)
 - `func`: The function to apply to `H dt`, taking a single (scalar)
   complex-valued argument `z` in place of `H dt`. The default `func`
   is to evaluate the time evoluation operator for the Schrödinger equation
