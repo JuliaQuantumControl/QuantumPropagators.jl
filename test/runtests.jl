@@ -1,7 +1,16 @@
 using QuantumPropagators
 using Test
+using SafeTestsets
 
-@testset "QuantumPropagators.jl" begin
-    include("test_cheby.jl")
-    include("test_newton.jl")
+# Note: comment outer @testset to stop after first @safetestset failure
+@time @testset verbose=true "QuantumPropagators" begin
+
+    print("\n**** Chebychev propagator")
+    @time @safetestset "Chebychev propagator" begin include("test_cheby.jl") end
+
+    print("\n**** Newton propagator")
+    @time @safetestset "Newton propagator" begin include("test_newton.jl") end
+
+    print("\n**** Total\n")
+
 end
