@@ -11,6 +11,9 @@ using SafeTestsets
     print("\n**** Newton propagator")
     @time @safetestset "Newton propagator" begin include("test_newton.jl") end
 
+    print("\n**** Exp propagator")
+    @time @safetestset "Exp propagator" begin include("test_expprop.jl") end
+
     print("\n**** Total\n")
 
 end

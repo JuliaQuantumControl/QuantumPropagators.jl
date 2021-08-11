@@ -4,8 +4,6 @@ using QuantumPropagators
 
 @testset "random Hermitian state" begin
 
-    precision = 1e-10
-
     # Input
     N = 1000
 
@@ -21,17 +19,16 @@ using QuantumPropagators
 
     # Expected
     U = exp(-im * H * dt)
-    @test norm(U * U'  - one(U)) < precision  # U is unitary
     Ψ_out_expected = U * Ψ₀
     @test norm(Ψ_out_expected) ≈ 1
 
     Ψ = copy(Ψ₀)
-    wrk = NewtonWrk(Ψ₀, 5)
-    newton!(Ψ, H, dt, wrk)
+    wrk = ExpPropWrk(Ψ₀)
+    expprop!(Ψ, H, dt, wrk)
     Ψ_out = copy(Ψ)
-    @test_broken norm(Ψ_out) ≈ 1
+    @test norm(Ψ_out) ≈ 1
 
-    # Comparison
-    @test_broken norm(Ψ_out - Ψ_out_expected) < precision
-
+    # Comparison (should be exact to machine precision)
+    @test norm(Ψ_out - Ψ_out_expected) ≈ 0
 end
+

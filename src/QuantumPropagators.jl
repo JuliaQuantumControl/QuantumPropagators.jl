@@ -2,9 +2,11 @@ module QuantumPropagators
 
 include("./cheby.jl")
 include("./newton.jl")
+include("./expprop.jl")
 
 export cheby_coeffs, cheby_coeffs!, ChebyWrk, cheby!
 export NewtonWrk, newton!
+export ExpPropWrk, expprop!
 export initpropwrk, propstep!, propagate
 
 
@@ -49,6 +51,8 @@ function initpropwrk(state, tlist, generator...; method=:auto, kwargs...)
         return ChebyWrk(state, Δ, E_min, dt; kwargs...)
     elseif method == :newton
         return NewtonWrk(state; kwargs...)
+    elseif method == :expprop
+        return ExpPropWrk(state; kwargs...)
     else
         throw(ArgumentError("Unknown method $method"))
     end
@@ -69,7 +73,11 @@ function propstep!(state, generator, dt, wrk::ChebyWrk; kwargs...)
 end
 
 function propstep!(state, generator, dt, wrk::NewtonWrk; kwargs...)
-    return newton(state, generator, dt, wrk; kwargs...)
+    return newton!(state, generator, dt, wrk; kwargs...)
+end
+
+function propstep!(state, generator, dt, wrk::ExpPropWrk; kwargs...)
+    return expprop!(state, generator, dt, wrk; kwargs...)
 end
 
 
