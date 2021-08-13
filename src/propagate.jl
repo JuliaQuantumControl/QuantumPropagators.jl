@@ -187,16 +187,8 @@ end
 # init_storage/_store!. The routine is not safe unless it is the *only*
 # observable. If state storage needs to be combined with other observables
 # `state->copy(state)` would need to be used.
-function _store_state(state)
-    if isa(state, AbstractVector)
-        # for an AbstractVector as the only observable, we know that storage is
-        # a 2D array to which we can transfer the values of state in-place.
-        # Thus, we don't need to make a copy
-        return state
-    else
-        return copy(state)
-    end
-end
+_store_state(state) = copy(state)
+_store_state(state::T) where T<:AbstractVector = state
 
 
 """Propagate a state over an entire time grid.
