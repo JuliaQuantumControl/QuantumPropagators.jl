@@ -69,36 +69,49 @@ function propstep!(state, generator, dt, wrk::ExpPropWrk; kwargs...)
 end
 
 
-"""Return a `storage` object for [`propagate`](@ref).
+"""Return a `storage` array for [`propagate`](@ref).
 
 ```julia
 storage = init_storage(state, tlist, observables=(state->copy(state), ))
 ```
 
-Return an Array suitable for storing the result of applying the given
-`observables` to a `state` for every point in `tlist`. There are three cases:
+Return an array suitable for storing the result of applying the given
+`observables` to a `state` for every point in `tlist` (`nt` time grid points).
+The size and type of the resulting `storage` depends on `state` and
+`observables` as follows:
 
-1.  For a single observable, the resulting `storage` is a Vector of the same
-    length as `tlist` that holds the result of applying the observable. For the
-    default observable `state->copy(state)`, that is a Vector of states
-    (`Vector{typeof(state)}`).
+1.  There is a single observable.
 
-2.  For multiple observables, if the observables are uniform (all return an
+    (a) If the result of applying the observable to `state` returns an
+    `AbstractVector` of length `n`, the return storage will be an `n × nt`
+    Array with the same `eltype` as the vector.  Examples include the storage
+    of the `state` if the state is an `AbstractVector`, or calculating the
+    population in all levels with `Ψ -> abs.(Ψ).^2`.
+
+    (b) If the result of applying the observable to `state` returns an object
+    that is not an `AbstractVector`, the storage will be a Vector of length
+    `nt`, with an `eltype` matching `typeof(object)` An examples is the storage
+    of states that are not simple arrays but e.g. instances of
+    `QuantumOptics.Ket`.
+
+2.  There are multiple observables.
+
+    (a) if the observables are uniform (all observables return an
     object of the same type), the resulting `storage` will be an Array of size
     `n × nt` where `n` is the number of `observables` and `nt` is the length of
     `tlist`.  This applies to e.g. the case where the observables are
-    normal expectation values.
+    normal expectation values,
 
         observables=(state->dot(state, Ô₁, state), state->dot(state, Ô₂, state))
 
-    for two Hermitian operators `Ô₁`, `Ô₂` would result in a `storage` of type
-    `Matrix{Float64}`. After a propagation with [`propagate`](@ref), the
-    expectation values of `Ô₁` over time would then be accessible as
-    `storage[1,:]`
+    for two Hermitian operators `Ô₁`, `Ô₂`. This example would result in a
+    `storage` of type `Matrix{Float64}`. After a propagation with
+    [`propagate`](@ref), the expectation values of `Ô₁` over time would then be
+    accessible as `storage[1,:]`
 
-3.  For multiple observables, if the observables are not uniform, the resulting
+    (b) if the observables are not uniform, the resulting
     `storage` will be a Vector of length `nt` for the observable-tuples. For
-    example,
+    example, for
 
         observables=(state->dot(state, Ô₁, state), state->count_poplevels(state))
 
@@ -110,8 +123,13 @@ function init_storage(state, tlist, observables=(state->copy(state), ))
     val_tuple = Tuple(O(state) for O in observables)
     first = val_tuple[1]
     nt = length(tlist)
-    if length(val_tuples) == 1
-        return Vector{typeof(first)}(undef, nt)
+    if length(val_tuple) == 1
+        if isa(first, AbstractVector)
+            n = length(first)
+            return Array{typeof(first[1])}(undef, n, nt)
+        else
+            return Vector{typeof(first)}(undef, nt)
+        end
     else
         is_uniform = all(typeof(v) == typeof(first) for v in val_tuple[2:end])
         if is_uniform
@@ -124,25 +142,36 @@ function init_storage(state, tlist, observables=(state->copy(state), ))
 end
 
 
-# helper function for `propagate`
-function _prop_store(storage, i, state, observables, in_place=false)
+# Helper function that `propagate` uses to fill `storage`.
+# Assumes that `storage` fulfills the exact format described in `init_storage`
+function _store!(storage, i, state, observables, in_place=false)
     val_tuple = Tuple(O(state) for O in observables)
-    if length(val_tuple) == 1
-        if in_place
-            copyto!(storage[i], val_tuple[1])
-        else
-            storage[i] = val_tuple[1]
+    if length(val_tuple) == 1  # a single "observable"
+        val = val_tuple[1]
+        if length(size(storage)) == 2  # storage is 2D Array
+            # assumes that `val` is an AbstractVector whose entries should be
+            # stored in the i'th time column of the storage array
+            for (n, m) in enumerate(eachindex(val))
+                storage[n][i] = val[m]
+            end
+        else # storage is vector of values
+            if in_place
+                copyto!(storage[i], val)
+            else
+                storage[i] = val
+            end
         end
-    else
-        if length(size(storage)) == 2  # 2D Array
+    else  # multiple "observables"
+        if length(size(storage)) == 2  # storage is 2D Array
             for i_obs in 1:length(val_tuple)
+                val = val_tuple[i_obs]
                 if in_place
-                    copyto!(storage[i_obs, i], val_tuple[i_obs])
+                    copyto!(storage[i_obs, i], val)
                 else
-                    storage[i_obs, i] = val_tuple[i_obs]
+                    storage[i_obs, i] = val
                 end
             end
-        else  # Vector of tuples
+        else  # storage is vector of tuples
             if in_place
                 copyto!(storage[i], val_tuple)
             else
@@ -153,12 +182,29 @@ function _prop_store(storage, i, state, observables, in_place=false)
 end
 
 
+# Default "observable" for storing the propagated state. We want to keep this
+# completely private, as it makes some very strong assumptions tied to
+# init_storage/_store!. The routine is not safe unless it is the *only*
+# observable. If state storage needs to be combined with other observables
+# `state->copy(state)` would need to be used.
+function _store_state(state)
+    if isa(state, AbstractVector)
+        # for an AbstractVector as the only observable, we know that storage is
+        # a 2D array to which we can transfer the values of state in-place.
+        # Thus, we don't need to make a copy
+        return state
+    else
+        return copy(state)
+    end
+end
+
+
 """Propagate a state over an entire time grid.
 
 ```julia
 propagate(state, genfunc, tlist, backwards=false;
-          wrk=nothing, storage=nothing, observables=(state->copy(state), ),
-          storage_in_place=false)
+          wrk=nothing, storage=nothing, observables=(<store state>, ),
+          storage_in_place=false, hook=nothing)
 ```
 
 propagates `state` over the time grid in `tlist`, using piecewise-constant
@@ -181,9 +227,9 @@ although some propagation methods (most notably [`cheby!`](@ref)) only support
 a uniform time grid.
 
 If `storage` is given as an Array, it will be filled with data determined by
-the `observables`. The default "observable", `state->copy(state)` results in
-the propagated states at every point in time being stored. Other use cases
-would include the storage of expectation values, e.g. with
+the `observables`. The default "observable" results in the propagated states at
+every point in time being stored. Other use cases would include the storage of
+expectation values, e.g. with
 
 ~~~julia
 observables=(state->dot(state, Ô₁, state), state->dot(state, Ô₂, state))
@@ -210,14 +256,23 @@ If `backwards` is `true`, the input state is assumed to be at time
 time step `dt`). If `storage` is given, it will be filled back-to-front during
 the backwards propagation.
 
+If `hook` is given as a callable, it will be called after each propagation
+step, as `hook(state, generator, tlist, i, wrk, observables)` where `i` is the
+index of the time interval on `tlist` covered by the propagation step (0 for
+the initial state, respectives `lastindex(tlist)` for the backward
+propagation).  The `hook` is called before calculating any observables. Example
+usage includes writing data to file, or modyfing `state`, e.g. removing
+amplitude from the lowest and highest level to mitigate "truncation error".
+
 The `propagate` routine returns the propagated state at `tlist[end]`,
 respectively `tlist[1]` if `backwards=true`.
 """
 function propagate(state, genfunc, tlist, backwards=false;
                    wrk=nothing,
                    storage=nothing,
-                   observables=(state->copy(state), ),
+                   observables=(_store_state, ),
                    storage_in_place=false,
+                   hook=nothing,
                   )
     state = copy(state)
     if wrk == nothing
@@ -226,13 +281,19 @@ function propagate(state, genfunc, tlist, backwards=false;
     intervals = enumerate(tlist[2:end])
     if backwards
         intervals = Iterators.reverse(intervals)
+        if hook ≠ nothing
+            hook(state, generator, tlist, lastindex(tlist), wrk, observables)
+        end
         if storage ≠ nothing
-            _prop_store(storage, lastindex(storage), state, observables,
-                        storage_in_place)
+            _store!(storage, lastindex(storage), state, observables,
+                    storage_in_place)
         end
     else
+        if hook ≠ nothing
+            hook(state, generator, tlist, 0, wrk, observables)
+        end
         if storage ≠ nothing
-            _prop_store(storage, 1, state, observables, storage_in_place)
+            _store!(storage, 1, state, observables, storage_in_place)
         end
     end
     # TODO: optional progress meter
@@ -241,10 +302,11 @@ function propagate(state, genfunc, tlist, backwards=false;
         generator = genfunc(tlist, i)
         propstep!(state, generator, (backwards ? -dt : dt), wrk)
         if storage ≠ nothing
-            _prop_store(
-                storage, i + (backwards ? -1 : 1), state, observables,
-                storage_in_place
-            )
+            _store!(storage, i + (backwards ? -1 : 1), state, observables,
+                    storage_in_place)
+        end
+        if hook ≠ nothing
+            hook(state, generator, tlist, i, wrk, observables)
         end
     end
     return state
