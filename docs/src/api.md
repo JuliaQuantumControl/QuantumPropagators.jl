@@ -18,7 +18,7 @@ See the [Index](@ref) for the full list of routines.
 
 ```@autodocs
 Modules = [QuantumPropagators]
-Pages = ["QuantumPropagators.jl"]
+Pages = ["propagate.jl"]
 ```
 
 ## Chebychev reference
