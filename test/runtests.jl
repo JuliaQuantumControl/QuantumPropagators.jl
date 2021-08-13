@@ -14,6 +14,9 @@ using SafeTestsets
     print("\n**** Exp propagator")
     @time @safetestset "Exp propagator" begin include("test_expprop.jl") end
 
+    print("\n**** High-Level propagation")
+    @time @safetestset "High-level propagation" begin include("test_propagate.jl") end
+
     print("\n**** Total\n")
 
 end

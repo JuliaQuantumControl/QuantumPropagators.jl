@@ -28,7 +28,7 @@ The resulting `wrk` can be passed to [`propagate`](@ref) or
 function initpropwrk(state, tlist, generator...; method=:auto, kwargs...)
     if method == :auto
         # TODO: determine the best method
-        error("not implemented")
+        method = :expprop
     end
     if method == :cheby
         # TODO Find the spectral envelope of all generators
@@ -152,7 +152,7 @@ function _store!(storage, i, state, observables, in_place=false)
             # assumes that `val` is an AbstractVector whose entries should be
             # stored in the i'th time column of the storage array
             for (n, m) in enumerate(eachindex(val))
-                storage[n][i] = val[m]
+                storage[n, i] = val[m]
             end
         else # storage is vector of values
             if in_place
@@ -202,9 +202,10 @@ end
 """Propagate a state over an entire time grid.
 
 ```julia
-propagate(state, genfunc, tlist, backwards=false;
-          wrk=nothing, storage=nothing, observables=(<store state>, ),
-          storage_in_place=false, hook=nothing)
+propagate(state, genfunc, tlist;
+          backwards=false; wrk=nothing, storage=nothing,
+          observables=(<store state>, ), storage_in_place=false,
+          hook=nothing)
 ```
 
 propagates `state` over the time grid in `tlist`, using piecewise-constant
@@ -267,7 +268,8 @@ amplitude from the lowest and highest level to mitigate "truncation error".
 The `propagate` routine returns the propagated state at `tlist[end]`,
 respectively `tlist[1]` if `backwards=true`.
 """
-function propagate(state, genfunc, tlist, backwards=false;
+function propagate(state, genfunc, tlist;
+                   backwards=false,
                    wrk=nothing,
                    storage=nothing,
                    observables=(_store_state, ),
@@ -276,7 +278,7 @@ function propagate(state, genfunc, tlist, backwards=false;
                   )
     state = copy(state)
     if wrk == nothing
-        wrk = initipropwrk(state, tlist, genfunc(tlist, 1))
+        wrk = initpropwrk(state, tlist, genfunc(tlist, 1))
     end
     intervals = enumerate(tlist[2:end])
     if backwards
@@ -285,7 +287,7 @@ function propagate(state, genfunc, tlist, backwards=false;
             hook(state, generator, tlist, lastindex(tlist), wrk, observables)
         end
         if storage ≠ nothing
-            _store!(storage, lastindex(storage), state, observables,
+            _store!(storage, lastindex(tlist), state, observables,
                     storage_in_place)
         end
     else
@@ -298,11 +300,11 @@ function propagate(state, genfunc, tlist, backwards=false;
     end
     # TODO: optional progress meter
     for (i, t_end) in intervals
-        dt = t_end - tlist[i-1]
+        dt = t_end - tlist[i]
         generator = genfunc(tlist, i)
         propstep!(state, generator, (backwards ? -dt : dt), wrk)
         if storage ≠ nothing
-            _store!(storage, i + (backwards ? -1 : 1), state, observables,
+            _store!(storage, i + (backwards ? 0 : 1), state, observables,
                     storage_in_place)
         end
         if hook ≠ nothing
