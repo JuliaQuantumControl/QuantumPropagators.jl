@@ -101,9 +101,7 @@ Return an Array suitable for storing the result of applying the given
     `tlist`.  This applies to e.g. the case where the observables are
     normal expectation values.
 
-    ~~~julia
-    observables=(state->dot(state, Ô₁, state), state->dot(state, Ô₂, state))
-    ~~~
+        observables=(state->dot(state, Ô₁, state), state->dot(state, Ô₂, state))
 
     for two Hermitian operators `Ô₁`, `Ô₂` would result in a `storage` of type
     `Matrix{Float64}`. After a propagation with [`propagate`](@ref), the
@@ -114,9 +112,7 @@ Return an Array suitable for storing the result of applying the given
     `storage` will be a Vector of length `nt` for the observable-tuples. For
     example,
 
-    ~~~julia
-    observables=(state->dot(state, Ô₁, state), state->count_poplevels(state))
-    ~~~
+        observables=(state->dot(state, Ô₁, state), state->count_poplevels(state))
 
     where `count_poplevels` is a function that counts the number of levels with
     non-zero population, the resulting `storage` would be a
