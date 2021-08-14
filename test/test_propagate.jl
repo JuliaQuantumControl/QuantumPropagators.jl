@@ -17,6 +17,8 @@ using UnicodePlots
     genfunc(tlist, i) = Ĥ
 
     storage = init_storage(Ψ0, tlist)
+    @test isa(storage, Matrix)
+    @test eltype(storage) == ComplexF64
 
     Ψ_out = propagate(Ψ0, genfunc, tlist; storage=storage)
     Ψ_expected = ComplexF64[-1/√2, -1im/√2]  # note the phases
@@ -49,4 +51,3 @@ using UnicodePlots
     @test norm(storage - storage_bw) < 1e-12
 
 end
-

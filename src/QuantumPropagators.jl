@@ -10,6 +10,10 @@ export NewtonWrk, newton!
 include("./expprop.jl")
 export ExpPropWrk, expprop!
 
+include("./storage.jl")
+export init_storage, map_observables, map_observable, write_to_storage!
+export get_from_storage
+
 # high-level interface
 include("./propagate.jl")
 export initpropwrk, init_storage, propstep!, propagate

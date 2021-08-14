@@ -4,7 +4,6 @@
 
 The `QuantumPropagators.jl` package provides the following high-level routines:
 
-* [`init_storage`](@ref) — Return a `storage` object for [`propagate`](@ref)
 * [`initpropwrk`](@ref) — Initialize a work space for propagation
 * [`propagate`](@ref) — Propagate a state over an entire time grid.
 * [`propstep!`](@ref) — Perform a single propagation step in-place.
@@ -19,6 +18,15 @@ See the [Index](@ref) for the full list of routines.
 ```@autodocs
 Modules = [QuantumPropagators]
 Pages = ["propagate.jl"]
+```
+
+## Storage Reference
+
+The following routine allow manage and extend storage arrays `storage` parameter in [`propagate`](@ref). See [Storage of states or expectation values](@ref) for more details.
+
+```@autodocs
+Modules = [QuantumPropagators]
+Pages = ["storage.jl"]
 ```
 
 ## Chebychev reference
