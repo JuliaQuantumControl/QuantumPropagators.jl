@@ -23,7 +23,7 @@ The resulting `wrk` can be passed to [`propagate`](@ref) or
 * `method`: The propagation method to use. The default value of `:auto`
   attempts to choose the best method available, based on the properties of the
   given `state`, `tlist`, and `generator`. Alternative values are `:cheby` and
-  `:newton`.
+  `:newton`, and `:expprop`.
 """
 function initpropwrk(state, tlist, generator...; method=:auto, kwargs...)
     if method == :auto
@@ -81,13 +81,14 @@ _store_state(state::Vector) = state
 
 ```julia
 propagate(state, genfunc, tlist;
-          backwards=false; wrk=nothing, storage=nothing,
+          backwards=false; wrk=nothing, method=:auto, storage=nothing,
           observables=(<store state>, ), hook=nothing)
 ```
 
 propagates `state` over the time grid in `tlist`, using piecewise-constant
 dynamical generators (Hamiltonians or Liouvillians) determined by `genfunc`,
-and returns the resulting propagated state.
+and returns the resulting propagated state. The propagation is performed by
+calling [`propstep!`](@ref) for every interval in `tlist`.
 
 For the i'th time interval, `genfunc(tlist, i)` must return the generator for
 that time interval. Generally, when approximating a time-continuous dynamical
@@ -96,9 +97,25 @@ generator as piecewise-constant on the time grid, it should be evaluated at the
 interval, which may be better evaluated at `tlist[1]` and `tlist[end]` to
 ensure exact boundary conditions like control fields that are exactly zero.
 
-The propagation method is determined by `wrk`, see [`initpropwrk`](@ref). If
-`wrk` is not given, `propagate` will attempt to choose the most appropriate
-method for the given parameters.
+In addition to the two positional parameters indicating the time interval,
+`genfunc` will also receive the `state` (the input state for the propagation
+step), `backwards`, `storage`, `observables`, and `init` as keyword arguments.
+These additional parameters may be used for unusual equations of motion beyond
+the standard Schrödinger or Liouville-von-Neumann equation, e.g. `state` would
+enter the `genfunc` for a Gross–Pitaevskii equation. For standard equations of
+motion that do not use the additional parameters, it is best to capture the
+keyword arguments to `genfunc` with a definition like
+
+```julia
+genfunc(tlist, i; kwargs...) = ...
+```
+
+The propagation method is determined by `wrk`, see [`initpropwrk`](@ref) and
+[`propstep!](@ref): If `wrk` is not given, it will be created internally for
+the given `method` with [`initpropwrk`](@ref); for the default `method=:auto`,
+[`initpropwrk`](@ref) will attempt to choose the most appropriate method for
+the given parameters, using the generator returned by `genfunc` with `i=1` and
+the keyword argument `init=true`.
 
 In general, there is no requirement that `tlist` has a constant time step,
 although some propagation methods (most notably [`cheby!`](@ref)) only support
@@ -134,6 +151,7 @@ stored states / observable data if `storage=true`.
 function propagate(state, genfunc, tlist;
                    backwards=false,
                    wrk=nothing,
+                   method=:auto,
                    storage=nothing,
                    observables=(_store_state, ),
                    hook=nothing,
@@ -145,7 +163,11 @@ function propagate(state, genfunc, tlist;
     end
     state = copy(state)
     if wrk == nothing
-        wrk = initpropwrk(state, tlist, genfunc(tlist, 1))
+        wrk = initpropwrk(
+            state, tlist, genfunc(tlist, 1; state=state, backwards=backwards,
+                                  storage=storage, observables=observables,
+                                  init=true)
+        )
     end
     intervals = enumerate(tlist[2:end])
     if backwards
@@ -167,7 +189,9 @@ function propagate(state, genfunc, tlist;
     # TODO: optional progress meter
     for (i, t_end) in intervals
         dt = t_end - tlist[i]
-        generator = genfunc(tlist, i)
+        generator = genfunc(tlist, i; state=state, backwards=backwards,
+                            storage=storage, observables=observables,
+                            init=false)
         propstep!(state, generator, (backwards ? -dt : dt), wrk)
         if storage ≠ nothing
             write_to_storage!(storage, i + (backwards ? 0 : 1), state,

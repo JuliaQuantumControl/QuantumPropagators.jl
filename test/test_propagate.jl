@@ -14,7 +14,7 @@ using UnicodePlots
     Ĥ = ComplexF64[0  0.5; 0.5 0]
     tlist = collect(range(0, 1.5π, length=101)) # 3π/2 pulse
 
-    genfunc(tlist, i) = Ĥ
+    genfunc(tlist, i; kwargs...) = Ĥ
 
     storage = init_storage(Ψ0, tlist)
     @test isa(storage, Matrix)
