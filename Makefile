@@ -25,13 +25,15 @@ export PRINT_HELP_PYSCRIPT
 help:  ## show this help
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
+test/Manifest.toml: test/Project.toml
+	julia --project=test -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
 
-test: ## Run the test suite
-	julia -e 'using Pkg;Pkg.activate(".");Pkg.test(coverage=true)'
+test:  ## Run the test suite
+	julia --project=test -e 'using Pkg;Pkg.activate(".");Pkg.test(coverage=true)'
 	@echo "Done. Consider using 'make testrepl'"
 
-testrepl: ## Start an interactive REPL for testing
-	@julia --banner=no --startup-file=yes -e 'using Pkg; Pkg.activate("."); using Revise; println("*******\nDOCS REPL\nRevise is active\nRun\n    ] test\n*******\n")' -i
+testrepl: test/Manifest.toml ## Start an interactive REPL for testing
+	@julia --project=test --banner=no --startup-file=yes -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); using Revise; println("*******\nTEST REPL\nRevise is active\nRun\n    include(\"test/runtests.jl\")\n*******\n")' -i
 
 
 docs/Manifest.toml: docs/Project.toml
@@ -53,4 +55,4 @@ clean: ## Clean up build/doc/testing artifacts
 	rm -rf docs/build
 
 distclean: clean ## Restore to a clean checkout state
-	rm -f Manifest.toml docs/Manifest.toml
+	rm -f Manifest.toml docs/Manifest.toml test/Manifest.toml

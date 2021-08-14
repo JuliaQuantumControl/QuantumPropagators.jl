@@ -47,11 +47,13 @@ jobs:
         with:
           version: '1'
       - run: |
+          # Instantiate docs env
           julia --project=docs -e '
             using Pkg
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()'
       - run: |
+          # Run doctests
           julia --project=docs -e '
             using Documenter: DocMeta, doctest
             using QuantumPropagators
