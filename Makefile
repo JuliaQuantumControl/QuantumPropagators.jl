@@ -31,7 +31,7 @@ test: ## Run the test suite
 	@echo "Done. Consider using 'make testrepl'"
 
 testrepl: ## Start an interactive REPL for testing
-	@julia --banner=no -e 'using Pkg; Pkg.activate("."); using Revise; println("*******\nDOCS REPL\nRevise is active\nRun\n    ] test\n*******\n")' -i
+	@julia --banner=no --startup-file=yes -e 'using Pkg; Pkg.activate("."); using Revise; println("*******\nDOCS REPL\nRevise is active\nRun\n    ] test\n*******\n")' -i
 
 
 docs/Manifest.toml: docs/Project.toml
