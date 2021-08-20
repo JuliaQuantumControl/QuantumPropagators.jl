@@ -350,8 +350,11 @@ function newton!(Ψ, H, dt, wrk, func=(z -> exp(-1im*z));
     P = Array{ComplexF64,1}(undef, m+1)
     R_abs = Array{Float64,1}(undef, m+1)
     Hess = zeros(ComplexF64, m_max+1, m_max+1)
+    # there seems to be a problem declaring dt as Float64 directly (if you pass
+    # it an Int, the kwargs seems to prevent Julia from auto-converting it
+    _dt :: Float64 = dt
 
-    @assert dt ≠ 0
+    @assert _dt ≠ 0.0
 
     n_a :: Int64 = 0  # number of Newton coefficients (accumulated)
     n_leja :: Int64 = 0  # number of Leja points (accumulated)
@@ -363,12 +366,8 @@ function newton!(Ψ, H, dt, wrk, func=(z -> exp(-1im*z));
 
     while true  # restart loop (s → s+1)
 
-        if β <= norm_min
-            break
-        end
-
-        m = arnoldi!(Hess, wrk.arnoldi_vecs, m, wrk.v, H, dt, extended=true,
-                     norm_min=norm_min)
+        m = arnoldi!(Hess, wrk.arnoldi_vecs, m, wrk.v, H, _dt;
+                     extended=true, norm_min=norm_min)
         if m == 1 && s == 0
             λ = β * Hess[1, 1]
             # wrk.v is an eigenvec of H with eigenval Hess[1, 1],
@@ -434,19 +433,16 @@ function newton!(Ψ, H, dt, wrk, func=(z -> exp(-1im*z));
         )
         R_abs[1:m+1] = abs.(R[1:m+1])
         β = norm(R_abs[1:m+1])
-        if β > norm_min
-            lmul!(1/β, view(R, 1:m+1))
-            copyto!(wrk.arnoldi_vecs[1], wrk.v)
-            lmul!(R[1], wrk.v)
-            for i = 2 : m+1
-                axpy!(R[i], wrk.arnoldi_vecs[i], wrk.v)
-            end
-        else
-            β = 0
+        lmul!(1/β, view(R, 1:m+1))
+        copyto!(wrk.arnoldi_vecs[1], wrk.v)
+        lmul!(R[1], wrk.v)
+        for i = 2 : m+1
+            axpy!(R[i], wrk.arnoldi_vecs[i], wrk.v)
         end
 
         # Convergence check (relative error of Newton series)
-        if (β * abs(wrk.a[n_a-1]) / (1 + norm(Ψ))) < relerr
+        Ψ_relerr = β * abs(wrk.a[n_a-1]) / (1 + norm(Ψ))
+        if Ψ_relerr < relerr
             break
         else
             s += 1
