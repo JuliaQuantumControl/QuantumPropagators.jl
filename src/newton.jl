@@ -29,7 +29,7 @@ mutable struct NewtonWrk{T}
     restarts :: Int64
     function NewtonWrk(v0::T, m_max::Int64=10) where T
         if m_max >= length(v0)
-            m_max = length(v) - 1
+            m_max = length(v0) - 1
         end
         new{T}(
             T[similar(v0) for _ in 1:m_max+1], # arnoldi_vecs
