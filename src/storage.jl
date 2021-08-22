@@ -24,11 +24,14 @@ length `nt`, or a `n × nt` Matrix with the same `eltype` as `data` if `data` is
 a Vector of length `n`.
 """
 function init_storage(state, tlist::AbstractVector)
-    return init_storage(state, length(tlist))
+    nt = length(tlist)
+    return init_storage(state, nt)
 end
 
 function init_storage(state, tlist, observables)
-    return init_storage(map_observables(state), length(tlist))
+    data = map_observables(observables, state)
+    nt = length(tlist)
+    return init_storage(data, nt)
 end
 
 init_storage(data, nt::Integer) = Vector{typeof(data)}(undef, nt)
