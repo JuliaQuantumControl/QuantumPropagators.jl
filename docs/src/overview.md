@@ -11,7 +11,7 @@ After each propagation step, with a propagate state at time slot `i`,
 * [`map_observables`](@ref) generates `data` from the propagated state 
 * [`write_to_storage!`](@ref) places that `data` into `storage` for time slot `i`
 
-After [`propagate`](@ref) returns, the [`get_from_storage`](@ref) routine can be used to extract data from any time slot. This interface hides the internal memory organization of `storage`, which is set up by [`init_storage`](@ref) based on the type of `state` and the given `observables`. This system can can extended with multiple dispatch, allowing to optimize the `storage` for custom data types. Obviously, [`init_storage`](@ref), [`map_observables`](@ref), [`write_to_storage!`](@ref), and [`get_from_storage`](@ref) must all be consistent.
+After [`propagate`](@ref) returns, the [`get_from_storage!`](@ref) routine can be used to extract data from any time slot. This interface hides the internal memory organization of `storage`, which is set up by [`init_storage`](@ref) based on the type of `state` and the given `observables`. This system can can extended with multiple dispatch, allowing to optimize the `storage` for custom data types. Obviously, [`init_storage`](@ref), [`map_observables`](@ref), [`write_to_storage!`](@ref), and [`get_from_storage!`](@ref) must all be consistent.
 
 The default implementation of these routine uses either a standard Vector or a Matrix as `storage`.
 
@@ -25,8 +25,8 @@ observables=(state->dot(state, Ô₁, state), state->dot(state, Ô₂, state))
 ~~~
 
 where `Ô₁`, `Ô₂` are two Hermitian operators. In this case, `storage` would be
-a `2 × nt` `Float64` array. Calling `get_from_storage(storage, i)` would be
-equivalent to `storage[:,i]` and return the i'th column of `storage`, i.e. the
+a `2 × nt` `Float64` array. Calling `get_from_storage!(data, storage, i)` would be
+equivalent to `copyto!(data, storage[:,i])` and extract the i'th column of `storage`, i.e. the
 vector `[⟨Ô₁⟩, ⟨Ô₂A]⟩]` at time slot `i`. Alternatively, `storage[1,:]` would return the values of `⟨Ô₁⟩` over time. This would be useful for plotting, and illustrates the benefits of using a Matrix as `storage`.
 
 Usually, the `observables` should be functions acting on the `state`, but [`map_observable`](@ref) can be extended to other types of observables as well. For example, the situation were `state` is a vector and the `observables` are matrices is also supported; if  `Ô₁`, `Ô₂` are matrices, 

@@ -132,11 +132,11 @@ end
 """Obtain data from storage
 
 ```julia
-state = get_from_storage(storage, i)
+get_from_storage!(state, storage, i)
 ```
 
 extracts data from the `storage` for the i'th time slot. Invese of
 [`write_to_storage!`](@ref)
 """
-get_from_storage(storage::AbstractVector, i) = storage[i]
-get_from_storage(storage::Matrix, i) = storage[:, i]
+get_from_storage!(state, storage::AbstractVector, i) = copyto!(state, storage[i])
+get_from_storage!(state, storage::Matrix, i) = copyto!(state, storage[:, i])
