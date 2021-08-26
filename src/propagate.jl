@@ -24,6 +24,9 @@ The resulting `wrk` can be passed to [`propagate`](@ref) or
   attempts to choose the best method available, based on the properties of the
   given `state`, `tlist`, and `generator`. Alternative values are `:cheby` and
   `:newton`, and `:expprop`.
+
+All other `kwargs` are filtered and passed to the contructor for returned
+workspace, e.g. `limit` for `method=:cheby` or `m_max` for `method=:newton`.
 """
 function initpropwrk(state, tlist, generator...; method=:auto, kwargs...)
     if method == :auto
@@ -36,11 +39,16 @@ function initpropwrk(state, tlist, generator...; method=:auto, kwargs...)
         Δ = 0
         E_min = 0
         dt = tlist[2] - tlist[1]
-        return ChebyWrk(state, Δ, E_min, dt; kwargs...)
+        allowed_kwargs = Set((:limit, ))
+        filtered_kwargs = filter(p->p.first in allowed_kwargs, kwargs)
+        return ChebyWrk(state, Δ, E_min, dt; filtered_kwargs...)
     elseif method == :newton
-        return NewtonWrk(state; kwargs...)
+        allowed_kwargs = Set((:m_max, ))
+        filtered_kwargs = filter(p->p.first in allowed_kwargs, kwargs)
+        return NewtonWrk(state; filtered_kwargs...)
     elseif method == :expprop
-        return ExpPropWrk(state; kwargs...)
+        # ExpPropWrk has no kwargs
+        return ExpPropWrk(state)
     else
         throw(ArgumentError("Unknown method $method"))
     end

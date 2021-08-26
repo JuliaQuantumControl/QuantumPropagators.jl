@@ -27,7 +27,7 @@ mutable struct NewtonWrk{T}
     n_a :: Int64
     n_leja :: Int64
     restarts :: Int64
-    function NewtonWrk(v0::T, m_max::Int64=10) where T
+    function NewtonWrk(v0::T; m_max::Int64=10) where T
         if m_max >= length(v0)
             m_max = length(v0) - 1
         end

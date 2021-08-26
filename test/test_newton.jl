@@ -55,7 +55,7 @@ using QuantumPropagators
     @test norm(Ψ_out_expected) ≈ 1
 
     Ψ = copy(Ψ₀)
-    wrk = NewtonWrk(Ψ₀, 100)
+    wrk = NewtonWrk(Ψ₀; m_max=5)
     newton!(Ψ, H, dt, wrk; max_restarts=200)
     Ψ_out = copy(Ψ)
     @test norm(Ψ_out) ≈ 1
