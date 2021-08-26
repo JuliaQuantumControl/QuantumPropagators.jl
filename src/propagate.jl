@@ -163,11 +163,9 @@ function propagate(state, genfunc, tlist;
     end
     state = copy(state)
     if wrk == nothing
-        wrk = initpropwrk(
-            state, tlist, genfunc(tlist, 1; state=state, backwards=backwards,
-                                  storage=storage, observables=observables,
-                                  init=true)
-        )
+        G = genfunc(tlist, 1; state=state, backwards=backwards,
+                    storage=storage, observables=observables, init=true)
+        wrk = initpropwrk(state, tlist, G; method=method)
     end
     intervals = enumerate(tlist[2:end])
     if backwards
