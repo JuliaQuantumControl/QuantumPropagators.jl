@@ -1,7 +1,7 @@
 """Initialize a workspace for propagation.
 
 ```julia
-wrk = initpropwrk(state, tlist, generator...; method=:auto, kwargs...)
+wrk = initpropwrk(state, tlist, method=:auto, generator...; kwargs...)
 ```
 
 The resulting `wrk` can be passed to [`propagate`](@ref) or
@@ -28,30 +28,49 @@ The resulting `wrk` can be passed to [`propagate`](@ref) or
 All other `kwargs` are filtered and passed to the contructor for returned
 workspace, e.g. `limit` for `method=:cheby` or `m_max` for `method=:newton`.
 """
-function initpropwrk(state, tlist, generator...; method=:auto, kwargs...)
-    if method == :auto
-        # TODO: determine the best method
-        method = :expprop
-    end
-    if method == :cheby
-        # TODO Find the spectral envelope of all generators
-        # TODO ensure that `tlist` has a constant dt
-        Δ = 0
-        E_min = 0
-        dt = tlist[2] - tlist[1]
-        allowed_kwargs = Set((:limit, ))
-        filtered_kwargs = filter(p->p.first in allowed_kwargs, kwargs)
-        return ChebyWrk(state, Δ, E_min, dt; filtered_kwargs...)
-    elseif method == :newton
-        allowed_kwargs = Set((:m_max, ))
-        filtered_kwargs = filter(p->p.first in allowed_kwargs, kwargs)
-        return NewtonWrk(state; filtered_kwargs...)
-    elseif method == :expprop
-        # ExpPropWrk has no kwargs
-        return ExpPropWrk(state)
-    else
-        throw(ArgumentError("Unknown method $method"))
-    end
+function initpropwrk(state, tlist, method::Val{:auto}, generator...; kwargs...)
+    # TODO: determine the best method
+    method = Val(:expprop)
+    return initpropwrk(state, tlist, method, generator...; kwargs)
+end
+
+function initpropwrk(state, tlist, method, generator...; kwargs...)
+    throw(TypeError("`method` must be a known symbol, not $method"))
+end
+
+
+function initpropwrk(state, tlist; kwargs...)
+    return initpropwrk(state, tlist, Val(:auto); kwargs...)
+end
+
+
+function initpropwrk(state, tlist, method::Symbol, generator...; kwargs...)
+    return initpropwrk(state, tlist, Val(method), generator...; kwargs...)
+end
+
+
+function initpropwrk(state, tlist, method::Val{:cheby}, generator...; kwargs...)
+    # TODO Find the spectral envelope of all generators
+    # TODO ensure that `tlist` has a constant dt
+    Δ = 0
+    E_min = 0
+    dt = tlist[2] - tlist[1]
+    allowed_kwargs = Set((:limit, ))
+    filtered_kwargs = filter(p->p.first in allowed_kwargs, kwargs)
+    return ChebyWrk(state, Δ, E_min, dt; filtered_kwargs...)
+end
+
+
+function initpropwrk(state, tlist, method::Val{:newton}, generator...; kwargs...)
+    allowed_kwargs = Set((:m_max, ))
+    filtered_kwargs = filter(p->p.first in allowed_kwargs, kwargs)
+    return NewtonWrk(state; filtered_kwargs...)
+end
+
+
+function initpropwrk(state, tlist, method::Val{:expprop}, generator...; kwargs...)
+    # ExpPropWrk has no kwargs
+    return ExpPropWrk(state)
 end
 
 
@@ -88,8 +107,8 @@ _store_state(state::Vector) = state
 """Propagate a state over an entire time grid.
 
 ```julia
-propagate(state, genfunc, tlist;
-          backwards=false; wrk=nothing, method=:auto, storage=nothing,
+propagate(state, genfunc, tlist, method=:auto;
+          backwards=false; storage=nothing,
           observables=(<store state>, ), hook=nothing)
 ```
 
@@ -118,12 +137,7 @@ keyword arguments to `genfunc` with a definition like
 genfunc(tlist, i; kwargs...) = ...
 ```
 
-The propagation method is determined by `wrk`, see [`initpropwrk`](@ref) and
-[`propstep!](@ref): If `wrk` is not given, it will be created internally for
-the given `method` with [`initpropwrk`](@ref); for the default `method=:auto`,
-[`initpropwrk`](@ref) will attempt to choose the most appropriate method for
-the given parameters, using the generator returned by `genfunc` with `i=1` and
-the keyword argument `init=true`.
+For valid propagation `method`s, see [`initpropwrk`](@ref).
 
 In general, there is no requirement that `tlist` has a constant time step,
 although some propagation methods (most notably [`cheby!`](@ref)) only support
@@ -156,25 +170,33 @@ The `propagate` routine returns the propagated state at `tlist[end]`,
 respectively `tlist[1]` if `backwards=true`, or a storage array with the
 stored states / observable data if `storage=true`.
 """
-function propagate(state, genfunc, tlist;
+function propagate(state, genfunc, tlist, method::Val=Val(:auto); kwargs...)
+    backwards = get(kwargs, :backwards, false)
+    storage = get(kwargs, :storage, nothing)
+    observables = get(kwargs, :observables, (_store_state, ))
+    G = genfunc(tlist, 1; state=state, backwards=backwards,
+                storage=storage, observables=observables, init=true)
+    wrk = initpropwrk(state, tlist, method, G)
+    return propagate(state, genfunc, tlist, wrk; kwargs...)
+end
+
+
+function propagate(state, genfunc, tlist, method::Symbol; kwargs...)
+    return propagate(state, genfunc, tlist, Val(method); kwargs...)
+end
+
+
+function propagate(state, genfunc, tlist, wrk;
                    backwards=false,
-                   wrk=nothing,
-                   method=:auto,
                    storage=nothing,
                    observables=(_store_state, ),
-                   hook=nothing,
-                  )
+                   hook=nothing)
     return_storage = false
     if storage === true
         storage = init_storage(state, tlist, observables)
         return_storage = true
     end
     state = copy(state)
-    if wrk == nothing
-        G = genfunc(tlist, 1; state=state, backwards=backwards,
-                    storage=storage, observables=observables, init=true)
-        wrk = initpropwrk(state, tlist, G; method=method)
-    end
     intervals = enumerate(tlist[2:end])
     if backwards
         intervals = Iterators.reverse(intervals)
@@ -212,4 +234,16 @@ function propagate(state, genfunc, tlist;
     else
         return state
     end
+end
+
+
+function propagate(state, genfunc, tlist, method::Val{:cheby}; kwargs...)
+    backwards = get(kwargs, :backwards, false)
+    storage = get(kwargs, :storage, nothing)
+    observables = get(kwargs, :observables, (_store_state, ))
+    # TODO: generate multiple examplary G
+    G = genfunc(tlist, 1; state=state, backwards=backwards,
+                storage=storage, observables=observables, init=true)
+    wrk = initpropwrk(state, tlist, method, G)
+    return propagate(state, genfunc, tlist, wrk)
 end
