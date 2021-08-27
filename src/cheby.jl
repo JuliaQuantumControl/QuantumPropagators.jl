@@ -8,7 +8,7 @@ using LinearAlgebra
 
 Return an array of coefficiencts larger than `limit`.
 
-Args:
+# Arguments
 
 * `Δ`: the spectral radius of the underlying operator
 * `dt`: the time step
@@ -32,23 +32,29 @@ end
 
 """Calculate Chebychev coefficients in-place.
 
-Writes the coefficients into `coeffs`. Returns the number `n` of coefficients
-required for convergence, or the size of `coeffs`, whichever is less.
+```julia
+n = cheby_coeffs!(coeffs, Δ, dt, limit=1e-12)
+```
 
-* `coeffs`: An array to hold the Chebychev cofficients. On output, the elements
-   1 through `n` will hold the calculated coefficients, while the remaining
-   elements will be unchanged
-* `dt`: the time step
+overwrites the first `n` values in `coeffs` with new coefficients larger than
+`limit` for the given new spectral radius `Δ` and time step `dt`. The `coeffs`
+array will be resized if necessary, and may length > `n` on exit.
 """
-function cheby_coeffs!(coeffs, Δ, dt; limit=1e-12)
+function cheby_coeffs!(coeffs, Δ, dt, limit=1e-12)
     α = abs(0.5 * Δ * dt)
-    coeffs[1] = besselj0(α)
-    n = length(coeffs)
-    for i = 2:n
-        coeffs[i] = 2 * besselj(i-1,α)
-        if abs(coeffs[i]) < limit
-            n = i
-            break
+    a = besselj(0, α)
+    coeffs[1] = a
+    N = length(coeffs)
+    ϵ = abs(a)
+    n = 1
+    while ϵ > limit
+        n += 1
+        a = 2 * besselj(n-1,α)
+        coeffs[n] = a
+        ϵ = abs(a)
+        if (n >= N)
+            N *= 2
+            resize!(coeffs, N)
         end
     end
     return n
@@ -66,11 +72,12 @@ initializes the workspace for the propagation of a state similar to Ψ under a
 Hamiltonian with eigenvalues between `E_min` and `E_min + Δ`, and a time step
 dt. Chebychev coefficients smaller than the given `limit` are discarded.
 """
-struct ChebyWrk{T, CFS, FT<:AbstractFloat}
+mutable struct ChebyWrk{T, CFS, FT<:AbstractFloat}
     v0 :: T
     v1 :: T
     v2 :: T
     coeffs :: CFS
+    n_coeffs :: Int64
     Δ :: FT
     E_min :: FT
     dt :: FT
@@ -81,7 +88,10 @@ struct ChebyWrk{T, CFS, FT<:AbstractFloat}
         v1::T = similar(Ψ)
         v2::T = similar(Ψ)
         coeffs = cheby_coeffs(Δ, dt; limit=limit)
-        new{T, typeof(coeffs), FT}(v0, v1, v2, coeffs, Δ, E_min, dt, limit)
+        n_coeffs = length(coeffs)
+        new{T, typeof(coeffs), FT}(
+            v0, v1, v2, coeffs, n_coeffs, Δ, E_min, dt, limit
+        )
     end
 end
 
@@ -117,6 +127,7 @@ function cheby!(Ψ, H, dt, wrk; E_min=nothing,
         c = 2im / Δ
     end
     a = wrk.coeffs
+    ϵ = wrk.limit
     @assert length(a) > 1 "Need at least 2 Chebychev coefficients"
     v0 = wrk.v0
     v1 = wrk.v1
@@ -136,7 +147,7 @@ function cheby!(Ψ, H, dt, wrk; E_min=nothing,
 
     c *= 2
 
-    for i = 3 : length(a)
+    for i = 3 : wrk.n_coeffs
 
         # v2 = -2i * H_norm * v1 + v0 = c * (H * v1 - β * v1) + v0
         mul!(v2, H, v1)
@@ -145,8 +156,7 @@ function cheby!(Ψ, H, dt, wrk; E_min=nothing,
         if check_normalization
             map_norm = abs(dot(v1, v2)) / (2 * norm(v1)^2)
             @assert(
-                map_norm <= (1.0 + wrk.limit),
-                "Incorrect normalization (E_min, wrk.Δ)"
+                map_norm <= (1.0 + ϵ), "Incorrect normalization (E_min, wrk.Δ)"
             )
         end
         v2 .+= v0

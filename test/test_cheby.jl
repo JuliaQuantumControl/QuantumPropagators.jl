@@ -32,9 +32,10 @@ using QuantumPropagators
     Δ = evals[end] - evals[1]
 
     a = cheby_coeffs(Δ, dt)
+    @test length(a) == 267
     b = zeros(20);
-    cheby_coeffs!(b, Δ, dt)
-    @test b[1:length(b)] ≈ a[1:length(b)]
+    n = cheby_coeffs!(b, Δ, dt)
+    @test b[1:n] ≈ a[1:n]
 
     Ψ = copy(Ψ₀)
     wrk = ChebyWrk(Ψ₀, Δ, E_min, dt)
