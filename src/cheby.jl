@@ -98,22 +98,31 @@ end
 
 """Evaluate `Ψ = exp(-i H dt) Ψ` in-place.
 
+```julia
+cheby!(Ψ, H, dt, wrk; E_min=nothing, check_normalization=false)
+```
+
 Args:
 
 * `Ψ`: on input, initial vector. Will be overwritten with result.
 * `H`: Hermitian operator
 * `dt`: time step
+* `wrk`: internal workspace
 * `E_min`: minimum eigenvalue of H, to be used instead of the `E_min` from the
    initialization of `wrk`. The same `wrk` may be used for different values
    `E_min`, as long as the spectra radius `Δ` and the time step `dt` are the
    same as those used for the initialization of `wrk`.
+* `check_normalizataion`: perform checks that the H does not exceed the
+  spectral radius for which the the workspace was initialized.
 
 The routine will not allocate any internal storage. This implementation
 requires `copyto!` `lmul!`, and `axpy!` to be implemented for `Ψ`, and the
 three-argument `mul!` for `Ψ` and `H`.
 """
-function cheby!(Ψ, H, dt, wrk; E_min=nothing,
-                check_normalization=false)
+function cheby!(Ψ, H, dt, wrk; kwargs...)
+
+    E_min = get(kwargs, :E_min, nothing)
+    check_normalization = get(kwargs, :check_normalization, false)
 
     Δ = wrk.Δ
     β::typeof(wrk.E_min) = (Δ / 2) + wrk.E_min  # "normfactor"

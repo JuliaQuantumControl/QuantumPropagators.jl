@@ -74,6 +74,31 @@ Public = true
 Private = false
 ```
 
+
+## Spectral Radius and Arnoldi
+
+Chebychev propagation relies on estimating the spectral radius of the
+Hamiltonian, which in turn may be done via Arnoldi iteration.
+
+### Public members
+
+```@autodocs
+Modules = [QuantumPropagators]
+Pages = ["specrad.jl", "arnoldi.jl"]
+Public = true
+Private = false
+```
+
+### Private members
+
+```@autodocs
+Modules = [QuantumPropagators]
+Pages = ["specrad.jl", "arnoldi.jl"]
+Public = false
+Private = true
+```
+
+
 ## Index
 
 ```@index

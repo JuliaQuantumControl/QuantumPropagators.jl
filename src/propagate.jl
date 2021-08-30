@@ -1,3 +1,5 @@
+using LinearAlgebra
+
 """Initialize a workspace for propagation.
 
 ```julia
@@ -24,13 +26,62 @@ The resulting `wrk` can be passed to [`propagate`](@ref) or
   attempts to choose the best method available, based on the properties of the
   given `state`, `tlist`, and `generator`. Alternative values are `:cheby` and
   `:newton`, and `:expprop`.
+* `specrad_method`: for `method=:cheby`, method to use for estimating the
+   spectral radius, see [`specrange`](@ref). Defaults to `:auto`.
+* `tolerance`: for `method=:cheby`, a tolerance factor for the estimated
+  spectral radius. That is, Chebychev coefficients will be calculated for a
+  spectral radius increased by the `tolerance` factor compared to the specral
+  radius estimated for the `generator`.
 
 All other `kwargs` are filtered and passed to the contructor for returned
 workspace, e.g. `limit` for `method=:cheby` or `m_max` for `method=:newton`.
+For `method=:cheby`, they additionally passed to [`specrange`](@ref).
 """
 function initpropwrk(state, tlist, method::Val{:auto}, generator...; kwargs...)
-    # TODO: determine the best method
-    method = Val(:expprop)
+    is_small = false
+    if length(generator) == 0
+        try
+            is_small = length(state) <= 8
+        catch exception
+            if isa(exception, MethodError)
+                @warn "Cannot determine problem dimension"
+            else
+                rethrow()
+            end
+        end
+        method = is_small ? Val(:expprop) : Val(:newton)
+    else # we have at least one generator
+        try
+            is_small = length(state) <= 8
+        catch
+            try
+                is_small = all(size(G)[2] <= 8 for G in generator)
+            catch exception
+                if isa(exception, MethodError)
+                    @warn "Cannot determine problem dimension"
+                else
+                    rethrow()
+                end
+            end
+        end
+        if is_small
+            method = Val(:expprop)
+        else
+            method = Val(:newton)
+            try
+                if all(ishermitian(G) for G in generator)
+                    method = Val(:cheby)
+                end
+            catch exception
+                # if we can't determine G is Hermitian, we don't do anything
+                if isa(exception, MethodError)
+                    @warn("Cannot determine if generator is Hermitian.")
+                else
+                    rethrow()
+                end
+            end
+        end
+    end
     return initpropwrk(state, tlist, method, generator...; kwargs)
 end
 
@@ -49,11 +100,24 @@ function initpropwrk(state, tlist, method::Symbol, generator...; kwargs...)
 end
 
 
-function initpropwrk(state, tlist, method::Val{:cheby}, generator...; kwargs...)
-    # TODO Find the spectral envelope of all generators
-    # TODO ensure that `tlist` has a constant dt
-    Δ = 0
-    E_min = 0
+function initpropwrk(state, tlist, method::Val{:cheby}, generator...;
+                     specrad_method=Val(:auto), tolerance=0.01, kwargs...)
+    if length(generator) == 0
+        throw(ArgumentError(
+            "The :cheby method requires at least on `generator`"
+        ))
+    end
+    # find a spectral envelope for all generators
+    E_min, E_max = specrange(generator[1], specrad_method; kwargs...)
+    for G in generator[2:end]
+        _E_min, _E_max = specrange(G, specrad_method; kwargs...)
+        E_min = (_E_min < E_min) ? _E_min : E_min
+        E_max = (_E_max > E_max) ? _E_max : E_max
+    end
+    Δ = E_max - E_min
+    δ = 0.01 * Δ
+    E_min = E_min - δ/2
+    Δ = Δ + δ
     dt = tlist[2] - tlist[1]
     allowed_kwargs = Set((:limit, ))
     filtered_kwargs = filter(p->p.first in allowed_kwargs, kwargs)
@@ -107,9 +171,10 @@ _store_state(state::Vector) = state
 """Propagate a state over an entire time grid.
 
 ```julia
-propagate(state, genfunc, tlist, method=:auto;
-          backwards=false; storage=nothing,
-          observables=(<store state>, ), hook=nothing)
+state_out = propagate(
+    state, genfunc, tlist, method=:auto;
+    backwards=false; storage=nothing, observables=(<store state>, ),
+    hook=nothing, kwargs...)
 ```
 
 propagates `state` over the time grid in `tlist`, using piecewise-constant
@@ -151,7 +216,14 @@ documentation for details.
 
 The `storage` parameter may also be given as `true`, and a new storage array
 will be created internally with [`init_storage`](@ref) and returned instead of
-the propagated state.
+the propagated state:
+
+```julia
+data = propagate(
+    state, genfunc, tlist; method=:auto
+    backwards=false; storage=true, observables=observables,
+    hook=nothing, kwargs...)
+```
 
 If `backwards` is `true`, the input state is assumed to be at time
 `tlist[end]`, and the propagation progresses backwards in time (with a negative
@@ -170,13 +242,18 @@ The `propagate` routine returns the propagated state at `tlist[end]`,
 respectively `tlist[1]` if `backwards=true`, or a storage array with the
 stored states / observable data if `storage=true`.
 """
-function propagate(state, genfunc, tlist, method::Val=Val(:auto); kwargs...)
+function propagate(state, genfunc, tlist; method=Val(:auto), kwargs...)
+    return propagate(state, genfunc, tlist, method; kwargs...)
+end
+
+function propagate(state, genfunc, tlist, method::Val; kwargs...)
+    # TODO: document what happens with kwargs
     backwards = get(kwargs, :backwards, false)
     storage = get(kwargs, :storage, nothing)
     observables = get(kwargs, :observables, (_store_state, ))
     G = genfunc(tlist, 1; state=state, backwards=backwards,
                 storage=storage, observables=observables, init=true)
-    wrk = initpropwrk(state, tlist, method, G)
+    wrk = initpropwrk(state, tlist, method, G; kwargs...)
     return propagate(state, genfunc, tlist, wrk; kwargs...)
 end
 
@@ -190,7 +267,8 @@ function propagate(state, genfunc, tlist, wrk;
                    backwards=false,
                    storage=nothing,
                    observables=(_store_state, ),
-                   hook=nothing)
+                   hook=nothing,
+                   kwargs...)
     return_storage = false
     if storage === true
         storage = init_storage(state, tlist, observables)
@@ -220,7 +298,7 @@ function propagate(state, genfunc, tlist, wrk;
         generator = genfunc(tlist, i; state=state, backwards=backwards,
                             storage=storage, observables=observables,
                             init=false)
-        propstep!(state, generator, (backwards ? -dt : dt), wrk)
+        propstep!(state, generator, (backwards ? -dt : dt), wrk; kwargs...)
         if storage ≠ nothing
             write_to_storage!(storage, i + (backwards ? 0 : 1), state,
                               observables)
@@ -244,6 +322,6 @@ function propagate(state, genfunc, tlist, method::Val{:cheby}; kwargs...)
     # TODO: generate multiple examplary G
     G = genfunc(tlist, 1; state=state, backwards=backwards,
                 storage=storage, observables=observables, init=true)
-    wrk = initpropwrk(state, tlist, method, G)
-    return propagate(state, genfunc, tlist, wrk)
+    wrk = initpropwrk(state, tlist, method, G; kwargs...)
+    return propagate(state, genfunc, tlist, wrk; kwargs...)
 end

@@ -51,3 +51,17 @@ using UnicodePlots
     @test norm(storage - storage_bw) < 1e-12
 
 end
+
+
+@testset "Optomech propagation" begin
+    include("optomech.jl")
+    Ψ0 = ket(0, N_cav) ⊗ ket(2, N_mech)
+    H = H_cav + H_mech + H_int
+    tlist = [0:0.2:50;]
+    Ψ1 = propagate(Ψ0, (tlist, i; kwargs...)->H, tlist, method=:newton)
+    @test (norm(Ψ1) - 1.0) < 1e-12
+    Ψ2 = propagate(Ψ0, (tlist, i; kwargs...)->H, tlist, method=:cheby)
+    @test norm(Ψ1 - Ψ2) < 1e-10
+    Ψ3 = propagate(Ψ0, (tlist, i; kwargs...)->H, tlist, method=:auto)
+    @test norm(Ψ1 - Ψ3) < 1e-10
+end

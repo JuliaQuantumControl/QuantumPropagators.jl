@@ -1,6 +1,12 @@
 module QuantumPropagators
 
 # low-level routines
+
+include("./arnoldi.jl")
+
+include("./specrad.jl")
+export specrange
+
 include("./cheby.jl")
 export cheby_coeffs, cheby_coeffs!, ChebyWrk, cheby!
 

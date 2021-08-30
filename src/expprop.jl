@@ -22,7 +22,7 @@ end
 
 """
 ```julia
-expprop!(Ψ, H, dt, wrk, func=(z -> exp(-1im*z)))
+expprop!(Ψ, H, dt, wrk; func=(H -> exp(-1im*H)))
 ```
 Evaluate `Ψ = func(H*dt) Ψ` by directly evaluating `U = func(H*dt)`, i.e. by
 matrix exponentiation for the default `func`, and then multiplying `U` and
@@ -31,7 +31,8 @@ matrix exponentiation for the default `func`, and then multiplying `U` and
 The workspace `wrk` must be initialized with [`ExpPropWrk`](@ref) to provide
 storage for a temporary state.
 """
-function expprop!(Ψ, H, dt, wrk, func=(z -> exp(-1im*z)))
+function expprop!(Ψ, H, dt, wrk; kwargs...)
+    func = get(kwargs, :func, z -> exp(-1im*z))
     copyto!(wrk.v, Ψ)
     U = func(H*dt)
     mul!(Ψ, U, wrk.v)

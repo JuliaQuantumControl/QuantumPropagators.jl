@@ -5,6 +5,9 @@ using SafeTestsets
 # Note: comment outer @testset to stop after first @safetestset failure
 @time @testset verbose=true "QuantumPropagators" begin
 
+    print("\n* Spec.Rad. (test_specrad.jl):")
+    @time @safetestset "Spec.Rad." begin include("test_specrad.jl") end
+
     print("\n* Cheby (test_cheby.jl):")
     @time @safetestset "Cheby" begin include("test_cheby.jl") end
 
