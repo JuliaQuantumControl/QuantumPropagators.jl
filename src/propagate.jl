@@ -279,6 +279,7 @@ function propagate(state, genfunc, tlist, wrk;
     if backwards
         intervals = Iterators.reverse(intervals)
         if hook ≠ nothing
+            # TODO: generator is undefined
             hook(state, generator, tlist, lastindex(tlist), wrk, observables)
         end
         if storage ≠ nothing
@@ -286,6 +287,7 @@ function propagate(state, genfunc, tlist, wrk;
         end
     else
         if hook ≠ nothing
+            # TODO: generator is undefined
             hook(state, generator, tlist, 0, wrk, observables)
         end
         if storage ≠ nothing

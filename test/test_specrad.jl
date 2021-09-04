@@ -74,7 +74,7 @@ end
 
 @testset "Spectral range" begin
 
-    SHOWVALS = true
+    SHOWVALS = false
 
     N = 1000
     ρ = 10  # spectral radius
