@@ -217,7 +217,7 @@ Evaluate `Ψ = func(H*dt) Ψ` using a Newton-with-restarted-Arnoldi scheme.
   `max_restart` will throw an `AssertionError`.
 """
 function newton!(Ψ, H, dt, wrk; kwargs...)
-    func = get(kwargs, :func, z-> exp(-1im*z))
+    func = get(kwargs, :func, z -> exp(-1im * z))
     norm_min :: Float64 = get(kwargs, :norm_min, 1e-14)
     relerr :: Float64 = get(kwargs, :relerr, 1e-12)
     max_restarts :: Int64 = get(kwargs, :max_restarts, 50)

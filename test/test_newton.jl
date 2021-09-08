@@ -163,12 +163,12 @@ end
     @test tr(reshape(ρ₀, (N, N))) ≈ 1
 
     # Expected
-    U = exp(Array(-im * L * dt))
+    U = exp(Array(L * dt))
     ρ_out_expected = U * ρ₀
 
     ρ = copy(ρ₀)
     wrk = NewtonWrk(ρ₀; m_max=50)
-    newton!(ρ, L, dt, wrk; max_restarts=20)
+    newton!(ρ, L, dt, wrk; max_restarts=20, func=(L_dt -> exp(L_dt)))
     ρ_out = copy(ρ)
 
     # Comparison
