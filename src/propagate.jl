@@ -115,7 +115,7 @@ function initpropwrk(state, tlist, method::Val{:cheby}, generator...;
         E_max = (_E_max > E_max) ? _E_max : E_max
     end
     Δ = E_max - E_min
-    δ = 0.01 * Δ
+    δ = tolerance * Δ
     E_min = E_min - δ/2
     Δ = Δ + δ
     dt = tlist[2] - tlist[1]
