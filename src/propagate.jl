@@ -172,7 +172,7 @@ _store_state(state::Vector) = state
 
 ```julia
 state_out = propagate(
-    state, genfunc, tlist, method=:auto;
+    state, genfunc, tlist; method=:auto,
     backwards=false; storage=nothing, observables=(<store state>, ),
     hook=nothing, kwargs...)
 ```
@@ -243,10 +243,10 @@ respectively `tlist[1]` if `backwards=true`, or a storage array with the
 stored states / observable data if `storage=true`.
 """
 function propagate(state, genfunc, tlist; method=Val(:auto), kwargs...)
-    return propagate(state, genfunc, tlist, method; kwargs...)
+    return propagate_state(state, genfunc, tlist, method; kwargs...)
 end
 
-function propagate(state, genfunc, tlist, method::Val; kwargs...)
+function propagate_state(state, genfunc, tlist, method::Val; kwargs...)
     # TODO: document what happens with kwargs
     backwards = get(kwargs, :backwards, false)
     storage = get(kwargs, :storage, nothing)
@@ -254,16 +254,16 @@ function propagate(state, genfunc, tlist, method::Val; kwargs...)
     G = genfunc(tlist, 1; state=state, backwards=backwards,
                 storage=storage, observables=observables, init=true)
     wrk = initpropwrk(state, tlist, method, G; kwargs...)
-    return propagate(state, genfunc, tlist, wrk; kwargs...)
+    return propagate_state_with_wrk(state, genfunc, tlist, wrk; kwargs...)
 end
 
 
-function propagate(state, genfunc, tlist, method::Symbol; kwargs...)
-    return propagate(state, genfunc, tlist, Val(method); kwargs...)
+function propagate_state(state, genfunc, tlist, method::Symbol; kwargs...)
+    return propagate_state(state, genfunc, tlist, Val(method); kwargs...)
 end
 
 
-function propagate(state, genfunc, tlist, wrk;
+function propagate_state_with_wrk(state, genfunc, tlist, wrk;
                    backwards=false,
                    storage=nothing,
                    observables=(_store_state, ),
@@ -317,7 +317,7 @@ function propagate(state, genfunc, tlist, wrk;
 end
 
 
-function propagate(state, genfunc, tlist, method::Val{:cheby}; kwargs...)
+function propagate_state(state, genfunc, tlist, method::Val{:cheby}; kwargs...)
     backwards = get(kwargs, :backwards, false)
     storage = get(kwargs, :storage, nothing)
     observables = get(kwargs, :observables, (_store_state, ))
@@ -325,5 +325,5 @@ function propagate(state, genfunc, tlist, method::Val{:cheby}; kwargs...)
     G = genfunc(tlist, 1; state=state, backwards=backwards,
                 storage=storage, observables=observables, init=true)
     wrk = initpropwrk(state, tlist, method, G; kwargs...)
-    return propagate(state, genfunc, tlist, wrk; kwargs...)
+    return propagate_state_with_wrk(state, genfunc, tlist, wrk; kwargs...)
 end
