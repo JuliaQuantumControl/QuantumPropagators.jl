@@ -1,4 +1,5 @@
 using LinearAlgebra
+using ProgressMeter
 
 """Initialize a workspace for propagation.
 
@@ -174,7 +175,7 @@ _store_state(state::Vector) = state
 state_out = propagate(
     state, genfunc, tlist; method=:auto,
     backwards=false; storage=nothing, observables=(<store state>, ),
-    hook=nothing, kwargs...)
+    hook=nothing, showprogress=false, kwargs...)
 ```
 
 propagates `state` over the time grid in `tlist`, using piecewise-constant
@@ -222,7 +223,7 @@ the propagated state:
 data = propagate(
     state, genfunc, tlist; method=:auto
     backwards=false; storage=true, observables=observables,
-    hook=nothing, kwargs...)
+    hook=nothing, showprogress=false, kwargs...)
 ```
 
 If `backwards` is `true`, the input state is assumed to be at time
@@ -237,6 +238,11 @@ the initial state, respectives `lastindex(tlist)` for the backward
 propagation).  The `hook` is called before calculating any observables. Example
 usage includes writing data to file, or modyfing `state`, e.g. removing
 amplitude from the lowest and highest level to mitigate "truncation error".
+
+If `showprogress` is given as `true`, a progress bar will be shown for
+long-running propagationn. In order to customize the progress bar,
+`showprogress` may also be a function that receives `length(tlist)` and returns
+a `ProgressMeter.Progress` instance.
 
 The `propagate` routine returns the propagated state at `tlist[end]`,
 respectively `tlist[1]` if `backwards=true`, or a storage array with the
@@ -268,6 +274,7 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
                    storage=nothing,
                    observables=(_store_state, ),
                    hook=nothing,
+                   showprogress=false,
                    kwargs...)
     return_storage = false
     if storage === true
@@ -294,7 +301,14 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
             write_to_storage!(storage, 1, state, observables)
         end
     end
-    # TODO: optional progress meter
+
+    N = length(intervals)
+    if isa(showprogress, Function)
+        progressmeter = showprogress(N)
+    else
+        progressmeter = Progress(N, enabled=showprogress)
+    end
+
     for (i, t_end) in intervals
         dt = t_end - tlist[i]
         generator = genfunc(tlist, i; state=state, backwards=backwards,
@@ -308,6 +322,7 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
         if hook ≠ nothing
             hook(state, generator, tlist, i, wrk, observables)
         end
+        next!(progressmeter)
     end
     if return_storage
         return storage
