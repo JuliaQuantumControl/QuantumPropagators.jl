@@ -169,6 +169,12 @@ _store_state(state) = copy(state)
 _store_state(state::Vector) = state
 
 
+# Work around https://github.com/timholy/ProgressMeter.jl/issues/214
+import ProgressMeter
+struct NoProgress end
+ProgressMeter.next!(p::NoProgress) = nothing
+
+
 """Propagate a state over an entire time grid.
 
 ```julia
@@ -307,6 +313,10 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
         progressmeter = showprogress(N)
     else
         progressmeter = Progress(N, enabled=showprogress)
+        if !showprogress
+            # XXX: https://github.com/timholy/ProgressMeter.jl/issues/214
+            progressmeter = NoProgress()
+        end
     end
 
     for (i, t_end) in intervals
