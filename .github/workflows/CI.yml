@@ -32,8 +32,36 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
+      - run: |
+          # Install matplotlib into system Python
+          set -x
+          /usr/bin/python3 -m pip install matplotlib
+      - run: |
+          # Instantiate Pkg
+          julia --project=@. -e '
+            using Pkg
+            println("Pkg.instantiate()")
+            Pkg.instantiate()'
+      - run: |
+          # Run tests
+          julia --project=@. -e '
+            using Pkg
+            Pkg.activate(".")
+            Pkg.test(coverage=true)'
+      - run: |
+          # Run upstream "QuantumControlBase" tests
+          julia --project=@. -e '
+            using Pkg
+            Pkg.activate(".")
+            Pkg.develop(url="https://github.com/QuantumControl-jl/QuantumControlBase.jl.git#master")
+            Pkg.test("QuantumControlBase", coverage=true)'
+      - run: |
+          # Run upstream "Krotov" tests
+          julia --project=@. -e '
+            using Pkg
+            Pkg.activate(".")
+            Pkg.develop(url="https://github.com/QuantumControl-jl/Krotov.jl.git#master")
+            Pkg.test("Krotov", coverage=true)'
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v1
         with:
