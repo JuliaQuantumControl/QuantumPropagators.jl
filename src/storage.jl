@@ -60,7 +60,8 @@ function map_observables(observables, state)
         return map_observable(observables[1], state)
     else
         val_tuple = Tuple(map_observable(O, state) for O in observables)
-        is_uniform = all(typeof(v) == typeof(first) for v in val_tuple[2:end])
+        uniform_type = typeof(val_tuple[1])
+        is_uniform = all(typeof(v) == uniform_type for v in val_tuple[2:end])
         if is_uniform
             return collect(val_tuple)  # convert to Vector
         else
