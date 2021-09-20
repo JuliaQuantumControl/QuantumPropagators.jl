@@ -37,3 +37,22 @@ function expprop!(Ψ, H, dt, wrk; kwargs...)
     U = func(H*dt)
     mul!(Ψ, U, wrk.v)
 end
+    
+    
+
+"""
+```julia
+expprop(Ψ, H, dt, wrk; func=(H_dt -> exp(-1im * H_dt)))
+```
+Evaluate `func(H*dt) Ψ` by directly evaluating `U = func(H*dt)`, i.e. by
+matrix exponentiation for the default `func`, and then multiplying `U`. Returns
+an array containing U * Ψ
+
+The workspace `wrk` must be initialized with [`ExpPropWrk`](@ref) to provide
+storage for a temporary state.
+"""
+function expprop(Ψ::SVector, H, dt, wrk; kwargs...)
+    func = get(kwargs, :func, H_dt -> exp(-1im * H_dt))
+    U = func(H*dt) * Ψ
+end
+    
