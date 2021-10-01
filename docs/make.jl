@@ -6,11 +6,11 @@ DocMeta.setdocmeta!(QuantumPropagators, :DocTestSetup, :(using QuantumPropagator
 makedocs(;
     modules=[QuantumPropagators],
     authors="Michael Goerz <mail@michaelgoerz.net> and contributors",
-    repo="https://github.com/QuantumControl-jl/QuantumPropagators.jl/blob/{commit}{path}#{line}",
+    repo="https://github.com/JuliaQuantumControl/QuantumPropagators.jl/blob/{commit}{path}#{line}",
     sitename="QuantumPropagators.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://quantumcontrol-jl.github.io/QuantumPropagators.jl",
+        canonical="https://juliaquantumcontrol.github.io/QuantumPropagators.jl",
         assets=String[],
     ),
     pages=[
@@ -29,5 +29,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/QuantumControl-jl/QuantumPropagators.jl",
+    repo="github.com/JuliaQuantumControl/QuantumPropagators.jl",
 )

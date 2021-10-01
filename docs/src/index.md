@@ -4,7 +4,7 @@ CurrentModule = QuantumPropagators
 
 # QuantumPropagators
 
-Documentation for [QuantumPropagators](https://github.com/quantumcontrol-jl/QuantumPropagators.jl).
+Documentation for [QuantumPropagators](https://github.com/JuliaQuantumControl/QuantumPropagators.jl).
 
 
 
