@@ -181,7 +181,7 @@ ProgressMeter.next!(p::NoProgress) = nothing
 state_out = propagate(
     state, genfunc, tlist; method=:auto,
     backwards=false; storage=nothing, observables=(<store state>, ),
-    hook=nothing, showprogress=false, kwargs...)
+    hook=nothing, showprogress=false, control_paramters=nothing, kwargs...)
 ```
 
 propagates `state` over the time grid in `tlist`, using piecewise-constant
@@ -198,12 +198,24 @@ ensure exact boundary conditions like control fields that are exactly zero.
 
 In addition to the two positional parameters indicating the time interval,
 `genfunc` will also receive the `state` (the input state for the propagation
-step), `backwards`, `storage`, `observables`, and `init` as keyword arguments.
-These additional parameters may be used for unusual equations of motion beyond
-the standard Schrödinger or Liouville-von-Neumann equation, e.g. `state` would
-enter the `genfunc` for a Gross–Pitaevskii equation. For standard equations of
-motion that do not use the additional parameters, it is best to capture the
-keyword arguments to `genfunc` with a definition like
+step), `backwards`, `storage`, `observables`, `control_parameters`, and `init`
+as keyword arguments.
+
+The `control_parameters` are an optional vector of floats with parameters for
+`genfunc`. This is required when `propagate` is used in the context of
+automatic differentiation (AD). E.g., the Zygote framework can automatically
+calculate gradients of a function `control_parameters -> J_T`, where `J_T`
+might be be a function of the overlap between a propagated state (returned by
+`propagate`) and a target state. Thus, the `control_parameters` must be
+*explicit* in `propagate`.  Outside of and AD context, `control_parameters` are
+not generally required: they can be implicit in `genfunc`.
+
+The remaining keyword arguments may be used for unusual
+equations of motion beyond the standard Schrödinger or Liouville-von-Neumann
+equation, e.g. `state` would enter the `genfunc` for a Gross–Pitaevskii
+equation. For standard equations of motion that do not use the additional
+parameters, it is best to capture the keyword arguments to `genfunc` with a
+definition like
 
 ```julia
 genfunc(tlist, i; kwargs...) = ...
@@ -263,8 +275,10 @@ function propagate_state(state, genfunc, tlist, method::Val; kwargs...)
     backwards = get(kwargs, :backwards, false)
     storage = get(kwargs, :storage, nothing)
     observables = get(kwargs, :observables, (_store_state, ))
+    control_parameters = get(kwargs, :control_parameters, nothing)
     G = genfunc(tlist, 1; state=state, backwards=backwards,
-                storage=storage, observables=observables, init=true)
+                storage=storage, observables=observables,
+                control_parameters=control_parameters, init=true)
     wrk = initpropwrk(state, tlist, method, G; kwargs...)
     return propagate_state_with_wrk(state, genfunc, tlist, wrk; kwargs...)
 end
@@ -281,6 +295,7 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
                    observables=(_store_state, ),
                    hook=nothing,
                    showprogress=false,
+                   control_parameters=nothing,
                    kwargs...)
     return_storage = false
     if storage === true
@@ -291,18 +306,10 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
     intervals = enumerate(tlist[2:end])
     if backwards
         intervals = Iterators.reverse(intervals)
-        if hook ≠ nothing
-            # TODO: generator is undefined
-            hook(state, generator, tlist, lastindex(tlist), wrk, observables)
-        end
         if storage ≠ nothing
             write_to_storage!(storage, lastindex(tlist), state, observables)
         end
     else
-        if hook ≠ nothing
-            # TODO: generator is undefined
-            hook(state, generator, tlist, 0, wrk, observables)
-        end
         if storage ≠ nothing
             write_to_storage!(storage, 1, state, observables)
         end
@@ -323,6 +330,7 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
         dt = t_end - tlist[i]
         generator = genfunc(tlist, i; state=state, backwards=backwards,
                             storage=storage, observables=observables,
+                            control_parameters=control_parameters,
                             init=false)
         propstep!(state, generator, (backwards ? -dt : dt), wrk; kwargs...)
         if storage ≠ nothing
@@ -346,9 +354,11 @@ function propagate_state(state, genfunc, tlist, method::Val{:cheby}; kwargs...)
     backwards = get(kwargs, :backwards, false)
     storage = get(kwargs, :storage, nothing)
     observables = get(kwargs, :observables, (_store_state, ))
+    control_parameters = get(kwargs, :control_parameters, nothing)
     # TODO: generate multiple examplary G
     G = genfunc(tlist, 1; state=state, backwards=backwards,
-                storage=storage, observables=observables, init=true)
+                storage=storage, observables=observables,
+                control_parameters=control_parameters, init=true)
     wrk = initpropwrk(state, tlist, method, G; kwargs...)
     return propagate_state_with_wrk(state, genfunc, tlist, wrk; kwargs...)
 end
