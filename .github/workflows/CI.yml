@@ -40,6 +40,8 @@ jobs:
           # Instantiate Pkg
           julia --project=@. -e '
             using Pkg
+            println("Dev-install QuantumControlBase")
+            Pkg.develop(url="https://github.com/JuliaQuantumControl/QuantumControlBase.jl.git#master")
             println("Pkg.instantiate()")
             Pkg.instantiate()'
       - run: |

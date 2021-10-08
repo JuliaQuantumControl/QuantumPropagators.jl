@@ -201,7 +201,7 @@ In addition to the two positional parameters indicating the time interval,
 step), `backwards`, `storage`, `observables`, `control_parameters`, and `init`
 as keyword arguments.
 
-The `control_parameters` are an optional vector of floats with parameters for
+The `control_parameters` are an optional array of floats with parameters for
 `genfunc`. This is required when `propagate` is used in the context of
 automatic differentiation (AD). E.g., the Zygote framework can automatically
 calculate gradients of a function `control_parameters -> J_T`, where `J_T`

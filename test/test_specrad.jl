@@ -1,9 +1,9 @@
 # Test routines releated the the spectral radius
 
 using Test
+using LinearAlgebra
 using QuantumPropagators
-
-include("utils.jl")
+using QuantumControlBase.TestUtils
 
 
 @testset "Ritz values (non-Herm)" begin

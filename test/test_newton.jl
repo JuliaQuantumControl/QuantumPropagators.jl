@@ -1,8 +1,7 @@
 using Test
 using LinearAlgebra
 using QuantumPropagators
-
-include("utils.jl")
+using QuantumControlBase.TestUtils
 
 @testset "random Hermitian" begin
 

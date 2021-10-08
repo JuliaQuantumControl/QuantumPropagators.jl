@@ -18,19 +18,41 @@ Make sure you have Revise.jl installed in your standard Julia environment
 endef
 export PRINT_HELP_PYSCRIPT
 
-
 help:  ## show this help
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
 
-test/Manifest.toml: test/Project.toml
-	julia --project=test -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+# We want to test against checkouts of QuantumControl packages
+QUANTUMCONTROLBASE ?= ../QuantumControlBase.jl
 
 
-test:  ## Run the test suite
+define DEV_PACKAGES
+using Pkg;
+Pkg.develop(path="$(QUANTUMCONTROLBASE)");
+endef
+export DEV_PACKAGES
+
+define ENV_PACKAGES
+using Pkg;
+$(DEV_PACKAGES)
+Pkg.develop(PackageSpec(path=pwd()));
+Pkg.instantiate()
+endef
+export ENV_PACKAGES
+
+
+Manifest.toml: Project.toml $(QUANTUMCONTROLBASE)/Project.toml
+	julia --project=. -e "$$DEV_PACKAGES;Pkg.instantiate()"
+
+
+test:  Manifest.toml ## Run the test suite
 	@rm -f test/Manifest.toml  # Pkg.test cannot handle existing Manifest.toml
 	julia --startup-file=yes -e 'using Pkg;Pkg.activate(".");Pkg.test(coverage=true)'
 	@echo "Done. Consider using 'make devrepl'"
+
+
+test/Manifest.toml: test/Project.toml  $(QUANTUMCONTROLBASE)/Project.toml
+	julia --project=test -e "$$ENV_PACKAGES"
 
 
 devrepl: test/Manifest.toml ## Start an interactive REPL for testing and building documentation
@@ -38,7 +60,7 @@ devrepl: test/Manifest.toml ## Start an interactive REPL for testing and buildin
 
 
 docs/Manifest.toml: docs/Project.toml
-	julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+	julia --project=docs -e "$$ENV_PACKAGES"
 
 
 docs: docs/Manifest.toml ## Build the documentation
