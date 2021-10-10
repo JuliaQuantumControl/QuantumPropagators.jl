@@ -44,3 +44,9 @@ function expprop(Ψ::StaticArrays.SVector, H, dt, wrk; kwargs...)
     func = get(kwargs, :func, H_dt -> exp(-1im * H_dt))
     return func(H*dt) * Ψ
 end
+
+
+function expprop(Ψ, H, dt, wrk; kwargs...)
+    func = get(kwargs, :func, H_dt -> exp(-1im * H_dt))
+    return func(H*dt) * Ψ
+end

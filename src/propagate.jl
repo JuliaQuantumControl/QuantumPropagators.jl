@@ -139,27 +139,32 @@ function initpropwrk(state, tlist, method::Val{:expprop}, generator...; kwargs..
 end
 
 
-"""Perform a single propagation step in-place.
+"""Perform a single propagation step in-place (unless for_autodiff=true).
 
 ```julia
-propstep!(state, generator, dt, wrk;, kwargs...)
+propstep!(state, generator, dt, wrk;for_autodiff, kwargs...)
 ```
 
 The propagation method is determined by `wrk`, see [`initpropwrk`](@ref).
+The truth value of for_autodiff can make the propagation step not in place (if possible),
+which is desirable for autodiff.
 The `kwargs` are forwarded to the underlying method
 """
-function propstep!(state, generator, dt, wrk::ChebyWrk; kwargs...)
+function propstep!(state, generator, dt, wrk::ChebyWrk; for_autodiff=false, kwargs...)
     return cheby!(state, generator, dt, wrk; kwargs...)
 end
 
-function propstep!(state, generator, dt, wrk::NewtonWrk; kwargs...)
+function propstep!(state, generator, dt, wrk::NewtonWrk; for_autodiff=false, kwargs...)
     return newton!(state, generator, dt, wrk; kwargs...)
 end
 
-function propstep!(state, generator, dt, wrk::ExpPropWrk; kwargs...)
-    return expprop!(state, generator, dt, wrk; kwargs...)
+function propstep!(state, generator, dt, wrk::ExpPropWrk; for_autodiff=false, kwargs...)
+    if !for_autodiff
+        return expprop!(state, generator, dt, wrk; kwargs...)
+    else
+        return expprop(state, generator, dt, wrk; kwargs...)
+    end
 end
-
 
 # Default "observable" for storing the propagated state. We want to keep this
 # private, as the routine is not safe unless it is the *only*
@@ -181,7 +186,8 @@ ProgressMeter.next!(p::NoProgress) = nothing
 state_out = propagate(
     state, genfunc, tlist; method=:auto,
     backwards=false; storage=nothing, observables=(<store state>, ),
-    hook=nothing, showprogress=false, control_paramters=nothing, kwargs...)
+    hook=nothing, showprogress=false, control_parameters=nothing, 
+    for_autodiff=false, kwargs...)
 ```
 
 propagates `state` over the time grid in `tlist`, using piecewise-constant
@@ -208,7 +214,12 @@ calculate gradients of a function `control_parameters -> J_T`, where `J_T`
 might be be a function of the overlap between a propagated state (returned by
 `propagate`) and a target state. Thus, the `control_parameters` must be
 *explicit* in `propagate`.  Outside of and AD context, `control_parameters` are
-not generally required: they can be implicit in `genfunc`.
+not generally required: they can be implicit in `genfunc`. 
+
+The `for_autodiff` is an optional bool that controls if the operations are 
+in-place or not. Not in-place operations are required when `propagate` is used 
+in automatic differentiation (AD). For instance, the Zygote framework is not 
+capable of differentiating in-place operations.
 
 The remaining keyword arguments may be used for unusual
 equations of motion beyond the standard Schrödinger or Liouville-von-Neumann
@@ -296,6 +307,7 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
                    hook=nothing,
                    showprogress=false,
                    control_parameters=nothing,
+                   for_autodiff=false,
                    kwargs...)
     return_storage = false
     if storage === true
@@ -315,14 +327,16 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
         end
     end
 
-    N = length(intervals)
-    if isa(showprogress, Function)
-        progressmeter = showprogress(N)
-    else
-        progressmeter = Progress(N, enabled=showprogress)
-        if !showprogress
-            # XXX: https://github.com/timholy/ProgressMeter.jl/issues/214
-            progressmeter = NoProgress()
+    if !for_autodiff
+        N = length(intervals)
+        if isa(showprogress, Function)
+            progressmeter = showprogress(N)
+        else
+            progressmeter = Progress(N, enabled=showprogress)
+            if !showprogress
+                # XXX: https://github.com/timholy/ProgressMeter.jl/issues/214
+                progressmeter = NoProgress()
+            end
         end
     end
 
@@ -332,7 +346,11 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
                             storage=storage, observables=observables,
                             control_parameters=control_parameters,
                             init=false)
-        propstep!(state, generator, (backwards ? -dt : dt), wrk; kwargs...)
+        if for_autodiff
+            state = propstep!(state, generator, (backwards ? -dt : dt), wrk; for_autodiff=for_autodiff, kwargs...)
+        else
+            propstep!(state, generator, (backwards ? -dt : dt), wrk; for_autodiff=for_autodiff, kwargs...)
+        end
         if storage ≠ nothing
             write_to_storage!(storage, i + (backwards ? 0 : 1), state,
                               observables)
@@ -340,7 +358,9 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
         if hook ≠ nothing
             hook(state, generator, tlist, i, wrk, observables)
         end
-        next!(progressmeter)
+        if !for_autodiff
+            next!(progressmeter)
+        end
     end
     if return_storage
         return storage
