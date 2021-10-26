@@ -8,7 +8,7 @@ include("./specrad.jl")
 export specrange
 
 include("./cheby.jl")
-export cheby_coeffs, cheby_coeffs!, ChebyWrk, cheby!
+export cheby_coeffs, cheby_coeffs!, ChebyWrk, cheby!, cheby
 
 include("./newton.jl")
 export NewtonWrk, newton!

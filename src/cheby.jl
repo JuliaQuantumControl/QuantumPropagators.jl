@@ -180,3 +180,57 @@ function cheby!(Ψ, H, dt, wrk; kwargs...)
     lmul!(exp(-im * β * dt), Ψ)
 
 end
+
+function cheby(Ψ, H, dt, wrk; kwargs...)
+
+    E_min = get(kwargs, :E_min, nothing)
+    check_normalization = get(kwargs, :check_normalization, false)
+
+    Δ = wrk.Δ
+    β::typeof(wrk.E_min) = (Δ / 2) + wrk.E_min  # "normfactor"
+    if E_min ≠ nothing
+        β = (Δ / 2) + E_min
+    end
+    @assert dt ≈ wrk.dt "wrk was initialized for dt=$(wrk.dt), not dt=$dt"
+    if dt > 0
+        c = -2im / Δ
+    else
+        c = 2im / Δ
+    end
+    a = wrk.coeffs
+    ϵ = wrk.limit
+    @assert length(a) > 1 "Need at least 2 Chebychev coefficients"
+    v0 = wrk.v0
+    v1 = wrk.v1
+    v2 = wrk.v2
+    
+    v0 = Ψ
+    Ψ = a[1] * v0
+    
+    v1 = c * (H * v0 - β * v0)
+    Ψ += a[2] * v1
+
+    c *= 2
+
+    for i = 3 : wrk.n_coeffs
+
+        v2 = H * v1
+        v2 += - v1 * β
+        v2 = c * v2
+        if check_normalization
+            map_norm = abs(dot(v1, v2)) / (2 * norm(v1)^2)
+            @assert(
+                map_norm <= (1.0 + ϵ), "Incorrect normalization (E_min, wrk.Δ)"
+            )
+        end
+        v2 += v0
+
+        Ψ += a[i] * v2
+
+        v0, v1, v2 = v1, v2, v0  # switch w/o copying
+
+    end
+
+    return exp(-im * β * dt) * Ψ
+
+end
