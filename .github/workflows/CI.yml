@@ -61,6 +61,7 @@ jobs:
           julia --project=@. -e '
             using Pkg
             Pkg.activate(".")
+            Pkg.develop(url="https://github.com/JuliaQuantumControl/GRAPE.jl.git#master")
             Pkg.develop(url="https://github.com/JuliaQuantumControl/Krotov.jl.git#master")
             Pkg.develop(url="https://github.com/JuliaQuantumControl/QuantumControl.jl.git#master")
             Pkg.test("Krotov", coverage=true)'
