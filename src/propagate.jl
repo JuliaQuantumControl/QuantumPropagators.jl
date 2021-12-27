@@ -186,7 +186,7 @@ ProgressMeter.next!(p::NoProgress) = nothing
 state_out = propagate(
     state, genfunc, tlist; method=:auto,
     backwards=false; storage=nothing, observables=(<store state>, ),
-    hook=nothing, showprogress=false, control_parameters=nothing, 
+    hook=nothing, showprogress=false, control_parameters=nothing,
     for_autodiff=false, kwargs...)
 ```
 
@@ -214,11 +214,11 @@ calculate gradients of a function `control_parameters -> J_T`, where `J_T`
 might be be a function of the overlap between a propagated state (returned by
 `propagate`) and a target state. Thus, the `control_parameters` must be
 *explicit* in `propagate`.  Outside of and AD context, `control_parameters` are
-not generally required: they can be implicit in `genfunc`. 
+not generally required: they can be implicit in `genfunc`.
 
-The `for_autodiff` is an optional bool that controls if the operations are 
-in-place or not. Not in-place operations are required when `propagate` is used 
-in automatic differentiation (AD). For instance, the Zygote framework is not 
+The `for_autodiff` is an optional bool that controls if the operations are
+in-place or not. Not in-place operations are required when `propagate` is used
+in automatic differentiation (AD). For instance, the Zygote framework is not
 capable of differentiating in-place operations.
 
 The remaining keyword arguments may be used for unusual
@@ -278,10 +278,17 @@ respectively `tlist[1]` if `backwards=true`, or a storage array with the
 stored states / observable data if `storage=true`.
 """
 function propagate(state, genfunc, tlist; method=Val(:auto), kwargs...)
-    return propagate_state(state, genfunc, tlist, method; kwargs...)
+    return propagate(state, genfunc, tlist, method; kwargs...)
 end
 
-function propagate_state(state, genfunc, tlist, method::Val; kwargs...)
+
+function propagate(state, genfunc, tlist, method::Symbol; kwargs...)
+    return propagate(state, genfunc, tlist, Val(method); kwargs...)
+end
+
+
+# default `propagate` implementation
+function propagate(state, genfunc, tlist, method::Val; kwargs...)
     # TODO: document what happens with kwargs
     backwards = get(kwargs, :backwards, false)
     storage = get(kwargs, :storage, nothing)
@@ -291,16 +298,12 @@ function propagate_state(state, genfunc, tlist, method::Val; kwargs...)
                 storage=storage, observables=observables,
                 control_parameters=control_parameters, init=true)
     wrk = initpropwrk(state, tlist, method, G; kwargs...)
-    return propagate_state_with_wrk(state, genfunc, tlist, wrk; kwargs...)
+    return _propagate(state, genfunc, tlist, wrk; kwargs...)
 end
 
 
-function propagate_state(state, genfunc, tlist, method::Symbol; kwargs...)
-    return propagate_state(state, genfunc, tlist, Val(method); kwargs...)
-end
-
-
-function propagate_state_with_wrk(state, genfunc, tlist, wrk;
+# `propagate` backend (note `wrk` argument instead of `method`)
+function _propagate(state, genfunc, tlist, wrk;
                    backwards=false,
                    storage=nothing,
                    observables=(_store_state, ),
@@ -370,7 +373,8 @@ function propagate_state_with_wrk(state, genfunc, tlist, wrk;
 end
 
 
-function propagate_state(state, genfunc, tlist, method::Val{:cheby}; kwargs...)
+# `propagate` for Chebychev propagation
+function propagate(state, genfunc, tlist, method::Val{:cheby}; kwargs...)
     backwards = get(kwargs, :backwards, false)
     storage = get(kwargs, :storage, nothing)
     observables = get(kwargs, :observables, (_store_state, ))
@@ -380,5 +384,5 @@ function propagate_state(state, genfunc, tlist, method::Val{:cheby}; kwargs...)
                 storage=storage, observables=observables,
                 control_parameters=control_parameters, init=true)
     wrk = initpropwrk(state, tlist, method, G; kwargs...)
-    return propagate_state_with_wrk(state, genfunc, tlist, wrk; kwargs...)
+    return _propagate(state, genfunc, tlist, wrk; kwargs...)
 end
