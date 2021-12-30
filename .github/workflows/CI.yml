@@ -78,19 +78,19 @@ jobs:
         with:
           version: '1'
       - run: |
-          # Instantiate docs env
-          julia --project=docs -e '
+          # Instantiate dev env
+          julia --project=test -e '
             using Pkg
             Pkg.develop(PackageSpec(path=pwd()))
             Pkg.instantiate()'
       - run: |
           # Run doctests
-          julia --project=docs -e '
+          julia --project=test -e '
             using Documenter: DocMeta, doctest
             using QuantumPropagators
             DocMeta.setdocmeta!(QuantumPropagators, :DocTestSetup, :(using QuantumPropagators); recursive=true)
             doctest(QuantumPropagators)'
-      - run: julia --project=docs docs/make.jl
+      - run: julia --project=test docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
