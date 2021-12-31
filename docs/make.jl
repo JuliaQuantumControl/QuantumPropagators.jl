@@ -25,6 +25,7 @@ makedocs(;
         "Howtos" => "howto.md",
         "Benchmarks" => "benchmarks.md",
         "API" => "api.md",
+        "History" => "history.md",
     ],
 )
 

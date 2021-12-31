@@ -18,6 +18,7 @@ Pages=[
  "howto.md",
  "benchmarks.md",
  "api.md",
+ "history.md",
 ]
 Depth = 2
 ```
