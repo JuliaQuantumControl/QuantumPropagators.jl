@@ -139,32 +139,51 @@ function initpropwrk(state, tlist, method::Val{:expprop}, generator...; kwargs..
 end
 
 
-"""Perform a single propagation step in-place (unless for_autodiff=true).
+"""Perform a single propagation step in-place.
 
 ```julia
-propstep!(state, generator, dt, wrk;for_autodiff, kwargs...)
+propstep!(state, generator, dt, wrk; kwargs...)
 ```
 
 The propagation method is determined by `wrk`, see [`initpropwrk`](@ref).
-The truth value of for_autodiff can make the propagation step not in place (if possible),
-which is desirable for autodiff.
-The `kwargs` are forwarded to the underlying method
+
+Generally, an in-place propagation will not be suitable for in the context of
+automatic differentiation.  See [`propagate`](@ref) for a method that does not
+act in-place.
+
+The `kwargs` are forwarded to the underlying method.
 """
-function propstep!(state, generator, dt, wrk::ChebyWrk; for_autodiff=false, kwargs...)
+function propstep!(state, generator, dt, wrk::ChebyWrk; kwargs...)
     return cheby!(state, generator, dt, wrk; kwargs...)
 end
 
-function propstep!(state, generator, dt, wrk::NewtonWrk; for_autodiff=false, kwargs...)
+function propstep!(state, generator, dt, wrk::NewtonWrk; kwargs...)
     return newton!(state, generator, dt, wrk; kwargs...)
 end
 
-function propstep!(state, generator, dt, wrk::ExpPropWrk; for_autodiff=false, kwargs...)
-    if !for_autodiff
-        return expprop!(state, generator, dt, wrk; kwargs...)
-    else
-        return expprop(state, generator, dt, wrk; kwargs...)
-    end
+function propstep!(state, generator, dt, wrk::ExpPropWrk; kwargs...)
+    return expprop!(state, generator, dt, wrk; kwargs...)
 end
+
+
+"""Perform a single propagation step and return the propagated `state`.
+
+```julia
+state_out = propstep(state, generator, dt, wrk; kwargs...)
+```
+
+The propagation method is determined by `wrk`, see [`initpropwrk`](@ref).
+
+Unlike [`propstep!`](@ref), this method does not act in place, which generally
+makes it more suitable for automatic differentiation. However, there may be a
+performance penalty associated with the additional memory allocations.
+
+The `kwargs` are forwarded to the underlying method.
+"""
+function propstep(state, generator, dt, wrk::ExpPropWrk; kwargs...)
+    return expprop(state, generator, dt, wrk; kwargs...)
+end
+
 
 # Default "observable" for storing the propagated state. We want to keep this
 # private, as the routine is not safe unless it is the *only*
@@ -187,13 +206,14 @@ state_out = propagate(
     state, genfunc, tlist; method=:auto,
     backwards=false; storage=nothing, observables=(<store state>, ),
     hook=nothing, showprogress=false, control_parameters=nothing,
-    for_autodiff=false, kwargs...)
+    in_place=true, kwargs...)
 ```
 
 propagates `state` over the time grid in `tlist`, using piecewise-constant
 dynamical generators (Hamiltonians or Liouvillians) determined by `genfunc`,
 and returns the resulting propagated state. The propagation is performed by
-calling [`propstep!`](@ref) for every interval in `tlist`.
+calling [`propstep!`](@ref) for every interval in `tlist`, or
+[`propstep`](@ref) if `in_place=false`.
 
 For the i'th time interval, `genfunc(tlist, i)` must return the generator for
 that time interval. Generally, when approximating a time-continuous dynamical
@@ -209,17 +229,13 @@ as keyword arguments.
 
 The `control_parameters` are an optional array of floats with parameters for
 `genfunc`. This is required when `propagate` is used in the context of
-automatic differentiation (AD). E.g., the Zygote framework can automatically
-calculate gradients of a function `control_parameters -> J_T`, where `J_T`
-might be be a function of the overlap between a propagated state (returned by
-`propagate`) and a target state. Thus, the `control_parameters` must be
-*explicit* in `propagate`.  Outside of and AD context, `control_parameters` are
-not generally required: they can be implicit in `genfunc`.
-
-The `for_autodiff` is an optional bool that controls if the operations are
-in-place or not. Not in-place operations are required when `propagate` is used
-in automatic differentiation (AD). For instance, the Zygote framework is not
-capable of differentiating in-place operations.
+automatic differentiation (AD). E.g., the
+[Zygote](https://fluxml.ai/Zygote.jl/) framework can automatically calculate
+gradients of a function `control_parameters -> J_T`, where `J_T` might be be a
+function of the overlap between a propagated state (returned by `propagate`)
+and a target state. Thus, the `control_parameters` must be *explicit* in
+`propagate`.  Outside of an AD context, `control_parameters` are not generally
+required: they can be implicit in `genfunc`.
 
 The remaining keyword arguments may be used for unusual
 equations of motion beyond the standard Schrödinger or Liouville-von-Neumann
@@ -265,13 +281,21 @@ step, as `hook(state, generator, tlist, i, wrk, observables)` where `i` is the
 index of the time interval on `tlist` covered by the propagation step (0 for
 the initial state, respectives `lastindex(tlist)` for the backward
 propagation).  The `hook` is called before calculating any observables. Example
-usage includes writing data to file, or modyfing `state`, e.g. removing
+usage includes writing data to file, or modifying `state`, e.g., removing
 amplitude from the lowest and highest level to mitigate "truncation error".
 
 If `showprogress` is given as `true`, a progress bar will be shown for
 long-running propagationn. In order to customize the progress bar,
 `showprogress` may also be a function that receives `length(tlist)` and returns
 a `ProgressMeter.Progress` instance.
+
+If `in_place=false` is given, the propagation avoids in-place operations by
+using [`propstep`](@ref) instead of [`propstep!`](@ref). This
+is often required in the context of automatic differentiation (AD), e.g., with
+[Zygote](https://fluxml.ai/Zygote.jl/). That is, use `in_place=false` if
+`propagate` is called inside a function to be passed to `Zygote.gradient`,
+`Zygote.pullback`, or a similar function. In and AD context, `storage` and
+`showprogress` should not be used.
 
 The `propagate` routine returns the propagated state at `tlist[end]`,
 respectively `tlist[1]` if `backwards=true`, or a storage array with the
@@ -310,7 +334,7 @@ function _propagate(state, genfunc, tlist, wrk;
                    hook=nothing,
                    showprogress=false,
                    control_parameters=nothing,
-                   for_autodiff=false,
+                   in_place=true,
                    kwargs...)
     return_storage = false
     if storage === true
@@ -330,16 +354,14 @@ function _propagate(state, genfunc, tlist, wrk;
         end
     end
 
-    if !for_autodiff
-        N = length(intervals)
-        if isa(showprogress, Function)
-            progressmeter = showprogress(N)
-        else
-            progressmeter = Progress(N, enabled=showprogress)
-            if !showprogress
-                # XXX: https://github.com/timholy/ProgressMeter.jl/issues/214
-                progressmeter = NoProgress()
-            end
+    N = length(intervals)
+    if isa(showprogress, Function)
+        progressmeter = showprogress(N)
+    else
+        progressmeter = Progress(N, enabled=showprogress)
+        if !showprogress
+            # XXX: https://github.com/timholy/ProgressMeter.jl/issues/214
+            progressmeter = NoProgress()
         end
     end
 
@@ -349,10 +371,10 @@ function _propagate(state, genfunc, tlist, wrk;
                             storage=storage, observables=observables,
                             control_parameters=control_parameters,
                             init=false)
-        if for_autodiff
-            state = propstep!(state, generator, (backwards ? -dt : dt), wrk; for_autodiff=for_autodiff, kwargs...)
+        if in_place
+            propstep!(state, generator, (backwards ? -dt : dt), wrk; kwargs...)
         else
-            propstep!(state, generator, (backwards ? -dt : dt), wrk; for_autodiff=for_autodiff, kwargs...)
+            state = propstep(state, generator, (backwards ? -dt : dt), wrk; kwargs...)
         end
         if storage ≠ nothing
             write_to_storage!(storage, i + (backwards ? 0 : 1), state,
@@ -361,9 +383,7 @@ function _propagate(state, genfunc, tlist, wrk;
         if hook ≠ nothing
             hook(state, generator, tlist, i, wrk, observables)
         end
-        if !for_autodiff
-            next!(progressmeter)
-        end
+        next!(progressmeter)
     end
     if return_storage
         return storage

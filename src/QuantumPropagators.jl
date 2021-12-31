@@ -22,6 +22,6 @@ export get_from_storage!
 
 # high-level interface
 include("./propagate.jl")
-export initpropwrk, init_storage, propstep!, propagate
+export initpropwrk, init_storage, propstep!, propstep, propagate
 
 end
