@@ -181,6 +181,15 @@ function cheby!(Ψ, H, dt, wrk; kwargs...)
 
 end
 
+
+"""Evaluate `Ψ = exp(i- H dt) Ψ.
+
+```julia
+Ψ_out = cheby(Ψ, H, dt, wrk; E_min=nothing, check_normalization=false)
+```
+
+acts like [`cheby!`](@ref) but does not modify `Ψ` in-place.
+"""
 function cheby(Ψ, H, dt, wrk; kwargs...)
 
     E_min = get(kwargs, :E_min, nothing)
@@ -203,10 +212,10 @@ function cheby(Ψ, H, dt, wrk; kwargs...)
     v0 = wrk.v0
     v1 = wrk.v1
     v2 = wrk.v2
-    
+
     v0 = Ψ
     Ψ = a[1] * v0
-    
+
     v1 = c * (H * v0 - β * v0)
     Ψ += a[2] * v1
 
