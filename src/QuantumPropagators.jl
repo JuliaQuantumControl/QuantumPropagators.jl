@@ -16,12 +16,15 @@ export NewtonWrk, newton!
 include("./expprop.jl")
 export ExpPropWrk, expprop!
 
+include("./ODE.jl")
+export ODEWrk, ODE!
+
 include("./storage.jl")
 export init_storage, map_observables, map_observable, write_to_storage!
 export get_from_storage!
 
 # high-level interface
 include("./propagate.jl")
-export initpropwrk, init_storage, propstep!, propstep, propagate
+export initpropwrk, init_storage, propstep!, propagate
 
 end
