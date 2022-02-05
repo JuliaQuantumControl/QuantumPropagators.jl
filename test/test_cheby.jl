@@ -21,7 +21,7 @@ using QuantumPropagators
 
     # Expected
     U = exp(-im * H * dt)
-    @test norm(U * U'  - one(U)) < precision  # U is unitary
+    @test norm(U * U' - one(U)) < precision  # U is unitary
     Ψ_out_expected = U * Ψ₀
     @test norm(Ψ_out_expected) ≈ 1
 
@@ -33,7 +33,7 @@ using QuantumPropagators
 
     a = cheby_coeffs(Δ, dt)
     @test length(a) == 267
-    b = zeros(20);
+    b = zeros(20)
     n = cheby_coeffs!(b, Δ, dt)
     @test b[1:n] ≈ a[1:n]
 

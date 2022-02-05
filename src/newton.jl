@@ -19,23 +19,23 @@ mutable struct NewtonWrk{T}
     # arnoldi_vecs and v are pre-allocated for efficiency. Other values and
     # vectors are mainly for debugging, so that we can inspect internal
     # parameters like the Newton coefficients (a) after a call to newton!
-    arnoldi_vecs :: Array{T}
-    v :: T
-    a :: OffsetVector{ComplexF64}
-    leja :: OffsetVector{ComplexF64}
-    radius :: Float64
-    n_a :: Int64
-    n_leja :: Int64
-    restarts :: Int64
-    function NewtonWrk(v0::T; m_max::Int64=10) where T
+    arnoldi_vecs::Array{T}
+    v::T
+    a::OffsetVector{ComplexF64}
+    leja::OffsetVector{ComplexF64}
+    radius::Float64
+    n_a::Int64
+    n_leja::Int64
+    restarts::Int64
+    function NewtonWrk(v0::T; m_max::Int64=10) where {T}
         if m_max >= length(v0)
             m_max = length(v0) - 1
         end
         new{T}(
-            T[similar(v0) for _ in 1:m_max+1], # arnoldi_vecs
+            T[similar(v0) for _ = 1:m_max+1], # arnoldi_vecs
             similar(v0),                       # v
-            OffsetVector(zeros(ComplexF64, 10*m_max+1), 0:10*m_max),  # a
-            OffsetVector(zeros(ComplexF64, 10*m_max+1), 0:10*m_max),  # leja
+            OffsetVector(zeros(ComplexF64, 10 * m_max + 1), 0:10*m_max),  # a
+            OffsetVector(zeros(ComplexF64, 10 * m_max + 1), 0:10*m_max),  # leja
             0.0,                               # radius
             0,                                 # n_a
             0,                                 # n_leja
@@ -79,14 +79,18 @@ necessary and may have a size of up to `2*(n+n_use)`.
   `new_points` are undefined.
 - `n_use`: Number of points that should be added to `leja`
 """
-function extend_leja!(leja::OffsetVector{ComplexF64}, n,
-                      newpoints::OffsetVector{ComplexF64}, n_use)
+function extend_leja!(
+    leja::OffsetVector{ComplexF64},
+    n,
+    newpoints::OffsetVector{ComplexF64},
+    n_use
+)
     @assert leja.offsets[1] == -1 "leja must be a zero-based vector"
     @assert newpoints.offsets[1] == -1 "newpoints must be a zero-based vector"
     if length(leja) < n + n_use
         # we allocate twice the required size, so we don't have to re-allocate
         # on every call
-        resize!(leja, 2*(n + n_use))
+        resize!(leja, 2 * (n + n_use))
         leja[n:end] .= 0
     end
     u = ubound(newpoints, 1)
@@ -94,8 +98,8 @@ function extend_leja!(leja::OffsetVector{ComplexF64}, n,
     if n == 0
         # Use point of largest absolute value as starting point by moving it to
         # the end of the `newpoints` array
-        z_last :: ComplexF64 = newpoints[u]
-        for i = lbound(newpoints, 1) : (u-1)
+        z_last::ComplexF64 = newpoints[u]
+        for i = lbound(newpoints, 1):(u-1)
             if abs(newpoints[i]) > abs(z_last)
                 newpoints[u] = newpoints[i]
                 newpoints[i] = z_last
@@ -107,11 +111,11 @@ function extend_leja!(leja::OffsetVector{ComplexF64}, n,
     end
     exponent = 1.0 / (n + n_use)
     for i_add = i_add_start:n_use-1
-        p_max :: Float64 = 0
+        p_max::Float64 = 0
         i_max = 0
-        for i in lbound(newpoints, 1) : (u-i_add)
-            p :: Float64 = 1
-            for j = 0 : (n + i_add - 1)  # existing Leja points
+        for i = lbound(newpoints, 1):(u-i_add)
+            p::Float64 = 1
+            for j = 0:(n+i_add-1)  # existing Leja points
                 p = p * (abs(newpoints[i] - leja[j])^exponent)
             end
             if p > p_max
@@ -120,7 +124,7 @@ function extend_leja!(leja::OffsetVector{ComplexF64}, n,
             end
         end
         # TODO: check that p_max did not overflow or underflow
-        leja[n + i_add] = newpoints[i_max]
+        leja[n+i_add] = newpoints[i_max]
         # remove the used point by replacing it with the last unused point
         newpoints[i_max] = newpoints[u-i_add]
     end
@@ -153,16 +157,21 @@ the `func` from `n_a` coefficients to `n_leja` coefficients. Return a new value
   coefficients, and the total number of Newton coefficients on output
 - `radius`: Normalization radius for divided differences
 """
-function extend_newton_coeffs!(a::OffsetVector{ComplexF64}, n_a::Int64,
-                               leja::OffsetVector{ComplexF64}, func,
-                               n_leja::Int64, radius::Float64)
+function extend_newton_coeffs!(
+    a::OffsetVector{ComplexF64},
+    n_a::Int64,
+    leja::OffsetVector{ComplexF64},
+    func,
+    n_leja::Int64,
+    radius::Float64
+)
     @assert a.offsets[1] == -1 "a must be a zero-based vector"
     m = n_leja - n_a
     n0 = n_a
     if length(a) < n_a + m
         # we allocate twice the required size, so we don't have to re-allocate
         # on every call
-        resize!(a, 2*n_leja)
+        resize!(a, 2 * n_leja)
         a[n_a:end] .= 0
     end
     @assert length(leja) >= n_leja
@@ -171,10 +180,10 @@ function extend_newton_coeffs!(a::OffsetVector{ComplexF64}, n_a::Int64,
         a[0] = func(leja[0])
         n0 = 1
     end
-    for k = n0 : (n_a - 1 + m)
-        d :: ComplexF64 = 1
-        pn :: ComplexF64 = 0
-        for n = 1 : k-1
+    for k = n0:(n_a-1+m)
+        d::ComplexF64 = 1
+        pn::ComplexF64 = 0
+        for n = 1:k-1
             zd = leja[k] - leja[n-1]
             d = d * zd / radius
             pn = pn + a[n] * d
@@ -218,36 +227,44 @@ Evaluate `Ψ = func(H*dt) Ψ` using a Newton-with-restarted-Arnoldi scheme.
 """
 function newton!(Ψ, H, dt, wrk; kwargs...)
     func = get(kwargs, :func, z -> exp(-1im * z))
-    norm_min :: Float64 = get(kwargs, :norm_min, 1e-14)
-    relerr :: Float64 = get(kwargs, :relerr, 1e-12)
-    max_restarts :: Int64 = get(kwargs, :max_restarts, 50)
+    norm_min::Float64 = get(kwargs, :norm_min, 1e-14)
+    relerr::Float64 = get(kwargs, :relerr, 1e-12)
+    max_restarts::Int64 = get(kwargs, :max_restarts, 50)
 
-    m_max :: Int64 = length(wrk.arnoldi_vecs) - 1
-    m :: Int64 = m_max
+    m_max::Int64 = length(wrk.arnoldi_vecs) - 1
+    m::Int64 = m_max
     fill!(wrk.a, 0)
     fill!(wrk.leja, 0)
-    R = Array{ComplexF64,1}(undef, m+1)
-    P = Array{ComplexF64,1}(undef, m+1)
-    R_abs = Array{Float64,1}(undef, m+1)
-    Hess = zeros(ComplexF64, m_max+1, m_max+1)
+    R = Array{ComplexF64,1}(undef, m + 1)
+    P = Array{ComplexF64,1}(undef, m + 1)
+    R_abs = Array{Float64,1}(undef, m + 1)
+    Hess = zeros(ComplexF64, m_max + 1, m_max + 1)
     # there seems to be a problem declaring dt as Float64 directly (if you pass
     # it an Int, the kwargs seems to prevent Julia from auto-converting it
-    _dt :: Float64 = dt
+    _dt::Float64 = dt
 
     @assert _dt ≠ 0.0
 
-    n_a :: Int64 = 0  # number of Newton coefficients (accumulated)
-    n_leja :: Int64 = 0  # number of Leja points (accumulated)
+    n_a::Int64 = 0  # number of Newton coefficients (accumulated)
+    n_leja::Int64 = 0  # number of Leja points (accumulated)
     copyto!(wrk.v, Ψ)
 
     s = 0  # counter for the restart loop
-    β :: Float64 = norm(wrk.v)
-    lmul!(1/β, wrk.v)  # normalize
+    β::Float64 = norm(wrk.v)
+    lmul!(1 / β, wrk.v)  # normalize
 
     while true  # restart loop (s → s+1)
 
-        m = arnoldi!(Hess, wrk.arnoldi_vecs, m, wrk.v, H, _dt;
-                     extended=true, norm_min=norm_min)
+        m = arnoldi!(
+            Hess,
+            wrk.arnoldi_vecs,
+            m,
+            wrk.v,
+            H,
+            _dt;
+            extended=true,
+            norm_min=norm_min
+        )
         if m == 1 && s == 0
             λ = β * Hess[1, 1]
             # wrk.v is an eigenvec of H with eigenval Hess[1, 1],
@@ -264,23 +281,19 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
 
         # Get the Leja points (i.e. Ritz values in the proper order
         n_s = n_leja  # we need to keep the old n_leja
-        n_leja = extend_leja!(
-            wrk.leja, n_leja, OffsetVector(ritz, 0:length(ritz)-1), m
-        )
+        n_leja = extend_leja!(wrk.leja, n_leja, OffsetVector(ritz, 0:length(ritz)-1), m)
 
         # Extend the Newton coefficients
-        n_a = extend_newton_coeffs!(
-            wrk.a, n_a, wrk.leja, func, n_leja, wrk.radius
-        )
+        n_a = extend_newton_coeffs!(wrk.a, n_a, wrk.leja, func, n_leja, wrk.radius)
         @assert n_a == n_leja
 
         # allocate array R for Newton basis polynomicals in the extended
         # Hessenberg matrix and P for the full Newton series
-        if length(R) ≠ m+1
+        if length(R) ≠ m + 1
             # we always treat R, R_abs, and P together
-            resize!(R, m+1)
-            resize!(R_abs, m+1)
-            resize!(P, m+1)
+            resize!(R, m + 1)
+            resize!(R_abs, m + 1)
+            resize!(P, m + 1)
         end
 
         # Evaluate Newton Polynomial in the extended Hessenberg matrix
@@ -290,8 +303,7 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
         P[1] = wrk.a[n_s] * β
         for k = 1:m-1
             R[1:m+1] = (
-                (Hess[1:m+1,1:m+1] * R[1:m+1] - wrk.leja[n_s+k-1] * R[1:m+1])
-                / wrk.radius
+                (Hess[1:m+1, 1:m+1] * R[1:m+1] - wrk.leja[n_s+k-1] * R[1:m+1]) / wrk.radius
             )
             # P += a_{n_s+k} R
             axpy!(wrk.a[n_s+k], view(R, 1:m+1), view(P, 1:m+1))
@@ -303,20 +315,18 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
         end
         # Ψ += P[i] * arnoldi_vecs[i]
         for i = 1:m
-          axpy!(P[i], wrk.arnoldi_vecs[i], Ψ)
+            axpy!(P[i], wrk.arnoldi_vecs[i], Ψ)
         end
 
         # Calculate the starting vector v_{s+1} for the next iteration
-        R[1:m+1] = (
-            ((Hess[1:m+1,1:m+1] * R[1:m+1]) - wrk.leja[n_s+m-1] * R[1:m+1])
-            / wrk.radius
-        )
+        R[1:m+1] =
+            (((Hess[1:m+1, 1:m+1] * R[1:m+1]) - wrk.leja[n_s+m-1] * R[1:m+1]) / wrk.radius)
         R_abs[1:m+1] = abs.(R[1:m+1])
         β = norm(R_abs[1:m+1])
-        lmul!(1/β, view(R, 1:m+1))
+        lmul!(1 / β, view(R, 1:m+1))
         copyto!(wrk.arnoldi_vecs[1], wrk.v)
         lmul!(R[1], wrk.v)
-        for i = 2 : m+1
+        for i = 2:m+1
             axpy!(R[i], wrk.arnoldi_vecs[i], wrk.v)
         end
 

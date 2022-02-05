@@ -101,12 +101,17 @@ function initpropwrk(state, tlist, method::Symbol, generator...; kwargs...)
 end
 
 
-function initpropwrk(state, tlist, method::Val{:cheby}, generator...;
-                     specrad_method=Val(:auto), tolerance=0.01, kwargs...)
+function initpropwrk(
+    state,
+    tlist,
+    method::Val{:cheby},
+    generator...;
+    specrad_method=Val(:auto),
+    tolerance=0.01,
+    kwargs...
+)
     if length(generator) == 0
-        throw(ArgumentError(
-            "The :cheby method requires at least on `generator`"
-        ))
+        throw(ArgumentError("The :cheby method requires at least on `generator`"))
     end
     # find a spectral envelope for all generators
     E_min, E_max = specrange(generator[1], specrad_method; kwargs...)
@@ -117,18 +122,18 @@ function initpropwrk(state, tlist, method::Val{:cheby}, generator...;
     end
     Δ = E_max - E_min
     δ = tolerance * Δ
-    E_min = E_min - δ/2
+    E_min = E_min - δ / 2
     Δ = Δ + δ
     dt = tlist[2] - tlist[1]
-    allowed_kwargs = Set((:limit, ))
-    filtered_kwargs = filter(p->p.first in allowed_kwargs, kwargs)
+    allowed_kwargs = Set((:limit,))
+    filtered_kwargs = filter(p -> p.first in allowed_kwargs, kwargs)
     return ChebyWrk(state, Δ, E_min, dt; filtered_kwargs...)
 end
 
 
 function initpropwrk(state, tlist, method::Val{:newton}, generator...; kwargs...)
-    allowed_kwargs = Set((:m_max, ))
-    filtered_kwargs = filter(p->p.first in allowed_kwargs, kwargs)
+    allowed_kwargs = Set((:m_max,))
+    filtered_kwargs = filter(p -> p.first in allowed_kwargs, kwargs)
     return NewtonWrk(state; filtered_kwargs...)
 end
 
@@ -316,26 +321,38 @@ function propagate(state, genfunc, tlist, method::Val; kwargs...)
     # TODO: document what happens with kwargs
     backwards = get(kwargs, :backwards, false)
     storage = get(kwargs, :storage, nothing)
-    observables = get(kwargs, :observables, (_store_state, ))
+    observables = get(kwargs, :observables, (_store_state,))
     control_parameters = get(kwargs, :control_parameters, nothing)
-    G = genfunc(tlist, 1; state=state, backwards=backwards,
-                storage=storage, observables=observables,
-                control_parameters=control_parameters, init=true)
+    G = genfunc(
+        tlist,
+        1;
+        state=state,
+        backwards=backwards,
+        storage=storage,
+        observables=observables,
+        control_parameters=control_parameters,
+        init=true
+    )
     wrk = initpropwrk(state, tlist, method, G; kwargs...)
     return _propagate(state, genfunc, tlist, wrk; kwargs...)
 end
 
 
 # `propagate` backend (note `wrk` argument instead of `method`)
-function _propagate(state, genfunc, tlist, wrk;
-                   backwards=false,
-                   storage=nothing,
-                   observables=(_store_state, ),
-                   hook=nothing,
-                   showprogress=false,
-                   control_parameters=nothing,
-                   in_place=true,
-                   kwargs...)
+function _propagate(
+    state,
+    genfunc,
+    tlist,
+    wrk;
+    backwards=false,
+    storage=nothing,
+    observables=(_store_state,),
+    hook=nothing,
+    showprogress=false,
+    control_parameters=nothing,
+    in_place=true,
+    kwargs...
+)
     return_storage = false
     if storage === true
         storage = init_storage(state, tlist, observables)
@@ -367,18 +384,23 @@ function _propagate(state, genfunc, tlist, wrk;
 
     for (i, t_end) in intervals
         dt = t_end - tlist[i]
-        generator = genfunc(tlist, i; state=state, backwards=backwards,
-                            storage=storage, observables=observables,
-                            control_parameters=control_parameters,
-                            init=false)
+        generator = genfunc(
+            tlist,
+            i;
+            state=state,
+            backwards=backwards,
+            storage=storage,
+            observables=observables,
+            control_parameters=control_parameters,
+            init=false
+        )
         if in_place
             propstep!(state, generator, (backwards ? -dt : dt), wrk; kwargs...)
         else
             state = propstep(state, generator, (backwards ? -dt : dt), wrk; kwargs...)
         end
         if storage ≠ nothing
-            write_to_storage!(storage, i + (backwards ? 0 : 1), state,
-                              observables)
+            write_to_storage!(storage, i + (backwards ? 0 : 1), state, observables)
         end
         if hook ≠ nothing
             hook(state, generator, tlist, i, wrk, observables)
@@ -397,12 +419,19 @@ end
 function propagate(state, genfunc, tlist, method::Val{:cheby}; kwargs...)
     backwards = get(kwargs, :backwards, false)
     storage = get(kwargs, :storage, nothing)
-    observables = get(kwargs, :observables, (_store_state, ))
+    observables = get(kwargs, :observables, (_store_state,))
     control_parameters = get(kwargs, :control_parameters, nothing)
     # TODO: generate multiple examplary G
-    G = genfunc(tlist, 1; state=state, backwards=backwards,
-                storage=storage, observables=observables,
-                control_parameters=control_parameters, init=true)
+    G = genfunc(
+        tlist,
+        1;
+        state=state,
+        backwards=backwards,
+        storage=storage,
+        observables=observables,
+        control_parameters=control_parameters,
+        init=true
+    )
     wrk = initpropwrk(state, tlist, method, G; kwargs...)
     return _propagate(state, genfunc, tlist, wrk; kwargs...)
 end

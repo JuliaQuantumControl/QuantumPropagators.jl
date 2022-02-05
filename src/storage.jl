@@ -125,7 +125,7 @@ function write_to_storage!(storage::AbstractVector, i::Integer, data)
     storage[i] = data
 end
 
-function write_to_storage!(storage::Matrix{T}, i::Integer, data::Vector{T}) where T
+function write_to_storage!(storage::Matrix{T}, i::Integer, data::Vector{T}) where {T}
     storage[:, i] .= data
 end
 

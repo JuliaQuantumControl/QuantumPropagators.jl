@@ -1,4 +1,4 @@
-.PHONY: help test docs clean distclean devrepl
+.PHONY: help test docs clean distclean devrepl codestyle
 .DEFAULT_GOAL := help
 
 define PRINT_HELP_PYSCRIPT
@@ -39,26 +39,28 @@ Pkg.instantiate()
 endef
 export ENV_PACKAGES
 
+JULIA ?= julia
+
 
 Manifest.toml: Project.toml $(QUANTUMCONTROLBASE)/Project.toml
-	julia --project=. -e "$$DEV_PACKAGES;Pkg.instantiate()"
+	$(JULIA) --project=. -e "$$DEV_PACKAGES;Pkg.instantiate()"
 
 
 test:  test/Manifest.toml  ## Run the test suite
-	julia --project=test --threads auto --color=auto --startup-file=yes --code-coverage="user" --depwarn="yes" --check-bounds="yes" -e 'include("test/runtests.jl")'
+	$(JULIA) --project=test --threads auto --color=auto --startup-file=yes --code-coverage="user" --depwarn="yes" --check-bounds="yes" -e 'include("test/runtests.jl")'
 	@echo "Done. Consider using 'make devrepl'"
 
 
 test/Manifest.toml: test/Project.toml  $(QUANTUMCONTROLBASE)/Project.toml
-	julia --project=test -e "$$ENV_PACKAGES"
+	$(JULIA) --project=test -e "$$ENV_PACKAGES"
 
 
 devrepl: test/Manifest.toml ## Start an interactive REPL for testing and building documentation
-	@julia --project=test --banner=no --startup-file=yes -e 'include("test/init.jl")' -i
+	@$(JULIA) --project=test --banner=no --startup-file=yes -e 'include("test/init.jl")' -i
 
 
 docs: test/Manifest.toml ## Build the documentation
-	julia --project=test docs/make.jl
+	$(JULIA) --project=test docs/make.jl
 	@echo "Done. Consider using 'make devrepl'"
 
 
@@ -68,6 +70,9 @@ clean: ## Clean up build/doc/testing artifacts
 	for file in examples/*.jl; do rm -f docs/src/"$${file%.jl}".*; done
 	rm -rf docs/build
 
+codestyle: test/Manifest.toml ../.JuliaFormatter.toml  ## Apply the codestyle to the entire project
+	$(JULIA) --project=test -e 'using JuliaFormatter; format(".", verbose=true)'
+	@echo "Done. Consider using 'make devrepl'"
 
 distclean: clean ## Restore to a clean checkout state
 	rm -f Manifest.toml test/Manifest.toml

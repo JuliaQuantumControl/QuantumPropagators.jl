@@ -16,9 +16,7 @@ using QuantumControlBase.TestUtils
     Ψ = random_state_vector(N)
     # a non_Hermitian X requires significantly more iterations to converge than
     # the default
-    ritzvals = QuantumPropagators.ritzvals(
-            X, Ψ, 180, 200; prec=1e-5
-    )
+    ritzvals = QuantumPropagators.ritzvals(X, Ψ, 180, 200; prec=1e-5)
     evals = eigvals(X)
 
     E_min = abs(evals[1])
