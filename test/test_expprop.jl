@@ -31,4 +31,3 @@ using QuantumPropagators
     # Comparison (should be exact to machine precision)
     @test norm(Ψ_out - Ψ_out_expected) ≈ 0
 end
-

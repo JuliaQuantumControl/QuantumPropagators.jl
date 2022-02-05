@@ -14,8 +14,8 @@ Workspace for propagation via direct matrix exponentiation.
 Initializes the workspace for the propagation of a vector `v0`
 """
 struct ExpPropWrk{T}
-    v :: T
-    function ExpPropWrk(v0::T) where T
+    v::T
+    function ExpPropWrk(v0::T) where {T}
         new{T}(similar(v0))
     end
 end
@@ -35,18 +35,18 @@ storage for a temporary state.
 function expprop!(Ψ, H, dt, wrk; kwargs...)
     func = get(kwargs, :func, H_dt -> exp(-1im * H_dt))
     copyto!(wrk.v, Ψ)
-    U = func(H*dt)
+    U = func(H * dt)
     mul!(Ψ, U, wrk.v)
 end
 
 
 function expprop(Ψ::StaticArrays.SVector, H, dt, wrk; kwargs...)
     func = get(kwargs, :func, H_dt -> exp(-1im * H_dt))
-    return func(H*dt) * Ψ
+    return func(H * dt) * Ψ
 end
 
 
 function expprop(Ψ, H, dt, wrk; kwargs...)
     func = get(kwargs, :func, H_dt -> exp(-1im * H_dt))
-    return func(H*dt) * Ψ
+    return func(H * dt) * Ψ
 end

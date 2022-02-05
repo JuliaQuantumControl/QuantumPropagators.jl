@@ -59,7 +59,7 @@ function specrange(H, method::Val{:arnoldi}; kwargs...)
 
     state = get(kwargs, :state, random_state(H))
     m_max = get(kwargs, :m_max, 60)
-    m_min = max(5, min(get(kwargs, :m_min, 25), m_max-1))
+    m_min = max(5, min(get(kwargs, :m_min, 25), m_max - 1))
     prec = get(kwargs, :prec, 1e-3)
     norm_min = get(kwargs, :norm_min, 1e-15)
     enlarge = get(kwargs, :enlarge, true)
@@ -73,7 +73,7 @@ function specrange(H, method::Val{:arnoldi}; kwargs...)
         E_min = 2 * E_min - real(R[2])
         E_max = 2 * E_max - real(R[end-1])
     end
-    return E_min,  E_max
+    return E_min, E_max
 end
 
 
@@ -119,14 +119,14 @@ R = ritzvals(G, state, m_min, m_max=2*m_min; prec=1e-5, norm_min=1e-15)
 calculates a complex vector `R` of at least `m_min` and at most `m_max` Ritz
 values.
 """
-function ritzvals(G, state, m_min, m_max=2*m_min; prec=1e-5, norm_min=1e-15)
+function ritzvals(G, state, m_min, m_max=2 * m_min; prec=1e-5, norm_min=1e-15)
     if m_max <= m_min
         throw(ArgumentError("m_max=$m_max must be smaller than m_min=$min"))
     end
-    m = max(5, min(m_min, m_max-1))
+    m = max(5, min(m_min, m_max - 1))
 
     Hess = Matrix{ComplexF64}(undef, m_max, m_max)
-    q = [similar(state) for _ in 1:(m_max+1)]
+    q = [similar(state) for _ = 1:(m_max+1)]
 
     # Get the Ritz eigenvalues for order m-1, so that we can decide whether
     # the values for order m are already precise enough
@@ -145,9 +145,9 @@ function ritzvals(G, state, m_min, m_max=2*m_min; prec=1e-5, norm_min=1e-15)
         v̲r = minimum(real(eigenvals))
         v̄r = maximum(real(eigenvals))
         v̄i = maximum(abs.(imag(eigenvals)))
-        e̲r = (v̲r₀ ≠ 0.0) ? abs(1.0 - v̲r/v̲r₀) : 0.0
-        ēr = (v̄r₀ ≠ 0.0) ? abs(1.0 - v̄r/v̄r₀) : 0.0
-        ēi = (v̄i₀ ≠ 0.0) ? abs(1.0 - v̄i/v̄i₀) : 0.0
+        e̲r = (v̲r₀ ≠ 0.0) ? abs(1.0 - v̲r / v̲r₀) : 0.0
+        ēr = (v̄r₀ ≠ 0.0) ? abs(1.0 - v̄r / v̄r₀) : 0.0
+        ēi = (v̄i₀ ≠ 0.0) ? abs(1.0 - v̄i / v̄i₀) : 0.0
         while (e̲r > prec) || (ēr > prec) || ((v̄i₀ > 1e-14) && ēi > prec)
             v̲r₀ = v̲r
             v̄r₀ = v̄r
@@ -160,9 +160,9 @@ function ritzvals(G, state, m_min, m_max=2*m_min; prec=1e-5, norm_min=1e-15)
             v̲r = minimum(real(eigenvals))
             v̄r = maximum(real(eigenvals))
             v̄i = maximum(abs.(imag(eigenvals)))
-            e̲r = abs(1.0 - (v̲r/v̲r₀))
-            ēr = abs(1.0 - (v̄r/v̄r₀))
-            ēi = abs(1.0 - (v̄i/v̄i₀))
+            e̲r = abs(1.0 - (v̲r / v̲r₀))
+            ēr = abs(1.0 - (v̄r / v̄r₀))
+            ēi = abs(1.0 - (v̄i / v̄i₀))
             if (m == m_max)
                 @warn "Ritz values did not converge within m_max=$m_max"
                 break

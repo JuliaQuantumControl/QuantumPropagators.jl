@@ -50,7 +50,7 @@ using QuantumControlBase.TestUtils
 
     # Expected
     U = exp(-im * H * dt)
-    @test norm(U * U'  - one(U)) < precision  # U is unitary
+    @test norm(U * U' - one(U)) < precision  # U is unitary
     Ψ_out_expected = U * Ψ₀
     @test norm(Ψ_out_expected) ≈ 1
 
