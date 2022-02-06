@@ -1,4 +1,6 @@
-"""Implementation of the Chebychev propagator."""
+module Cheby
+
+export cheby_coeffs, cheby_coeffs!, ChebyWrk, cheby!, cheby
 
 using SpecialFunctions
 using LinearAlgebra
@@ -6,12 +8,18 @@ using LinearAlgebra
 
 """Calculate Chebychev coefficients.
 
-Return an array of coefficiencts larger than `limit`.
+```julia
+a::Vector{Float64} = cheby_coeffs(Δ, dt; limit=1e-12)
+```
+
+return an array of coefficiencts larger than `limit`.
 
 # Arguments
 
 * `Δ`: the spectral radius of the underlying operator
 * `dt`: the time step
+
+See also [`cheby_coeffs!`](@ref) for an in-place version.
 """
 function cheby_coeffs(Δ, dt; limit=1e-12)
     α = abs(0.5 * Δ * dt)
@@ -33,12 +41,14 @@ end
 """Calculate Chebychev coefficients in-place.
 
 ```julia
-n = cheby_coeffs!(coeffs, Δ, dt, limit=1e-12)
+n::Int = cheby_coeffs!(coeffs, Δ, dt, limit=1e-12)
 ```
 
 overwrites the first `n` values in `coeffs` with new coefficients larger than
 `limit` for the given new spectral radius `Δ` and time step `dt`. The `coeffs`
-array will be resized if necessary, and may length > `n` on exit.
+array will be resized if necessary, and may have a length > `n` on exit.
+
+See also [`cheby_coeffs`](@ref) for an non-in-place version.
 """
 function cheby_coeffs!(coeffs, Δ, dt, limit=1e-12)
     α = abs(0.5 * Δ * dt)
@@ -65,12 +75,12 @@ end
 Workspace for the Chebychev propagation routine.
 
 ```julia
-    ChebyWrk(Ψ, Δ, E_min, dt; limit=1e-12)
+ChebyWrk(Ψ, Δ, E_min, dt; limit=1e-12)
 ```
 
-initializes the workspace for the propagation of a state similar to Ψ under a
+initializes the workspace for the propagation of a state similar to `Ψ` under a
 Hamiltonian with eigenvalues between `E_min` and `E_min + Δ`, and a time step
-dt. Chebychev coefficients smaller than the given `limit` are discarded.
+`dt`. Chebychev coefficients smaller than the given `limit` are discarded.
 """
 mutable struct ChebyWrk{T,CFS,FT<:AbstractFloat}
     v0::T
@@ -99,7 +109,7 @@ end
 cheby!(Ψ, H, dt, wrk; E_min=nothing, check_normalization=false)
 ```
 
-Args:
+# Arguments
 
 * `Ψ`: on input, initial vector. Will be overwritten with result.
 * `H`: Hermitian operator
@@ -177,7 +187,7 @@ function cheby!(Ψ, H, dt, wrk; kwargs...)
 end
 
 
-"""Evaluate `Ψ = exp(i- H dt) Ψ.
+"""Evaluate `Ψ = exp(i- H dt) Ψ`.
 
 ```julia
 Ψ_out = cheby(Ψ, H, dt, wrk; E_min=nothing, check_normalization=false)
@@ -234,5 +244,7 @@ function cheby(Ψ, H, dt, wrk; kwargs...)
     end
 
     return exp(-im * β * dt) * Ψ
+
+end
 
 end

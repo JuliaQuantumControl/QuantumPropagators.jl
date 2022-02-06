@@ -1,6 +1,7 @@
 using Test
 using LinearAlgebra
 using QuantumPropagators
+using QuantumPropagators.Cheby
 
 @testset "random state" begin
 
@@ -32,7 +33,7 @@ using QuantumPropagators
     Δ = evals[end] - evals[1]
 
     a = cheby_coeffs(Δ, dt)
-    @test length(a) == 267
+    @test length(a) ∈ [267, 268]  # numerical fluctuations
     b = zeros(20)
     n = cheby_coeffs!(b, Δ, dt)
     @test b[1:n] ≈ a[1:n]

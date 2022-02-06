@@ -1,6 +1,7 @@
 using Test
 using LinearAlgebra
 using QuantumPropagators
+using QuantumPropagators.Newton
 using QuantumControlBase.TestUtils
 
 @testset "random Hermitian" begin

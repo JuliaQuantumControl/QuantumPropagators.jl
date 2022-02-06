@@ -1,6 +1,7 @@
 using Test
 using LinearAlgebra
 using QuantumPropagators
+using QuantumPropagators.ExpProp
 
 @testset "random Hermitian state" begin
 

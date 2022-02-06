@@ -1,3 +1,11 @@
+module SpectralRange
+
+export specrange
+
+using ..Arnoldi: arnoldi!, diagonalize_hessenberg_matrix, extend_arnoldi!
+using LinearAlgebra
+
+
 """Calculate the spectral range of a Hamiltonian `H` on the real axis.
 
 ```julia
@@ -170,4 +178,6 @@ function ritzvals(G, state, m_min, m_max=2 * m_min; prec=1e-5, norm_min=1e-15)
         end
     end
     return eigenvals
+end
+
 end

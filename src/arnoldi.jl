@@ -1,3 +1,8 @@
+module Arnoldi
+
+using LinearAlgebra
+
+
 """
 ```julia
 m = arnoldi!(Hess, q, m, Ψ, H, dt=1.0; extended=true, norm_min=1e-15)
@@ -157,4 +162,6 @@ function diagonalize_hessenberg_matrix(Hess, m; accumulate=false)
         offset += j
     end
     return eigenvals
+end
+
 end

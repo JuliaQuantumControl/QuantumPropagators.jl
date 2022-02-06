@@ -1,5 +1,6 @@
 using Test
 using QuantumPropagators
+using QuantumPropagators.Storage
 using LinearAlgebra
 using UnicodePlots
 

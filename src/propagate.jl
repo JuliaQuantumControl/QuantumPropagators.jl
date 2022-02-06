@@ -1,6 +1,7 @@
 using LinearAlgebra
 using ProgressMeter
 
+
 """Initialize a workspace for propagation.
 
 ```julia
@@ -28,7 +29,8 @@ The resulting `wrk` can be passed to [`propagate`](@ref) or
   given `state`, `tlist`, and `generator`. Alternative values are `:cheby` and
   `:newton`, and `:expprop`.
 * `specrad_method`: for `method=:cheby`, method to use for estimating the
-   spectral radius, see [`specrange`](@ref). Defaults to `:auto`.
+   spectral radius, see [`QuantumPropagators.SpectralRange.specrange`](@ref).
+   Defaults to `:auto`.
 * `tolerance`: for `method=:cheby`, a tolerance factor for the estimated
   spectral radius. That is, Chebychev coefficients will be calculated for a
   spectral radius increased by the `tolerance` factor compared to the specral
@@ -36,7 +38,8 @@ The resulting `wrk` can be passed to [`propagate`](@ref) or
 
 All other `kwargs` are filtered and passed to the contructor for returned
 workspace, e.g. `limit` for `method=:cheby` or `m_max` for `method=:newton`.
-For `method=:cheby`, they additionally passed to [`specrange`](@ref).
+For `method=:cheby`, they are also passed to
+[`specrange`](@ref QuantumPropagators.SpectralRange.specrange).
 """
 function initpropwrk(state, tlist, method::Val{:auto}, generator...; kwargs...)
     is_small = false
@@ -114,9 +117,9 @@ function initpropwrk(
         throw(ArgumentError("The :cheby method requires at least on `generator`"))
     end
     # find a spectral envelope for all generators
-    E_min, E_max = specrange(generator[1], specrad_method; kwargs...)
+    E_min, E_max = SpectralRange.specrange(generator[1], specrad_method; kwargs...)
     for G in generator[2:end]
-        _E_min, _E_max = specrange(G, specrad_method; kwargs...)
+        _E_min, _E_max = SpectraRange.specrange(G, specrad_method; kwargs...)
         E_min = (_E_min < E_min) ? _E_min : E_min
         E_max = (_E_max > E_max) ? _E_max : E_max
     end
@@ -127,20 +130,20 @@ function initpropwrk(
     dt = tlist[2] - tlist[1]
     allowed_kwargs = Set((:limit,))
     filtered_kwargs = filter(p -> p.first in allowed_kwargs, kwargs)
-    return ChebyWrk(state, Δ, E_min, dt; filtered_kwargs...)
+    return Cheby.ChebyWrk(state, Δ, E_min, dt; filtered_kwargs...)
 end
 
 
 function initpropwrk(state, tlist, method::Val{:newton}, generator...; kwargs...)
     allowed_kwargs = Set((:m_max,))
     filtered_kwargs = filter(p -> p.first in allowed_kwargs, kwargs)
-    return NewtonWrk(state; filtered_kwargs...)
+    return Newton.NewtonWrk(state; filtered_kwargs...)
 end
 
 
 function initpropwrk(state, tlist, method::Val{:expprop}, generator...; kwargs...)
     # ExpPropWrk has no kwargs
-    return ExpPropWrk(state)
+    return ExpProp.ExpPropWrk(state)
 end
 
 
@@ -158,16 +161,16 @@ act in-place.
 
 The `kwargs` are forwarded to the underlying method.
 """
-function propstep!(state, generator, dt, wrk::ChebyWrk; kwargs...)
-    return cheby!(state, generator, dt, wrk; kwargs...)
+function propstep!(state, generator, dt, wrk::Cheby.ChebyWrk; kwargs...)
+    return Cheby.cheby!(state, generator, dt, wrk; kwargs...)
 end
 
-function propstep!(state, generator, dt, wrk::NewtonWrk; kwargs...)
-    return newton!(state, generator, dt, wrk; kwargs...)
+function propstep!(state, generator, dt, wrk::Newton.NewtonWrk; kwargs...)
+    return Newton.newton!(state, generator, dt, wrk; kwargs...)
 end
 
-function propstep!(state, generator, dt, wrk::ExpPropWrk; kwargs...)
-    return expprop!(state, generator, dt, wrk; kwargs...)
+function propstep!(state, generator, dt, wrk::ExpProp.ExpPropWrk; kwargs...)
+    return ExpProp.expprop!(state, generator, dt, wrk; kwargs...)
 end
 
 
@@ -185,8 +188,8 @@ performance penalty associated with the additional memory allocations.
 
 The `kwargs` are forwarded to the underlying method.
 """
-function propstep(state, generator, dt, wrk::ExpPropWrk; kwargs...)
-    return expprop(state, generator, dt, wrk; kwargs...)
+function propstep(state, generator, dt, wrk::ExpProp.ExpPropWrk; kwargs...)
+    return ExpProp.expprop(state, generator, dt, wrk; kwargs...)
 end
 
 
@@ -256,8 +259,8 @@ genfunc(tlist, i; kwargs...) = ...
 For valid propagation `method`s, see [`initpropwrk`](@ref).
 
 In general, there is no requirement that `tlist` has a constant time step,
-although some propagation methods (most notably [`cheby!`](@ref)) only support
-a uniform time grid.
+although some propagation methods (most notably [`cheby!`](@ref
+QuantumPropagators.Cheby.cheby!)) only support a uniform time grid.
 
 If `storage` is given as an Array, it will be filled with data determined by
 the `observables`. The default "observable" results in the propagated states at
@@ -363,11 +366,11 @@ function _propagate(
     if backwards
         intervals = Iterators.reverse(intervals)
         if storage ≠ nothing
-            write_to_storage!(storage, lastindex(tlist), state, observables)
+            Storage.write_to_storage!(storage, lastindex(tlist), state, observables)
         end
     else
         if storage ≠ nothing
-            write_to_storage!(storage, 1, state, observables)
+            Storage.write_to_storage!(storage, 1, state, observables)
         end
     end
 
@@ -400,7 +403,7 @@ function _propagate(
             state = propstep(state, generator, (backwards ? -dt : dt), wrk; kwargs...)
         end
         if storage ≠ nothing
-            write_to_storage!(storage, i + (backwards ? 0 : 1), state, observables)
+            Storage.write_to_storage!(storage, i + (backwards ? 0 : 1), state, observables)
         end
         if hook ≠ nothing
             hook(state, generator, tlist, i, wrk, observables)

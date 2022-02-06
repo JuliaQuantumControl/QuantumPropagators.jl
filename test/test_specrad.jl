@@ -3,6 +3,7 @@
 using Test
 using LinearAlgebra
 using QuantumPropagators
+using QuantumPropagators.SpectralRange
 using QuantumControlBase.TestUtils
 
 
@@ -16,7 +17,7 @@ using QuantumControlBase.TestUtils
     Ψ = random_state_vector(N)
     # a non_Hermitian X requires significantly more iterations to converge than
     # the default
-    ritzvals = QuantumPropagators.ritzvals(X, Ψ, 180, 200; prec=1e-5)
+    ritzvals = QuantumPropagators.SpectralRange.ritzvals(X, Ψ, 180, 200; prec=1e-5)
     evals = eigvals(X)
 
     E_min = abs(evals[1])
@@ -47,7 +48,7 @@ end
     H = random_hermitian_matrix(N, ρ)
     Ψ = random_state_vector(N)
     # for a Hermitian H, lower default (cf. specrange) should be ok
-    ritzvals = QuantumPropagators.ritzvals(H, Ψ, 20, 60; prec=1e-3)
+    ritzvals = QuantumPropagators.SpectralRange.ritzvals(H, Ψ, 20, 60; prec=1e-3)
     evals = eigvals(H)
 
     E_min = abs(evals[1])

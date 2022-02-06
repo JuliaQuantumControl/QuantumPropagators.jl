@@ -1,4 +1,10 @@
-"""Create a `storage` array for [`propagate`](@ref).
+module Storage
+
+
+export init_storage, map_observables, map_observable, write_to_storage!
+export get_from_storage!
+
+"""Create a `storage` array for propagation.
 
 ```julia
 storage = init_storage(state, tlist)
@@ -96,7 +102,7 @@ end
 """Place data into `storage` for time slot `i`.
 
 ```julia
-    write_to_storage!(storage, i, state, observables)
+write_to_storage!(storage, i, state, observables)
 ```
 
 For a `storage` array created by [`init_storage`](@ref), store the data obtains
@@ -104,7 +110,7 @@ from [`map_observables`](@ref) into the `storage` for time slot `i`. This
 delegates to the more general
 
 ```julia
-    write_to_storage!(storage, i, data)
+write_to_storage!(storage, i, data)
 ```
 
 Conceptually, this corresponds roughly to `storage[i] = data`, but `storage`
@@ -130,7 +136,7 @@ function write_to_storage!(storage::Matrix{T}, i::Integer, data::Vector{T}) wher
 end
 
 
-"""Obtain data from storage
+"""Obtain data from storage.
 
 ```julia
 get_from_storage!(state, storage, i)
@@ -141,3 +147,5 @@ extracts data from the `storage` for the i'th time slot. Invese of
 """
 get_from_storage!(state, storage::AbstractVector, i) = copyto!(state, storage[i])
 get_from_storage!(state, storage::Matrix, i) = copyto!(state, storage[:, i])
+
+end

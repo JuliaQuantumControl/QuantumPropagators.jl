@@ -1,12 +1,16 @@
-"""Implementation of Newton-with-restarted-Arnoldi propagation routine."""
+# Implementation of Newton-with-restarted-Arnoldi propagation routine
+module Newton
 
+export NewtonWrk, newton!
+
+using ..Arnoldi: arnoldi!, diagonalize_hessenberg_matrix
 using LinearAlgebra
 using OffsetArrays
 
 
 """
 ```julia
-    NewtonWrk(v0, m_max=10)
+NewtonWrk(v0, m_max=10)
 ```
 
 Workspace for the Newton-with-restarted-Arnoldi propagation routine.
@@ -345,5 +349,7 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
     wrk.n_leja = n_leja
     wrk.n_a = n_a
     return Ψ
+
+end
 
 end

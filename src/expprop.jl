@@ -1,4 +1,7 @@
-"""Implementation of propagation via direct matrix exponentiation."""
+# Implementation of propagation via direct matrix exponentiation
+module ExpProp
+
+export ExpPropWrk, expprop!
 
 using LinearAlgebra
 import StaticArrays
@@ -6,7 +9,7 @@ import StaticArrays
 
 """
 ```julia
-    ExpPropWrk(v0)
+ExpPropWrk(v0)
 ```
 
 Workspace for propagation via direct matrix exponentiation.
@@ -49,4 +52,6 @@ end
 function expprop(Ψ, H, dt, wrk; kwargs...)
     func = get(kwargs, :func, H_dt -> exp(-1im * H_dt))
     return func(H * dt) * Ψ
+end
+
 end

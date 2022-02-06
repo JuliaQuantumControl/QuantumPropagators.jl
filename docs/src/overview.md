@@ -8,17 +8,17 @@ By default, the `storage` will be used to store the propagated states at each po
 
 After each propagation step, with a propagate state at time slot `i`,
 
-* [`map_observables`](@ref) generates `data` from the propagated state 
-* [`write_to_storage!`](@ref) places that `data` into `storage` for time slot `i`
+* [`QuantumPropagators.Storage.map_observables`](@ref) generates `data` from the propagated state
+* [`QuantumPropagators.Storage.write_to_storage!`](@ref) places that `data` into `storage` for time slot `i`
 
-After [`propagate`](@ref) returns, the [`get_from_storage!`](@ref) routine can be used to extract data from any time slot. This interface hides the internal memory organization of `storage`, which is set up by [`init_storage`](@ref) based on the type of `state` and the given `observables`. This system can can extended with multiple dispatch, allowing to optimize the `storage` for custom data types. Obviously, [`init_storage`](@ref), [`map_observables`](@ref), [`write_to_storage!`](@ref), and [`get_from_storage!`](@ref) must all be consistent.
+After [`propagate`](@ref) returns, the [`get_from_storage!`](@ref) routine can be used to extract data from any time slot. This interface hides the internal memory organization of `storage`, which is set up by [`init_storage`](@ref) based on the type of `state` and the given `observables`. This system can can extended with multiple dispatch, allowing to optimize the `storage` for custom data types. Obviously, [`init_storage`](@ref), [`map_observables`](@ref QuantumPropagators.Storage.map_observables), [`write_to_storage!`](@ref), and [`get_from_storage!`](@ref) must all be consistent.
 
 The default implementation of these routine uses either a standard Vector or a Matrix as `storage`.
 
 Roughly speaking, when storing states, if the state of some arbitrary type,
 the storage will be a Vector where the i'th entry points to a copy of the propagated state at the i'th time slot. If the state is a Vector, the storage will be a Matrix containing the state for the i'th time slot in the i'th column.
 
-When a tuple of `observables` is passed to [`propagate`](@ref), if [`map_observable`](@ref) returns data of the same type for each observable, `storage` will be a Matrix containing the values from the different observables for the i'th time slot in the i'th column. This would be typical for the storage of expectation values, e.g. with
+When a tuple of `observables` is passed to [`propagate`](@ref), if [`map_observables`](@ref QuantumPropagators.Storage.map_observables) returns data of the same type for each observable, `storage` will be a Matrix containing the values from the different observables for the i'th time slot in the i'th column. This would be typical for the storage of expectation values, e.g. with
 
 ~~~julia
 observables=(state->dot(state, Ô₁, state), state->dot(state, Ô₂, state))
@@ -29,7 +29,7 @@ a `2 × nt` `Float64` array. Calling `get_from_storage!(data, storage, i)` would
 equivalent to `copyto!(data, storage[:,i])` and extract the i'th column of `storage`, i.e. the
 vector `[⟨Ô₁⟩, ⟨Ô₂A]⟩]` at time slot `i`. Alternatively, `storage[1,:]` would return the values of `⟨Ô₁⟩` over time. This would be useful for plotting, and illustrates the benefits of using a Matrix as `storage`.
 
-Usually, the `observables` should be functions acting on the `state`, but [`map_observable`](@ref) can be extended to other types of observables as well. For example, the situation were `state` is a vector and the `observables` are matrices is also supported; if  `Ô₁`, `Ô₂` are matrices, 
+Usually, the `observables` should be functions acting on the `state`, but [`map_observables`](@ref QuantumPropagators.Storage.map_observables) can be extended to other types of observables as well. For example, the situation were `state` is a vector and the `observables` are matrices is also supported; if  `Ô₁`, `Ô₂` are matrices,
 ~~~julia
 observables=(Ô₁, Ô)
 ~~~
@@ -54,4 +54,4 @@ If there is a single observable that yields a vector, that vector is stored in t
 `observables=(Ψ -> abs.(Ψ).^2, )`.
 
 If there is a single variable that yields a non-vector object, `storage` will be a Vector where the i'th entry points to the object. This is in fact what happens by default when storing states  that are e.g. instances of
-`QuantumOptics.Ket`. In such a case, it might be advisable to add new methods for [`init_storage`](@ref) and [`write_to_storage!`](@ref) that implement a more efficient in-place storage.
+`QuantumOptics.Ket`. In such a case, it might be advisable to add new methods for [`QuantumPropagators.Storage.init_storage`](@ref) and [`QuantumPropagators.Storage.write_to_storage!`](@ref) that implement a more efficient in-place storage.
