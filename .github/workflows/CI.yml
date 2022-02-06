@@ -32,10 +32,6 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - run: |
-          # Install matplotlib into system Python
-          set -x
-          /usr/bin/python3 -m pip install matplotlib
-      - run: |
           # Instantiate Pkg
           julia --project=@. -e '
             using Pkg
@@ -78,6 +74,10 @@ jobs:
         with:
           version: '1'
       - run: |
+          # Install Python dependencies
+          set -x
+          /usr/bin/python3 -m pip install zip-files
+      - run: |
           # Instantiate dev env
           julia --project=test -e '
             using Pkg
@@ -98,6 +98,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+      - name: Zip the HTML documentation
+        run: zip-folder --debug --auto-root --outfile "docs.zip" docs/build
+      - uses: actions/upload-artifact@v2
+        name: Upload documentation artifacts
+        with:
+          name: QuantumPropagators
+          # We need at least two files in the artifact to avoid a weird
+          # double-zip file. Hence README.md
+          path: |
+            README.md
+            ./docs.zip
   codestyle:
     name: Codestyle
     runs-on: ubuntu-latest

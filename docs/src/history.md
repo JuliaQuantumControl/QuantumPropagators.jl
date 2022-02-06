@@ -1,5 +1,5 @@
 # History
 
-## 0.0.3 (2020-12-30)
+## 0.1.0 (2022-02-06)
 
 First public release
