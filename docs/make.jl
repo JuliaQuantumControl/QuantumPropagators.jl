@@ -1,5 +1,6 @@
 using QuantumPropagators
 using Documenter
+using Pkg
 
 DocMeta.setdocmeta!(
     QuantumPropagators,
@@ -8,15 +9,24 @@ DocMeta.setdocmeta!(
     recursive=true
 )
 
+PROJECT_TOML = Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "Project.toml"))
+VERSION = PROJECT_TOML["version"]
+NAME = PROJECT_TOML["name"]
+AUTHORS = join(PROJECT_TOML["authors"], ", ") * " and contributors"
+GITHUB = "https://github.com/JuliaQuantumControl/QuantumPropagators.jl"
+
+println("Starting makedocs")
+
 makedocs(;
-    modules=[QuantumPropagators],
-    authors="Michael Goerz <mail@michaelgoerz.net> and contributors",
-    repo="https://github.com/JuliaQuantumControl/QuantumPropagators.jl/blob/{commit}{path}#{line}",
+    authors=AUTHORS,
     sitename="QuantumPropagators.jl",
+    modules=[QuantumPropagators],
+    repo="https://github.com/JuliaQuantumControl/QuantumPropagators.jl/blob/{commit}{path}#{line}",
     format=Documenter.HTML(;
-        prettyurls=get(ENV, "CI", "false") == "true",
+        prettyurls=true,
         canonical="https://juliaquantumcontrol.github.io/QuantumPropagators.jl",
-        assets=String[]
+        assets=String[],
+        footer="[$NAME.jl]($GITHUB) v$VERSION docs powered by [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl)."
     ),
     pages=[
         "Home" => "index.md",
@@ -32,5 +42,7 @@ makedocs(;
         "History" => "history.md",
     ]
 )
+
+println("Finished makedocs")
 
 deploydocs(; repo="github.com/JuliaQuantumControl/QuantumPropagators.jl")
