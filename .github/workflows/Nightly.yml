@@ -1,7 +1,9 @@
 name: Nightly
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - 'master'
+      - 'release-*'
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
@@ -32,36 +34,19 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - run: |
-          # Install matplotlib into system Python
-          set -x
-          /usr/bin/python3 -m pip install matplotlib
-      - run: |
           # Instantiate Pkg
-          julia --project=@. -e '
-            using Pkg
-            println("Dev-install QuantumControlBase")
-            Pkg.develop(url="https://github.com/JuliaQuantumControl/QuantumControlBase.jl.git#master")
-            println("Pkg.instantiate()")
-            Pkg.instantiate()'
+          wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/scripts/installorg.jl
+          julia --project=test installorg.jl
       - run: |
           # Run tests
-          julia --project=@. -e '
-            using Pkg
-            Pkg.activate(".")
-            Pkg.test()'
+          julia --project=test --color=auto --startup-file=yes --code-coverage="user" --depwarn="yes" --check-bounds="yes" -e 'include("test/runtests.jl")'
       - run: |
           # Run upstream "QuantumControlBase" tests
-          julia --project=@. -e '
+          julia --project=test -e '
             using Pkg
-            Pkg.activate(".")
-            Pkg.develop(url="https://github.com/JuliaQuantumControl/QuantumControlBase.jl.git#master")
-            Pkg.test("QuantumControlBase")'
+            Pkg.test("QuantumControlBase", coverage=true)'
       - run: |
           # Run upstream "Krotov" tests
-          julia --project=@. -e '
+          julia --project=test -e '
             using Pkg
-            Pkg.activate(".")
-            Pkg.develop(url="https://github.com/JuliaQuantumControl/GRAPE.jl.git#master")
-            Pkg.develop(url="https://github.com/JuliaQuantumControl/Krotov.jl.git#master")
-            Pkg.develop(url="https://github.com/JuliaQuantumControl/QuantumControl.jl.git#master")
-            Pkg.test("Krotov")'
+            Pkg.test("Krotov", coverage=true)'

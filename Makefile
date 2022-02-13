@@ -1,49 +1,24 @@
-.PHONY: help test docs clean distclean devrepl codestyle
+.PHONY: help test docs clean distclean devrepl codestyle servedocs
 .DEFAULT_GOAL := help
 
-define PRINT_HELP_PYSCRIPT
-import re, sys
+JULIA ?= julia
+PORT ?= 8000
 
-for line in sys.stdin:
-    match = re.match(r'^([a-z0-9A-Z_-]+):.*?## (.*)$$', line)
-    if match:
-        target, help = match.groups()
-        print("%-20s %s" % (target, help))
-print("""
-Instead of "make test", consider "make devrepl" if you want to run the test
-suite or generate the docs repeatedly.
-
-Make sure you have Revise.jl installed in your standard Julia environment
-""")
+define PRINT_HELP_JLSCRIPT
+rx = r"^([a-z0-9A-Z_-]+):.*?##[ ]+(.*)$$"
+for line in eachline()
+    m = match(rx, line)
+    if !isnothing(m)
+        target, help = m.captures
+        println("$$(rpad(target, 20)) $$help")
+    end
+end
 endef
-export PRINT_HELP_PYSCRIPT
+export PRINT_HELP_JLSCRIPT
+
 
 help:  ## show this help
-	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
-
-
-# We want to test against checkouts of QuantumControl packages
-QUANTUMCONTROLBASE ?= ../QuantumControlBase.jl
-
-
-define DEV_PACKAGES
-using Pkg;
-endef
-export DEV_PACKAGES
-
-define ENV_PACKAGES
-$(DEV_PACKAGES)
-Pkg.develop(path="$(QUANTUMCONTROLBASE)");
-Pkg.develop(PackageSpec(path=pwd()));
-Pkg.instantiate()
-endef
-export ENV_PACKAGES
-
-JULIA ?= julia
-
-
-Manifest.toml: Project.toml $(QUANTUMCONTROLBASE)/Project.toml
-	$(JULIA) --project=. -e "$$DEV_PACKAGES;Pkg.instantiate()"
+	@julia -e "$$PRINT_HELP_JLSCRIPT" < $(MAKEFILE_LIST)
 
 
 test:  test/Manifest.toml  ## Run the test suite
@@ -51,28 +26,28 @@ test:  test/Manifest.toml  ## Run the test suite
 	@echo "Done. Consider using 'make devrepl'"
 
 
-test/Manifest.toml: test/Project.toml  $(QUANTUMCONTROLBASE)/Project.toml
-	$(JULIA) --project=test -e "$$ENV_PACKAGES"
+test/Manifest.toml: test/Project.toml ../scripts/installorg.jl
+	$(JULIA) --project=test ../scripts/installorg.jl
+	@touch $@
 
 
-devrepl: test/Manifest.toml ## Start an interactive REPL for testing and building documentation
-	@$(JULIA) --project=test --banner=no --startup-file=yes -e 'include("test/init.jl")' -i
+devrepl:  ## Start an interactive REPL for testing and building documentation
+	$(JULIA) --project=test --banner=no --startup-file=yes -i devrepl.jl
 
 
 docs: test/Manifest.toml ## Build the documentation
 	$(JULIA) --project=test docs/make.jl
 	@echo "Done. Consider using 'make devrepl'"
 
+servedocs: test/Manifest.toml  ## Build (auto-rebuild) and serve documentation at PORT=8000
+	$(JULIA) --project=test -e 'include("devrepl.jl"); servedocs(port=$(PORT), verbose=true)'
 
 clean: ## Clean up build/doc/testing artifacts
-	rm -f src/*.cov test/*.cov
-	rm -f test/examples/*
-	for file in examples/*.jl; do rm -f docs/src/"$${file%.jl}".*; done
-	rm -rf docs/build
+	$(JULIA) -e 'include("test/clean.jl"); clean()'
 
 codestyle: test/Manifest.toml ../.JuliaFormatter.toml  ## Apply the codestyle to the entire project
 	$(JULIA) --project=test -e 'using JuliaFormatter; format(".", verbose=true)'
 	@echo "Done. Consider using 'make devrepl'"
 
 distclean: clean ## Restore to a clean checkout state
-	rm -f Manifest.toml test/Manifest.toml
+	$(JULIA) -e 'include("test/clean.jl"); clean(distclean=true)'

@@ -2,6 +2,10 @@
 *.jl.cov
 *.jl.mem
 /Manifest.toml
-/docs/build/
-/docs/Manifest.toml
 /test/Manifest.toml
+/docs/Manifest.toml
+/docs/build/
+/gh-pages/
+/.JuliaFormatter.toml
+/lcov.info
+/coverage
