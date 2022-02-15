@@ -32,5 +32,3 @@ Revise, JuliaFormatter, LiveServer, Plots with unicode backend are active.
 
 """Show help"""
 help() = println(REPL_MESSAGE)
-
-help()

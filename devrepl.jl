@@ -39,3 +39,7 @@ if !isfile(joinpath("test", "Manifest.toml"))
     _instantiate()
 end
 include("test/init.jl")
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    help()
+end
