@@ -1,5 +1,6 @@
 module Storage
 
+using LinearAlgebra
 
 export init_storage, map_observables, map_observable, write_to_storage!
 export get_from_storage!
