@@ -119,7 +119,7 @@ function initpropwrk(
     # find a spectral envelope for all generators
     E_min, E_max = SpectralRange.specrange(generator[1], specrad_method; kwargs...)
     for G in generator[2:end]
-        _E_min, _E_max = SpectraRange.specrange(G, specrad_method; kwargs...)
+        _E_min, _E_max = SpectralRange.specrange(G, specrad_method; kwargs...)
         E_min = (_E_min < E_min) ? _E_min : E_min
         E_max = (_E_max > E_max) ? _E_max : E_max
     end
