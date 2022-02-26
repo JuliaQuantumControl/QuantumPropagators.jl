@@ -136,7 +136,7 @@ function cheby!(Ψ, H, dt, wrk; kwargs...)
     if E_min ≠ nothing
         β = (Δ / 2) + E_min
     end
-    @assert dt ≈ wrk.dt "wrk was initialized for dt=$(wrk.dt), not dt=$dt"
+    @assert abs(dt) ≈ abs(wrk.dt) "wrk was initialized for dt=$(wrk.dt), not dt=$dt"
     if dt > 0
         c = -2im / Δ
     else
