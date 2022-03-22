@@ -41,7 +41,14 @@ workspace, e.g. `limit` for `method=:cheby` or `m_max` for `method=:newton`.
 For `method=:cheby`, they are also passed to
 [`specrange`](@ref QuantumPropagators.SpectralRange.specrange).
 """
-function initpropwrk(state, tlist, method::Val{:auto}, generator...; kwargs...)
+function initpropwrk(
+    state,
+    tlist,
+    method::Val{:auto},
+    generator...;
+    verbose=false,
+    kwargs...
+)
     is_small = false
     if length(generator) == 0
         try
@@ -86,6 +93,9 @@ function initpropwrk(state, tlist, method::Val{:auto}, generator...; kwargs...)
             end
         end
     end
+    if verbose
+        @info "Auto-choosing propagation method $(repr(typeof(method).parameters[1]))"
+    end
     return initpropwrk(state, tlist, method, generator...; kwargs)
 end
 
@@ -114,7 +124,7 @@ function initpropwrk(
     kwargs...
 )
     if length(generator) == 0
-        throw(ArgumentError("The :cheby method requires at least on `generator`"))
+        throw(ArgumentError("The :cheby method requires at least one `generator`"))
     end
     # find a spectral envelope for all generators
     E_min, E_max = SpectralRange.specrange(generator[1], specrad_method; kwargs...)
