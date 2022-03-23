@@ -18,8 +18,10 @@ Pages=[
  "howto.md",
  "benchmarks.md",
  "api.md",
- "history.md",
 ]
 Depth = 2
 ```
 
+## History
+
+See the [Releases](https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases) on Github.
