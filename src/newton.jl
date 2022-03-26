@@ -103,7 +103,7 @@ function extend_leja!(
         # Use point of largest absolute value as starting point by moving it to
         # the end of the `newpoints` array
         z_last::ComplexF64 = newpoints[u]
-        for i = lbound(newpoints, 1):(u-1)
+        @inbounds for i = lbound(newpoints, 1):(u-1)
             if abs(newpoints[i]) > abs(z_last)
                 newpoints[u] = newpoints[i]
                 newpoints[i] = z_last
@@ -113,14 +113,15 @@ function extend_leja!(
         leja[0] = newpoints[end]
         i_add_start = 1
     end
-    exponent = 1.0 / (n + n_use)
-    for i_add = i_add_start:n_use-1
+    ex = 1.0 / (n + n_use)
+    @inbounds for i_add = i_add_start:n_use-1
         p_max::Float64 = 0
         i_max = 0
-        for i = lbound(newpoints, 1):(u-i_add)
+        @inbounds for i = lbound(newpoints, 1):(u-i_add)
             p::Float64 = 1
-            for j = 0:(n+i_add-1)  # existing Leja points
-                p = p * (abs(newpoints[i] - leja[j])^exponent)
+            @inbounds for j = 0:(n+i_add-1)  # existing Leja points
+                Δ = abs(newpoints[i] - leja[j])
+                p = p * Δ^ex
             end
             if p > p_max
                 p_max = p

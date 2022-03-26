@@ -173,7 +173,8 @@ function cheby!(Ψ, H, dt, wrk; kwargs...)
             map_norm = abs(dot(v1, v2)) / (2 * norm(v1)^2)
             @assert(map_norm <= (1.0 + ϵ), "Incorrect normalization (E_min, wrk.Δ)")
         end
-        v2 .+= v0
+        # v2 += v0
+        axpy!(true, v0, v2)
 
         # Ψ += a[i] * v2
         axpy!(a[i], v2, Ψ)
