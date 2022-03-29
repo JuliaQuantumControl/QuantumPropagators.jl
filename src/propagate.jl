@@ -2,6 +2,9 @@ using LinearAlgebra
 using ProgressMeter
 
 
+has_real_eigvals(H) = ishermitian(H)
+
+
 """Initialize a workspace for propagation.
 
 ```julia
@@ -80,7 +83,7 @@ function initpropwrk(
         else
             method = Val(:newton)
             try
-                if all(ishermitian(G) for G in generator)
+                if all(has_real_eigvals(G) for G in generator)
                     method = Val(:cheby)
                 end
             catch exception
