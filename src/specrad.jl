@@ -81,7 +81,7 @@ function specrange(H, method::Val{:arnoldi}; kwargs...)
         E_min = 2 * E_min - real(R[2])
         E_max = 2 * E_max - real(R[end-1])
     end
-    return E_min, E_max
+    return E_min::Float64, E_max::Float64
 end
 
 
@@ -95,8 +95,9 @@ smallest and largest eigenvalue. This should only be used for relatively small
 matrices.
 """
 function specrange(H, method::Val{:diag}; kwargs...)
-    evals = eigvals(Array(H))
-    return evals[1], evals[end]
+    evals = real.(eigvals(Array(H)))
+    # "By default, the eigenvalues [...] are sorted [...] by (real(λ),imag(λ))"
+    return evals[1]::Float64, evals[end]::Float64
 end
 
 

@@ -85,6 +85,8 @@ end
 
     prec = 1e-4
     E_min, E_max = specrange(H, method=:arnoldi, prec=prec)
+    @test E_min isa Float64
+    @test E_max isa Float64
     SHOWVALS && @show E_min, E_max
 
     Δ = evals[end] - evals[1]
@@ -94,5 +96,12 @@ end
     SHOWVALS && @show δmin, δmax
     @test evals[1] - 0.05 * Δ <= E_min <= evals[1]
     @test evals[end] <= E_max < evals[end] + 0.05 * Δ
+
+    E_min, E_max = specrange(H, method=:diag)
+    @test E_min isa Float64
+    @test E_max isa Float64
+    SHOWVALS && @show E_min, E_max
+    @test abs(evals[1] - E_min) < 1e-12
+    @test abs(evals[end] - E_max) < 1e-12
 
 end
