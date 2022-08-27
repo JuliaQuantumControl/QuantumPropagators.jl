@@ -50,7 +50,7 @@ end
 """
 ```julia
 E_min, E_max = specrange(H, :arnoldi; state=random_state(H), m_min=20,
-                         m_max=60, prec=1e-3, nom_min=1e-15, enlarge=true)
+                         m_max=60, prec=1e-3, norm_min=1e-15, enlarge=true)
 ```
 
 uses [Arnoldi iteration](https://en.wikipedia.org/wiki/Arnoldi_iteration) with
@@ -173,7 +173,7 @@ function ritzvals(G, state, m_min, m_max=2 * m_min; prec=1e-5, norm_min=1e-15)
             ēr = abs(1.0 - (v̄r / v̄r₀))
             ēi = abs(1.0 - (v̄i / v̄i₀))
             if (m == m_max)
-                @warn "Ritz values did not converge within m_max=$m_max"
+                #@warn "Ritz values did not converge within m_max=$m_max"
                 break
             end
         end

@@ -79,26 +79,27 @@ ChebyWrk(Ψ, Δ, E_min, dt; limit=1e-12)
 ```
 
 initializes the workspace for the propagation of a state similar to `Ψ` under a
-Hamiltonian with eigenvalues between `E_min` and `E_min + Δ`, and a time step
-`dt`. Chebychev coefficients smaller than the given `limit` are discarded.
+Hamiltonian with eigenvalues between `E_min` and `E_min + Δ`,
+and a time step `dt`. Chebychev coefficients smaller than the given `limit` are
+discarded.
 """
-mutable struct ChebyWrk{T,CFS,FT<:AbstractFloat}
-    v0::T
-    v1::T
-    v2::T
+mutable struct ChebyWrk{ST,CFS,FT<:AbstractFloat}
+    v0::ST
+    v1::ST
+    v2::ST
     coeffs::CFS
     n_coeffs::Int64
     Δ::FT
     E_min::FT
     dt::FT
     limit::FT
-    function ChebyWrk(Ψ::T, Δ::FT, E_min::FT, dt::FT; limit::FT=1e-12) where {T,FT}
-        v0::T = similar(Ψ)
-        v1::T = similar(Ψ)
-        v2::T = similar(Ψ)
+    function ChebyWrk(Ψ::ST, Δ::FT, E_min::FT, dt::FT; limit::FT=1e-12) where {ST,FT}
+        v0::ST = similar(Ψ)
+        v1::ST = similar(Ψ)
+        v2::ST = similar(Ψ)
         coeffs = cheby_coeffs(Δ, dt; limit=limit)
         n_coeffs = length(coeffs)
-        new{T,typeof(coeffs),FT}(v0, v1, v2, coeffs, n_coeffs, Δ, E_min, dt, limit)
+        new{ST,typeof(coeffs),FT}(v0, v1, v2, coeffs, n_coeffs, Δ, E_min, dt, limit)
     end
 end
 

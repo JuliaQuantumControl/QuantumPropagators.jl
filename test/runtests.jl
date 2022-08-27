@@ -5,6 +5,22 @@ using SafeTestsets
 # Note: comment outer @testset to stop after first @safetestset failure
 @time @testset verbose = true "QuantumPropagators" begin
 
+    print("\n* Doctests:")
+    @time @safetestset "Doctests" begin
+        using QuantumPropagators, Test, Documenter
+        doctest(QuantumPropagators)
+    end
+
+    print("\n* Controls (test_controls.jl):")
+    @time @safetestset "Controls" begin
+        include("test_controls.jl")
+    end
+
+    print("\n* Discretization (test_discretization.jl):")
+    @time @safetestset "Discretization" begin
+        include("test_discretization.jl")
+    end
+
     print("\n* Spec.Rad. (test_specrad.jl):")
     @time @safetestset "Spec.Rad." begin
         include("test_specrad.jl")

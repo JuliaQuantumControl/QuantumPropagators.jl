@@ -18,13 +18,13 @@ using UnicodePlots
     ]
     tlist = collect(range(0, 1.5π, length=101)) # 3π/2 pulse
 
-    genfunc(tlist, i; kwargs...) = Ĥ
+    generator = (Ĥ,)
 
     storage = init_storage(Ψ0, tlist)
     @test isa(storage, Matrix)
     @test eltype(storage) == ComplexF64
 
-    Ψ_out = propagate(Ψ0, genfunc, tlist; storage=storage)
+    Ψ_out = propagate(Ψ0, generator, tlist; storage=storage)
     Ψ_expected = ComplexF64[-1/√2, -1im/√2]  # note the phases
 
     pop0 = abs.(storage[1, :]) .^ 2
@@ -33,13 +33,13 @@ using UnicodePlots
     @test norm(Ψ_out - Ψ_expected) < 1e-12
     @test pop0[end] ≈ 0.5
 
-    # Propagating backwards in time should exactly reverse the dyanmics (since
+    # Propagating backward in time should exactly reverse the dyanmics (since
     # they are unitary). Thus, we should end up back at the initial state, and
     # the stored states (being filled back-to-front) should exactly match the
     # stored states from the forward propagation.
 
     storage_bw = init_storage(Ψ0, tlist)
-    Ψ_out_bw = propagate(Ψ_out, genfunc, tlist; backwards=true, storage=storage_bw)
+    Ψ_out_bw = propagate(Ψ_out, generator, tlist; backward=true, storage=storage_bw)
 
     pop0_bw = abs.(storage_bw[1, :]) .^ 2
     SHOWPLOT && println(lineplot(tlist ./ π, pop0_bw, ylim=[0, 1], title="bw prop"))
@@ -56,11 +56,12 @@ end
     include("optomech.jl")
     Ψ0 = ket(0, N_cav) ⊗ ket(2, N_mech)
     H = H_cav + H_mech + H_int
+    generator = (H,)
     tlist = collect(range(0, 50, step=0.2))
-    Ψ1 = propagate(Ψ0, (tlist, i; kwargs...) -> H, tlist, method=:newton)
+    Ψ1 = propagate(Ψ0, generator, tlist, method=:newton)
     @test (norm(Ψ1) - 1.0) < 1e-12
-    Ψ2 = propagate(Ψ0, (tlist, i; kwargs...) -> H, tlist, method=:cheby)
+    Ψ2 = propagate(Ψ0, generator, tlist, method=:cheby)
     @test norm(Ψ1 - Ψ2) < 1e-10
-    Ψ3 = propagate(Ψ0, (tlist, i; kwargs...) -> H, tlist, method=:auto)
+    Ψ3 = propagate(Ψ0, generator, tlist, method=:auto)
     @test norm(Ψ1 - Ψ3) < 1e-10
 end

@@ -26,7 +26,7 @@ end
 
 """
 ```julia
-expprop!(Ψ, H, dt, wrk; func=(H_dt -> exp(-1im * H_dt)))
+expprop!(Ψ, H, dt, wrk; func=(H_dt -> exp(-1im * H_dt)), _...)
 ```
 Evaluate `Ψ = func(H*dt) Ψ` by directly evaluating `U = func(H*dt)`, i.e. by
 matrix exponentiation for the default `func`, and then multiplying `U` and
@@ -34,23 +34,25 @@ matrix exponentiation for the default `func`, and then multiplying `U` and
 
 The workspace `wrk` must be initialized with [`ExpPropWrk`](@ref) to provide
 storage for a temporary state.
+
+Keyword arguments besides `func` are ignored.
 """
-function expprop!(Ψ, H, dt, wrk; kwargs...)
-    func = get(kwargs, :func, H_dt -> exp(-1im * H_dt))
+function expprop!(Ψ, H, dt, wrk; func=(H_dt -> exp(-1im * H_dt)), _...)
     copyto!(wrk.v, Ψ)
     U = func(H * dt)
     mul!(Ψ, U, wrk.v)
 end
 
 
-function expprop(Ψ::StaticArrays.SVector, H, dt, wrk; kwargs...)
-    func = get(kwargs, :func, H_dt -> exp(-1im * H_dt))
-    return func(H * dt) * Ψ
-end
+"""
+```julia
+Ψ_out = expprop(Ψ, H, dt, wrk; func=(H_dt -> exp(-1im * H_dt)), _...)
+```
 
-
-function expprop(Ψ, H, dt, wrk; kwargs...)
-    func = get(kwargs, :func, H_dt -> exp(-1im * H_dt))
+evaluates `Ψ_out = func(H*dt) Ψ` as in [`expprop!`](@ref), but not acting
+in-place.
+"""
+function expprop(Ψ, H, dt, wrk; func=(H_dt -> exp(-1im * H_dt)), _...)
     return func(H * dt) * Ψ
 end
 
