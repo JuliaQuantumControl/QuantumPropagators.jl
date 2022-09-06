@@ -63,7 +63,7 @@ end
     SHOWVALS && @show evals[end], ritzvals[end]
     ϵ_max = Δ_max / E_max
     SHOWVALS && @show E_max, Δ_max, ϵ_max
-    @test ϵ_max < 0.01
+    @test ϵ_max < 0.02
 
     # Note: E_min and E_max should be roughly equal to ρ (Girko-Ginibri
     # circular law)

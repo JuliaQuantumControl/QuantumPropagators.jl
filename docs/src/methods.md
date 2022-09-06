@@ -1,4 +1,4 @@
-# Background
+# Propagation Methods
 
 ## Chebychev Propagation
 

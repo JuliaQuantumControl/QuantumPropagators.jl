@@ -32,8 +32,14 @@ mutable struct NewtonWrk{T}
     n_leja::Int64
     restarts::Int64
     function NewtonWrk(v0::T; m_max::Int64=10) where {T}
+        if m_max <= 2
+            error("Newton propagation requires m_max > 2")
+        end
         if m_max >= length(v0)
             m_max = length(v0) - 1
+            if m_max <= 2
+                error("Newton propagation requires state dimension > 2")
+            end
         end
         new{T}(
             T[similar(v0) for _ = 1:m_max+1], # arnoldi_vecs
@@ -206,7 +212,7 @@ end
 """
 ```julia
 newton!(Ψ, H, dt, wrk; func=(z -> exp(-1im*z)), norm_min=1e-14, relerr=1e-12,
-        max_restarts=50)
+        max_restarts=50, _...)
 ```
 
 Evaluate `Ψ = func(H*dt) Ψ` using a Newton-with-restarted-Arnoldi scheme.
@@ -227,8 +233,10 @@ Evaluate `Ψ = func(H*dt) Ψ` using a Newton-with-restarted-Arnoldi scheme.
 - `relerr`: The relative error defining the convergence condition for the
   restart iteration. Propagation stops when the norm of the accumulated `Ψ`
   is stable up to the given relative error
-- `max_restart`: The maximum number of restart iterations. Exceeding
-  `max_restart` will throw an `AssertionError`.
+- `max_restarts`: The maximum number of restart iterations. Exceeding
+  `max_restarts` will throw an `AssertionError`.
+
+All other keyword arguments are ignored.
 """
 function newton!(Ψ, H, dt, wrk; kwargs...)
     func = get(kwargs, :func, z -> exp(-1im * z))

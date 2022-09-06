@@ -13,7 +13,8 @@ The [QuantumPropagators](https://github.com/JuliaQuantumControl/QuantumPropagato
 ```@contents
 Pages=[
  "overview.md",
- "background.md",
+ "methods.md",
+ "storage.md",
  "examples/index.md",
  "howto.md",
  "benchmarks.md",
