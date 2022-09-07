@@ -3,7 +3,7 @@ module Controls
 using LinearAlgebra: axpy!
 
 export discretize, discretize_on_midpoints
-export get_control_parameters, getcontrols
+export getcontrols
 export get_tlist_midpoints
 export getcontrolderiv, getcontrolderivs
 export evalcontrols, evalcontrols!, substitute_controls
@@ -383,47 +383,5 @@ end
 
 getcontrolderiv(operator::AbstractMatrix, control) = nothing
 
-
-"""Collect all control parameters from the given objectives.
-
-```julia
-get_control_parameters(objectives...; kwargs...)
-```
-
-returns a vector of control parameters extracted from the controls in
-`objectives`. This first extracts the controls with [`getcontrols`] and then
-the "control parameters" from each control. What are the "control parameters"
-are depends on the type of the control. For controls that are function ϵ(t),
-the control parameters are the values of the control function on intervals of
-the time grid. The time grid in the case must be passed as a keyword argument
-`tlist`.
-
-The control parameters for multiple controls will be concatenated in the
-returned vector.
-"""
-function get_control_parameters(objectives...; kwargs...)
-    controls = getcontrols(objectives)
-    parameters = [get_control_parameters(control; kwargs...) for control in controls]
-    return vcat(parameters...)
-end
-
-
-"""
-```julia
-get_control_parameters(func; tlist, on_midpoints=true)
-```
-
-returns the control parameters of a control function by discretizing to the
-time grid in `tlist`. By default, the discretization is on intervals
-(midpoints) of the time grid. With `on_midpoints=false`, the discretization
-will be on the actual points of the time grid.
-"""
-function get_control_parameters(func::Function; tlist, on_midpoints=true, kwargs...)
-    if on_midpoints
-        return discretize_on_midpoints(func, tlist)
-    else
-        return discretize(func, tlist)
-    end
-end
 
 end
