@@ -1,6 +1,6 @@
 module Controls
 
-using LinearAlgebra.BLAS: axpy!
+using LinearAlgebra: axpy!
 
 export discretize, discretize_on_midpoints
 export get_control_parameters, getcontrols
