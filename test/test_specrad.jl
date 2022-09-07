@@ -56,7 +56,7 @@ end
     SHOWVALS && @show evals[1], ritzvals[1]
     ϵ_min = Δ_min / E_min
     SHOWVALS && @show E_min, Δ_min, ϵ_min
-    @test ϵ_min < 0.01
+    @test ϵ_min < 0.02
 
     E_max = abs(evals[end])
     Δ_max = abs(evals[end] - ritzvals[end])
