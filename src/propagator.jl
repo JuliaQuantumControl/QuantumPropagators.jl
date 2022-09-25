@@ -116,7 +116,7 @@ function Base.setproperty!(propagator::AbstractPropagator, name::Symbol, value)
     end
 end
 
-function Base.propertynames(propagator::AbstractPropagator, private=false)
+function Base.propertynames(propagator::AbstractPropagator, private::Bool=false)
     public_properties = (:state, :tlist, :t, :parameters, :backward, :inplace)
     if private
         return Tuple(union(public_properties, fieldnames(typeof(propagator))))
