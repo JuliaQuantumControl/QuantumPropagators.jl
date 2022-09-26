@@ -63,22 +63,28 @@ end
 
 function _pwc_get_max_genop(generator, controls, tlist)
     controlvals = [Controls.discretize(control, tlist) for control in controls]
+    # TODO: this does not take into account explicit time dependencies (control
+    # amplitude ≠ control function). For now, we just take any explicit time
+    # dependency in the middle of the time grid.
+    n = length(tlist) ÷ 2
     max_vals =
         IdDict(control => maximum(controlvals[i]) for (i, control) in enumerate(controls))
-    return Controls.evalcontrols(generator, max_vals)
+    return Controls.evalcontrols(generator, max_vals, tlist, n)
 end
 
 
 function _pwc_set_genop!(propagator::PiecewisePropagator, n)
     vals_dict = IdDict(c => propagator.parameters[c][n] for c in propagator.controls)
     generator = getfield(propagator, :generator)
-    Controls.evalcontrols!(propagator.genop, generator, vals_dict)
+    tlist = propagator.tlist
+    Controls.evalcontrols!(propagator.genop, generator, vals_dict, tlist, n)
 end
 
 function _pwc_get_genop(propagator::PiecewisePropagator, n)
     vals_dict = IdDict(c => propagator.parameters[c][n] for c in propagator.controls)
     generator = getfield(propagator, :generator)
-    Controls.evalcontrols(generator, vals_dict)
+    tlist = propagator.tlist
+    Controls.evalcontrols(generator, vals_dict, tlist, n)
 end
 
 

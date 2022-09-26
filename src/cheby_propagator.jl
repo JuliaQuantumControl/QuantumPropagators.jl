@@ -108,6 +108,7 @@ function initprop(
     end
     E_min, E_max = cheby_get_spectral_envelope(
         generator,
+        tlist,
         control_ranges,
         specrange_method;
         specrange_kwargs...
@@ -244,7 +245,7 @@ function reinitprop!(
             break
         end
     end
-    tlist = getfield(propagator, :tlist)
+    tlist = propagator.tlist
     if need_to_recalculate_cheby_coeffs
         for control in propagator.controls
             ϵ_min = control_ranges[control][1]
@@ -253,6 +254,7 @@ function reinitprop!(
         end
         E_min, E_max = cheby_get_spectral_envelope(
             getfield(propagator, :generator),
+            tlist,
             control_ranges,
             propagator.specrange_method;
             propagator.specrange_options...
@@ -275,8 +277,9 @@ end
 """Determine the spectral envelope of a `generator`.
 
 ```julia
-E_min, E_max = cheby_get_spectral_envelope(generator, control_ranges, method;
-                                           kwargs...)
+E_min, E_max = cheby_get_spectral_envelope(
+    generator, tlist, control_ranges, method; kwargs...
+)
 ```
 
 estimates a lower bound `E_min` the lowest eigenvalue of the generator for any
@@ -291,6 +294,7 @@ QuantumPropagators.SpectralRange.specrange) for those operators.
 # Arguments
 
 * `generator`: dynamical generator, e.g. a time-dependent
+* `tlist`: The time grid for the propagation
 * `control_ranges`: a dict that maps controls that occur in `generator` (cf.
   [`getcontrols`](@ref QuantumPropagators.Controls.getcontrols) to a tuple of
   mimimum and maximum amplitude for that control
@@ -299,11 +303,15 @@ QuantumPropagators.SpectralRange.specrange) for those operators.
 * `kwargs`: Any remaining keyword arguments are passed to [`specrange`](@ref
   QuantumPropagators.SpectralRange.specrange)
 """
-function cheby_get_spectral_envelope(generator, control_ranges, method; kwargs...)
+function cheby_get_spectral_envelope(generator, tlist, control_ranges, method; kwargs...)
     min_vals = IdDict(control => r[1] for (control, r) ∈ control_ranges)
-    G_min = Controls.evalcontrols(generator, min_vals)
+    # TODO: this does not take into account explicit time dependencies (control
+    # amplitude ≠ control function). For now, we just take any explicit time
+    # dependency in the middle of the time grid.
+    n = length(tlist) ÷ 2
+    G_min = Controls.evalcontrols(generator, min_vals, tlist, n)
     max_vals = IdDict(control => r[2] for (control, r) ∈ control_ranges)
-    G_max = Controls.evalcontrols(generator, max_vals)
+    G_max = Controls.evalcontrols(generator, max_vals, tlist, n)
     E_min, E_max = SpectralRange.specrange(G_max, method; kwargs...)
     _E_min, _E_max = SpectralRange.specrange(G_min, method; kwargs...)
     E_min = (_E_min < E_min) ? _E_min : E_min

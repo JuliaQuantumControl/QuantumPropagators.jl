@@ -223,7 +223,9 @@ replaces the time-dependent controls in `generator` with the values in
 The `vals_dict` is a dictionary (`IdDict`) mapping controls as returned by
 `getcontrols(generator)` to values.
 """
-function evalcontrols(generator::Tuple, vals_dict::AbstractDict)
+function evalcontrols(generator::Tuple, vals_dict::AbstractDict, _...)
+    # TODO: update documentation about possibility of additional parameters
+    # (`tlist`, `n`) or `t`. See usage in Krotov/GRAPE
     if isa(generator[1], Tuple)
         control = generator[1][2]
         G = vals_dict[control] * generator[1][1]
@@ -241,7 +243,7 @@ function evalcontrols(generator::Tuple, vals_dict::AbstractDict)
     return G
 end
 
-function evalcontrols(operator::AbstractMatrix, vals_dict::AbstractDict)
+function evalcontrols(operator::AbstractMatrix, _...)
     return operator
 end
 
@@ -254,7 +256,8 @@ evalcontrols!(G, generator, vals_dict)
 
 acts as [`evalcontrols`](@ref), but modifies `G` in-place.
 """
-function evalcontrols!(G, generator::Tuple, vals_dict::AbstractDict)
+function evalcontrols!(G, generator::Tuple, vals_dict::AbstractDict, _...)
+    # TODO: update documentation about additonal parameters, see evalcontrols
     if generator[1] isa Tuple
         control = generator[1][2]
         axpy!(vals_dict[control], generator[1][1], G)
@@ -272,7 +275,7 @@ function evalcontrols!(G, generator::Tuple, vals_dict::AbstractDict)
     return G
 end
 
-function evalcontrols!(G, operator::AbstractMatrix, vals_dict::AbstractDict)
+function evalcontrols!(G, operator::AbstractMatrix, _...)
     copyto!(G, operator)
 end
 
@@ -376,7 +379,8 @@ function getcontrolderiv(generator::Tuple, control)
     if isnothing(control_generator)
         return nothing
     else
-        return v -> control_generator
+        # TODO: document additional parameters, see evalcontrols
+        return (v, _...) -> control_generator
     end
 end
 
