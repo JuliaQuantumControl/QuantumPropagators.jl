@@ -38,10 +38,14 @@ end
 
 
 function specrange(H, method::Val{:auto}; kwargs...)
-    if size(H)[1] <= 32
-        # TODO: benchmark what a good cross-over point from exact
-        # diagonalization to Arnoldi is
-        return specrange(H, Val(:diag); kwargs...)
+    if hasmethod(size, (typeof(H),)) && hasmethod(Array, (typeof(H),))
+        if size(H)[1] <= 32
+            # TODO: benchmark what a good cross-over point from exact
+            # diagonalization to Arnoldi is
+            return specrange(H, Val(:diag); kwargs...)
+        end
+    else
+        @warn "`size(H)` and `Array(H)` are not implemented for $(typeof(H))"
     end
     return specrange(H, Val(:arnoldi); kwargs...)
 end
@@ -111,7 +115,7 @@ returns a random normalized state compatible with the Hamiltonian `H`. This is
 intended to provide a starting vector for estimating the spectral radius of `H`
 via an Arnoldi method.
 """
-function random_state(H::AbstractMatrix)
+function random_state(H)
     N = size(H)[2]
     Ψ = rand(N) .* exp.((2π * im) .* rand(N))
     Ψ ./= norm(Ψ)

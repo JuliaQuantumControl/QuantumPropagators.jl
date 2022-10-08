@@ -48,15 +48,13 @@ abstract type AbstractPropagator end
 """[`AbstractPropagator`](@ref) sub-type for piecewise propagators.
 
 A piecewise propagator is determined by a single parameter per control and time
-grid interval. Consequently, the `propagator.parameters` are a
-dictionary mapping the controls found in the `generator` via
-[`getcontrols`](@ref QuantumPropagators.Controls.getcontrols) to a vector of
-values defined on the intervals of the time grid, see
-[`discretize_on_midpoints`](@ref
-QuantumPropagators.Controls.discretize_on_midpoints). This does not necessarily
-imply that these values are the piecewise-constant amplitudes for the
-intervals. A general piecwise propagatore might use interpolation to obtain
-actual amplitudes within any given time interval.
+grid interval. Consequently, the `propagator.parameters` are a dictionary
+mapping the controls found in the `generator` via [`getcontrols`](@ref) to a
+vector of values defined on the intervals of the time grid, see
+[`discretize_on_midpoints`](@ref). This does not necessarily imply that these
+values are the piecewise-constant amplitudes for the intervals. A general
+piecwise propagatore might use interpolation to obtain actual amplitudes within
+any given time interval.
 
 When the amplitudes *are* piecewise-constant, the propagator should be a
 concrete intantiation of a [`PWCPropagator`](@ref).
@@ -299,7 +297,7 @@ function choose_propmethod(
             if inplace
                 method = Val(:newton)
             end
-            controls = Controls.getcontrols(generator)
+            controls = getcontrols(generator)
             genop = _pwc_get_max_genop(generator, controls, tlist)
             if has_real_eigvals(genop) ≡ true
                 dt = _get_uniform_dt(tlist)

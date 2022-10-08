@@ -17,6 +17,8 @@ GITHUB = "https://github.com/JuliaQuantumControl/QuantumPropagators.jl"
 
 println("Starting makedocs")
 
+include("generate_api.jl")
+
 makedocs(;
     authors=AUTHORS,
     sitename="QuantumPropagators.jl",
@@ -31,6 +33,7 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Overview" => "overview.md",
+        "Dynamical Generators" => "generators.md",
         "Propagation Methods" => "methods.md",
         "Storage" => "storage.md",
         hide("Examples" => "examples/index.md", [
@@ -39,7 +42,7 @@ makedocs(;
         ]),
         "Howtos" => "howto.md",
         "Benchmarks" => "benchmarks.md",
-        "API" => "api.md",
+        "API" => "api/quantumpropagators.md",
     ]
 )
 

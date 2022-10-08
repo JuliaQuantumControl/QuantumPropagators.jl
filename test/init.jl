@@ -4,9 +4,17 @@ using Plots
 unicodeplots()
 using JuliaFormatter
 using QuantumControlBase.TestUtils: test, show_coverage, generate_coverage_html
-using LiveServer: LiveServer, serve, servedocs
+using LiveServer: LiveServer, serve, servedocs as _servedocs
 using Term
 include(joinpath(@__DIR__, "clean.jl"))
+
+function servedocs(; kwargs...)
+    clean()  # otherwise, we get an infinite loop
+    _servedocs(;
+        skip_dirs=[joinpath("docs", "src", "api"), joinpath("docs", "src", "examples")],
+        kwargs...
+    )
+end
 
 
 REPL_MESSAGE = """

@@ -13,12 +13,13 @@ The [QuantumPropagators](https://github.com/JuliaQuantumControl/QuantumPropagato
 ```@contents
 Pages=[
  "overview.md",
+ "generators.md",
  "methods.md",
  "storage.md",
  "examples/index.md",
  "howto.md",
  "benchmarks.md",
- "api.md",
+ "api/quantumpropagators.md",
 ]
 Depth = 2
 ```

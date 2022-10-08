@@ -50,13 +50,12 @@ initializes a [`ChebyPropagator`](@ref).
 # Method-specific keyword arguments
 
 * `control_ranges`: a dict the maps the controls in `generator` (see
-  [`getcontrols`](@ref QuantumPropagators.Controls.getcontrols)) to a tuple of
-  min/max values. The Chebychev coefficients will be calculated based on a
-  spectral envelope that assumes that each control can take arbitrary values
-  within the min/max range. If not given, the ranges are determined
-  automatically. Specifying manual control ranges can be useful when the the
-  control amplitudes (`parameters`) may change during the propagation, e.g. in
-  a sequential-update control scheme.
+  [`getcontrols`](@ref)) to a tuple of min/max values. The Chebychev
+  coefficients will be calculated based on a spectral envelope that assumes
+  that each control can take arbitrary values within the min/max range. If not
+  given, the ranges are determined automatically. Specifying manual control
+  ranges can be useful when the the control amplitudes (`parameters`) may
+  change during the propagation, e.g. in a sequential-update control scheme.
 * `specrange_method`: Method to pass to the [`specrange`](@ref
   QuantumPropagators.SpectralRange.specrange) function
 * `specrange_buffer`: An additional factor by which to enlarge the estimated
@@ -89,8 +88,8 @@ function initprop(
     specrange_kwargs...
 )
     tlist = convert(Vector{Float64}, tlist)
-    controls = Controls.getcontrols(generator)
-    controlvals = [Controls.discretize(control, tlist) for control in controls]
+    controls = getcontrols(generator)
+    controlvals = [discretize(control, tlist) for control in controls]
 
     G = _pwc_get_max_genop(generator, controls, tlist)
 
@@ -144,7 +143,7 @@ function initprop(
         parameters,
         controls,
         control_ranges,
-        similar(G),
+        G,
         wrk,
         backward,
         inplace,
@@ -296,8 +295,8 @@ QuantumPropagators.SpectralRange.specrange) for those operators.
 * `generator`: dynamical generator, e.g. a time-dependent
 * `tlist`: The time grid for the propagation
 * `control_ranges`: a dict that maps controls that occur in `generator` (cf.
-  [`getcontrols`](@ref QuantumPropagators.Controls.getcontrols) to a tuple of
-  mimimum and maximum amplitude for that control
+  [`getcontrols`](@ref) to a tuple of mimimum and maximum amplitude for that
+  control
 * `method`: method name to pass to  [`specrange`](@ref
   QuantumPropagators.SpectralRange.specrange)
 * `kwargs`: Any remaining keyword arguments are passed to [`specrange`](@ref
@@ -309,9 +308,9 @@ function cheby_get_spectral_envelope(generator, tlist, control_ranges, method; k
     # amplitude ≠ control function). For now, we just take any explicit time
     # dependency in the middle of the time grid.
     n = length(tlist) ÷ 2
-    G_min = Controls.evalcontrols(generator, min_vals, tlist, n)
+    G_min = evalcontrols(generator, min_vals, tlist, n)
     max_vals = IdDict(control => r[2] for (control, r) ∈ control_ranges)
-    G_max = Controls.evalcontrols(generator, max_vals, tlist, n)
+    G_max = evalcontrols(generator, max_vals, tlist, n)
     E_min, E_max = SpectralRange.specrange(G_max, method; kwargs...)
     _E_min, _E_max = SpectralRange.specrange(G_min, method; kwargs...)
     E_min = (_E_min < E_min) ? _E_min : E_min

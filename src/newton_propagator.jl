@@ -69,7 +69,7 @@ function initprop(
     _...
 )
     tlist = convert(Vector{Float64}, tlist)
-    controls = Controls.getcontrols(generator)
+    controls = getcontrols(generator)
     G = _pwc_get_max_genop(generator, controls, tlist)
 
     parameters = _pwc_process_parameters(parameters, controls, tlist)
@@ -92,7 +92,7 @@ function initprop(
         tlist,
         parameters,
         controls,
-        similar(G),
+        G,
         wrk,
         backward,
         inplace,

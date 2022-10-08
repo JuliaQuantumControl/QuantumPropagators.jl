@@ -14,7 +14,7 @@ CurrentModule = QuantumPropagators
 ```
 
 
-The `QuantumPropagators` packages provides solvers for the dynamic equations of quantum mechnics, most importantly the Schrödinger and Liouville equations.
+The `QuantumPropagators` packages provides solvers for the dynamic equations of quantum mechanics, most importantly the Schrödinger and Liouville equations.
 
 ## Getting started
 
@@ -89,14 +89,14 @@ which differs from most textbooks by a factor of ``i``, but has the benefit that
 
 ## Dynamic generators
 
-In the above example, the "generator" `H` that is the second argument to [`propagate`](@ref) was a simple static operator. In general, we will want time-dependent Hamiltonians or Liouvillians. The "default" format for a time-dependent Hamiltonians is a nested tuple, e.g. `(Ĥ₀, (Ĥ₁, ϵ₁), (Ĥ₂, ϵ₂))`, inspired by [QuTiP](https://qutip.org/docs/latest/guide/dynamics/dynamics-time.html). The `Ĥ₀`, `Ĥ₁`, and `Ĥ₂` are static operators, and `ϵ₁` and `ϵ₂` are control fields, typically functions of time `t`. For piecewise-constant propagators, `ϵ₁` nad `ϵ₂` may also be an array of amplitude values appropriate to the time grid `tlist`.
+In the above example, the "generator" `H` that is the second argument to [`propagate`](@ref) was a simple static operator. In general, we will want time-dependent Hamiltonians or Liouvillians. The standard way to initialize a time-dependent Hamiltonian is via the [`hamiltonian`](@ref) function, e.g., as  `hamiltonian(Ĥ₀, (Ĥ₁, ϵ₁), (Ĥ₂, ϵ₂))`. The `Ĥ₀`, `Ĥ₁`, and `Ĥ₂` are static operators, and `ϵ₁` and `ϵ₂` are control fields, typically functions of time `t`. For piecewise-constant propagators, `ϵ₁` nad `ϵ₂` may also be an array of amplitude values appropriate to the time grid `tlist`. The tuple-syntax for the time-dependent terms is inspired by [QuTiP](https://qutip.org/docs/latest/guide/dynamics/dynamics-time.html).
 
-Generally, the `generator`, or the operators/controls inside the nested tuple can be a arbitrary objects, as long as some relevant methods are implemented for these objects. Which methods these are depends on the propagation method.
+Generally, the `generator`, or the operators/controls inside the tuples can be a arbitrary objects, as long as some relevant methods are implemented for these objects, see the full section on [Dynamic Generators](@ref).
 
-Open quantum systems are handled identically to closes quantum system, except that Hamiltonian operator are replaced by Liouvillian super-operators. For any system of non-trivial Hilbert space dimension, all (super-)operators should be sparse matrices.
+Open quantum systems are handled identically to closed quantum system, except that Hamiltonian operator are replaced by Liouvillian super-operators. For any system of non-trivial Hilbert space dimension, all (super-)operators should be sparse matrices.
 
 
-## The Propagator Interface
+## The Propagator interface
 
 As a lower-level interface than [`propagate`](@ref), the `QuantumPropagators` package defines an interface for "propagator" objects. These are initialized via [`initprop`](@ref) as, e.g.,
 

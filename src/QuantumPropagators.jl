@@ -5,8 +5,16 @@ include("./specrad.jl")   # submodule SpectralRange
 include("./cheby.jl")     # submodule Cheby
 include("./newton.jl")    # submodule Newton
 include("./expprop.jl")   # submodule ExpProp
+
 include("./storage.jl")   # submodule Storage
-include("./controls.jl")  # submodule Controls
+
+using .Storage
+export init_storage, write_to_storage!, get_from_storage!
+
+include("./generators.jl")  # submodule Generators
+
+using .Generators
+export liouvillian, hamiltonian
 
 include("./propagator.jl")
 export initprop, reinitprop!, propstep!, set_state!
@@ -20,8 +28,5 @@ include("./exp_propagator.jl")
 # high-level interface
 include("./propagate.jl")
 export propagate
-
-using .Storage
-export init_storage, write_to_storage!, get_from_storage!
 
 end

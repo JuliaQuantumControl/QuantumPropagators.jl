@@ -9,6 +9,7 @@ function has_real_eigvals(H)
     if hasmethod(ishermitian, (typeof(H),))
         return ishermitian(H)
     else
+        @warn "ishermitian is not defined for $(typeof(H))"
         return nothing
     end
 end

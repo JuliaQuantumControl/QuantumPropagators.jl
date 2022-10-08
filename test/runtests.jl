@@ -11,6 +11,21 @@ using SafeTestsets
         doctest(QuantumPropagators)
     end
 
+    print("\n* Hamiltonian (test_hamiltonian.jl):")
+    @time @safetestset "Hamiltonian" begin
+        include("test_hamiltonian.jl")
+    end
+
+    print("\n* Liouvillian (test_liouvillian.jl):")
+    @time @safetestset "Liouvillian" begin
+        include("test_liouvillian.jl")
+    end
+
+    print("\n* Operator Linalg (test_operator_linalg.jl):")
+    @time @safetestset "Operator Linalg" begin
+        include("test_operator_linalg.jl")
+    end
+
     print("\n* Controls (test_controls.jl):")
     @time @safetestset "Controls" begin
         include("test_controls.jl")

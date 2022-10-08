@@ -1,5 +1,5 @@
 using Test
-using QuantumPropagators.Controls
+using QuantumPropagators.Generators
 using QuantumControlBase.Shapes: blackman
 
 @testset "discretize/discretize_on_midpoints" begin

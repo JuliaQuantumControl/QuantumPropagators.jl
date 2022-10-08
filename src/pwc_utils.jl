@@ -27,7 +27,7 @@
 function _pwc_process_parameters(parameters, controls, tlist)
     if isnothing(parameters)
         parameters = IdDict(
-            control => Controls.discretize_on_midpoints(control, tlist) for
+            control => discretize_on_midpoints(control, tlist) for
             (i, control) in enumerate(controls)
         )
     else  # check that user-supplied parameters are for pulse parametrization
@@ -62,14 +62,14 @@ end
 
 
 function _pwc_get_max_genop(generator, controls, tlist)
-    controlvals = [Controls.discretize(control, tlist) for control in controls]
+    controlvals = [discretize(control, tlist) for control in controls]
     # TODO: this does not take into account explicit time dependencies (control
     # amplitude ≠ control function). For now, we just take any explicit time
     # dependency in the middle of the time grid.
     n = length(tlist) ÷ 2
     max_vals =
         IdDict(control => maximum(controlvals[i]) for (i, control) in enumerate(controls))
-    return Controls.evalcontrols(generator, max_vals, tlist, n)
+    return evalcontrols(generator, max_vals, tlist, n)
 end
 
 
@@ -77,14 +77,14 @@ function _pwc_set_genop!(propagator::PiecewisePropagator, n)
     vals_dict = IdDict(c => propagator.parameters[c][n] for c in propagator.controls)
     generator = getfield(propagator, :generator)
     tlist = propagator.tlist
-    Controls.evalcontrols!(propagator.genop, generator, vals_dict, tlist, n)
+    evalcontrols!(propagator.genop, generator, vals_dict, tlist, n)
 end
 
 function _pwc_get_genop(propagator::PiecewisePropagator, n)
     vals_dict = IdDict(c => propagator.parameters[c][n] for c in propagator.controls)
     generator = getfield(propagator, :generator)
     tlist = propagator.tlist
-    Controls.evalcontrols(generator, vals_dict, tlist, n)
+    evalcontrols(generator, vals_dict, tlist, n)
 end
 
 

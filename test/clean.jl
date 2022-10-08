@@ -26,6 +26,7 @@ function clean(; distclean=false, _exit=true)
         CLEAN,
         _glob_star(joinpath(ROOT, "docs", "src", "examples"), except=["index.md"])
     )
+    _push!(CLEAN, joinpath(ROOT, "docs", "src", "api", "quantumpropagators.md"))
     _push!(CLEAN, joinpath(ROOT, "coverage"))
     _push!(CLEAN, joinpath(ROOT, "docs", "build"))
     _push!(CLEAN, joinpath(ROOT, "lcov.info"))
