@@ -6,7 +6,7 @@ using QuantumPropagators
 using QuantumPropagators: Generator, Operator
 using QuantumPropagators.Generators: check_generator, check_operator, check_amplitude
 using QuantumControlBase.TestUtils:
-    random_hermitian_matrix, random_real_matrix, random_state_vector
+    random_hermitian_matrix, random_real_matrix, random_state_vector, QuantumTestLogger
 
 _OT(::Generator{OT,AT}) where {OT,AT} = OT
 _AT(::Generator{OT,AT}) where {OT,AT} = AT
@@ -341,51 +341,71 @@ end
     H = hamiltonian(nothing, (nothing, ϵ₁), (nothing, ϵ₂))
     @test repr(H) == "Generator{Nothing, Function}(<3 ops>, <2 amplitudes>)"
 
-    @test_logs (:warn, "Generator terms may not have been properly expanded") try
-        H = hamiltonian((H₀, (H₁, ϵ₁), (H₂, ϵ₂)))
-    catch
+    logger = QuantumTestLogger()
+    with_logger(logger) do
+        try
+            H = hamiltonian((H₀, (H₁, ϵ₁), (H₂, ϵ₂)))
+        catch
+        end
     end
+    @test "Warn: Generator terms may not have been properly expanded" ∈ logger
 
-    @test_logs (:warn, "Generator terms may not have been properly expanded") try
-        H = hamiltonian([H₀, (H₁, ϵ₁), (H₂, ϵ₂)])
-    catch
+    logger = QuantumTestLogger()
+    with_logger(logger) do
+        try
+            H = hamiltonian([H₀, (H₁, ϵ₁), (H₂, ϵ₂)])
+        catch
+        end
     end
+    @test "Warn: Generator terms may not have been properly expanded" ∈ logger
 
-    @test_warn "Generator terms may not have been properly expanded" begin
+    logger = QuantumTestLogger()
+    with_logger(logger) do
         H = hamiltonian((H₀, (H₁, ϵ₁)))
     end
+    @test "Warn: Generator terms may not have been properly expanded" ∈ logger
 
-    @test_warn "Generator terms may not have been properly expanded" begin
+    logger = QuantumTestLogger()
+    with_logger(logger) do
         H = hamiltonian([H₀, (H₁, ϵ₁)])
     end
+    @test "Warn: Generator terms may not have been properly expanded" ∈ logger
 
-    @test_throws ErrorException("time-dependent term must be 2-tuple") begin
-        H = hamiltonian(H₀_r, (H₁, ϵ₁, ϵ₂))
+    logger = QuantumTestLogger()
+    with_logger(logger) do
+        try
+            H = hamiltonian(H₀_r, (H₁, ϵ₁, ϵ₂))
+            @test "raised Exception" == ""
+        catch exc
+            @test exc == ErrorException("time-dependent term must be 2-tuple")
+        end
     end
 
-    @test_logs (:error, r"Collected drift operators are of a disparate type.*") try
-        H = hamiltonian(H₀_r, ϵ₁, (H₂, ϵ₂))
-    catch
+    logger = QuantumTestLogger()
+    with_logger(logger) do
+        try
+            H = hamiltonian(H₀_r, ϵ₁, (H₂, ϵ₂))
+        catch exc
+        end
     end
+    @test "Error: Collected drift operators are of a disparate type" ∈ logger
 
-    @test_warn "Collected operators are not of a concrete type: Function" begin
+    logger = QuantumTestLogger()
+    with_logger(logger) do
         H = hamiltonian((ϵ₁, H₁), (ϵ₂, H₂))
     end
+    @test "Warn: It looks like (op, ampl) in term are reversed" ∈ logger
+    @test "Warn: Collected operators are not of a concrete type" ∈ logger
 
-    #! format: off
-    _w1 = "It looks like (op, ampl) in term are reversed"
-    _w2 = "It looks like (op, ampl) in term are reversed"
-    _w3 = "Collected operators are not of a concrete type: Any"
-    _e1 = "evalcontrols(::Matrix{ComplexF64}, …) for amplitude does not return a number"
-    _e2 = "getcontrolderiv(::Matrix{ComplexF64}, …) for amplitude does not return `0.0` for a control that the amplitude does not depend on"
-    _w4 = "Collected amplitude #1 is invalid"
-    _e3 = "evalcontrols(::Matrix{ComplexF64}, …) for amplitude does not return a number"
-    _e4 = "getcontrolderiv(::Matrix{ComplexF64}, …) for amplitude does not return `0.0` for a control that the amplitude does not depend on"
-    _w5 = "Collected amplitude #2 is invalid"
-    @test_logs (:warn, _w1) (:warn, _w2) (:warn, _w3) (:error, _e1) (:error, _e2) (:warn, _w4) (:error, _e3) (:error, _e4) (:warn, _w5) begin
+    logger = QuantumTestLogger()
+    with_logger(logger) do
         H = hamiltonian(H₀, (ϵ₁, H₁), (ϵ₂, H₂))
     end
+    @test "Warn: It looks like (op, ampl) in term are reversed" ∈ logger
+    @test "Warn: Collected operators are not of a concrete type: Any" ∈ logger
+    @test r"Error: evalcontrols.* for amplitude does not return a number" ∈ logger
+    @test "Warn: Collected amplitude #1 is invalid" ∈ logger
+    @test "Warn: Collected amplitude #2 is invalid" ∈ logger
     @test repr(H) == "Generator{Any, Matrix{ComplexF64}}(<3 ops>, <2 amplitudes>)"
-    #! format: on
 
 end
