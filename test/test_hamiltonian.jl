@@ -5,6 +5,7 @@ using LinearAlgebra
 using QuantumPropagators
 using QuantumPropagators: Generator, Operator
 using QuantumPropagators.Generators: check_generator, check_operator, check_amplitude
+using QuantumControlBase
 using QuantumControlBase.TestUtils:
     random_hermitian_matrix, random_real_matrix, random_state_vector, QuantumTestLogger
 
@@ -50,7 +51,7 @@ end
     end
 
     struct BrokenAmplitude2 end
-    QuantumPropagators.Generators.getcontrols(::BrokenAmplitude2) = (ϵ,)
+    QuantumPropagators.Controls.getcontrols(::BrokenAmplitude2) = (ϵ,)
     @test_throws ErrorException("Invalid control amplitude") begin
         with_logger(test_logger) do
             @info "BrokenAmplitude2"
@@ -59,9 +60,9 @@ end
     end
 
     struct BrokenAmplitude3 end
-    QuantumPropagators.Generators.getcontrols(::BrokenAmplitude3) = (ϵ,)
-    QuantumPropagators.Generators.evalcontrols(::BrokenAmplitude3, _...) = nothing
-    QuantumPropagators.Generators.getcontrolderiv(::BrokenAmplitude3, _) = nothing
+    QuantumPropagators.Controls.getcontrols(::BrokenAmplitude3) = (ϵ,)
+    QuantumPropagators.Controls.evalcontrols(::BrokenAmplitude3, _...) = nothing
+    QuantumControlBase.getcontrolderiv(::BrokenAmplitude3, _) = nothing
     @test_throws ErrorException("Invalid control amplitude") begin
         with_logger(test_logger) do
             @info "BrokenAmplitude3"
@@ -70,7 +71,7 @@ end
     end
 
     struct BrokenAmplitude4 end
-    QuantumPropagators.Generators.getcontrols(::BrokenAmplitude4) = error("Not implemented")
+    QuantumPropagators.Controls.getcontrols(::BrokenAmplitude4) = error("Not implemented")
     @test_throws ErrorException("Not implemented") begin
         with_logger(test_logger) do
             @info "BrokenAmplitude4"
@@ -79,8 +80,8 @@ end
     end
 
     struct BrokenAmplitude5 end
-    QuantumPropagators.Generators.getcontrols(::BrokenAmplitude5) = (ϵ,)
-    QuantumPropagators.Generators.evalcontrols(::BrokenAmplitude5, _...) =
+    QuantumPropagators.Controls.getcontrols(::BrokenAmplitude5) = (ϵ,)
+    QuantumPropagators.Controls.evalcontrols(::BrokenAmplitude5, _...) =
         error("Not implemented")
     @test_throws ErrorException("Not implemented") begin
         with_logger(test_logger) do
@@ -90,10 +91,9 @@ end
     end
 
     struct BrokenAmplitude6 end
-    QuantumPropagators.Generators.getcontrols(::BrokenAmplitude6) = (ϵ,)
-    QuantumPropagators.Generators.evalcontrols(::BrokenAmplitude6, _...) = 1.0
-    QuantumPropagators.Generators.getcontrolderiv(::BrokenAmplitude6, _) =
-        error("Not implemented")
+    QuantumPropagators.Controls.getcontrols(::BrokenAmplitude6) = (ϵ,)
+    QuantumPropagators.Controls.evalcontrols(::BrokenAmplitude6, _...) = 1.0
+    QuantumControlBase.getcontrolderiv(::BrokenAmplitude6, _) = error("Not implemented")
     @test_throws ErrorException("Invalid control amplitude") begin
         with_logger(test_logger) do
             @info "BrokenAmplitude6"
@@ -102,8 +102,8 @@ end
     end
 
     struct BrokenAmplitude7 end
-    QuantumPropagators.Generators.getcontrols(::BrokenAmplitude7) = (ϵ,)
-    QuantumPropagators.Generators.evalcontrols(::BrokenAmplitude7, _...) = 1.0
+    QuantumPropagators.Controls.getcontrols(::BrokenAmplitude7) = (ϵ,)
+    QuantumPropagators.Controls.evalcontrols(::BrokenAmplitude7, _...) = 1.0
     @test_throws ErrorException("Invalid control amplitude") begin
         with_logger(test_logger) do
             @info "BrokenAmplitude7"
@@ -140,7 +140,7 @@ end
     end
 
     struct BrokenGenerator end
-    QuantumPropagators.Generators.getcontrols(::BrokenGenerator) = (ϵ₁, ϵ₂)
+    QuantumPropagators.Controls.getcontrols(::BrokenGenerator) = (ϵ₁, ϵ₂)
     @test_throws ErrorException("Invalid generator") begin
         with_logger(test_logger) do
             @info "BrokenGenerator"
@@ -149,8 +149,8 @@ end
     end
 
     struct BrokenGenerator2 end
-    QuantumPropagators.Generators.getcontrols(::BrokenGenerator2) = (ϵ₁, ϵ₂)
-    QuantumPropagators.Generators.evalcontrols(::BrokenGenerator2, _...) = nothing
+    QuantumPropagators.Controls.getcontrols(::BrokenGenerator2) = (ϵ₁, ϵ₂)
+    QuantumPropagators.Controls.evalcontrols(::BrokenGenerator2, _...) = nothing
     @test_throws ErrorException("Invalid generator") begin
         with_logger(test_logger) do
             @info "BrokenGenerator2"
@@ -159,9 +159,9 @@ end
     end
 
     struct BrokenGenerator3 end
-    QuantumPropagators.Generators.getcontrols(::BrokenGenerator3) = (ϵ₁, ϵ₂)
-    QuantumPropagators.Generators.evalcontrols(::BrokenGenerator3, _...) = H₀
-    QuantumPropagators.Generators.getcontrolderiv(::BrokenGenerator3, _) =
+    QuantumPropagators.Controls.getcontrols(::BrokenGenerator3) = (ϵ₁, ϵ₂)
+    QuantumPropagators.Controls.evalcontrols(::BrokenGenerator3, _...) = H₀
+    QuantumControlBase.getcontrolderiv(::BrokenGenerator3, _) =
         random_hermitian_matrix(5, 1.0)
     @test_throws ErrorException("Invalid generator") begin
         with_logger(test_logger) do
@@ -171,9 +171,9 @@ end
     end
 
     struct BrokenGenerator4 end
-    QuantumPropagators.Generators.getcontrols(::BrokenGenerator4) = (ϵ₁, ϵ₂)
-    QuantumPropagators.Generators.evalcontrols(::BrokenGenerator4, _...) = H₀
-    QuantumPropagators.Generators.getcontrolderiv(::BrokenGenerator4, _) = nothing
+    QuantumPropagators.Controls.getcontrols(::BrokenGenerator4) = (ϵ₁, ϵ₂)
+    QuantumPropagators.Controls.evalcontrols(::BrokenGenerator4, _...) = H₀
+    QuantumControlBase.getcontrolderiv(::BrokenGenerator4, _) = nothing
     @test_throws ErrorException("Invalid generator") begin
         with_logger(test_logger) do
             @info "BrokenGenerator4"
@@ -182,8 +182,8 @@ end
     end
 
     struct BrokenGenerator5 end
-    QuantumPropagators.Generators.getcontrols(::BrokenGenerator5) = (ϵ₁, ϵ₂)
-    QuantumPropagators.Generators.evalcontrols(::BrokenGenerator5, _...) =
+    QuantumPropagators.Controls.getcontrols(::BrokenGenerator5) = (ϵ₁, ϵ₂)
+    QuantumPropagators.Controls.evalcontrols(::BrokenGenerator5, _...) =
         error("Not Implemented")
     @test_throws ErrorException("Not Implemented") begin
         with_logger(test_logger) do
@@ -193,7 +193,7 @@ end
     end
 
     struct BrokenGenerator6 end
-    QuantumPropagators.Generators.getcontrols(::BrokenGenerator6) = error("Not Implemented")
+    QuantumPropagators.Controls.getcontrols(::BrokenGenerator6) = error("Not Implemented")
     @test_throws ErrorException("Not Implemented") begin
         with_logger(test_logger) do
             @info "BrokenGenerator6"
@@ -202,9 +202,9 @@ end
     end
 
     struct BrokenGenerator7 end
-    QuantumPropagators.Generators.getcontrols(::BrokenGenerator7) = (ϵ₁, ϵ₂)
-    QuantumPropagators.Generators.evalcontrols(::BrokenGenerator7, _...) = H₀
-    QuantumPropagators.Generators.getcontrolderiv(::BrokenGenerator7, control) =
+    QuantumPropagators.Controls.getcontrols(::BrokenGenerator7) = (ϵ₁, ϵ₂)
+    QuantumPropagators.Controls.evalcontrols(::BrokenGenerator7, _...) = H₀
+    QuantumControlBase.getcontrolderiv(::BrokenGenerator7, control) =
         error("Not Implemented")
     @test_throws ErrorException("Invalid generator") begin
         with_logger(test_logger) do

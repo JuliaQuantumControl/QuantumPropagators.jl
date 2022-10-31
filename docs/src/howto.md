@@ -23,4 +23,4 @@
 
   Note the `method::Val{:mynewmethod}` as the fourth positional parameter. While the *public* interface for [`initprop`](@ref) takes `method` as a keyword argument, privately [`initprop`](@ref) dispatches for different methods as above.
 
-* Implement the remaining methods in [The Propagator Interface](@ref)
+* Implement the remaining methods in [The Propagator interface](@ref)

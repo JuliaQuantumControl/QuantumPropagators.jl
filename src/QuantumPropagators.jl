@@ -11,7 +11,14 @@ include("./storage.jl")   # submodule Storage
 using .Storage
 export init_storage, write_to_storage!, get_from_storage!
 
+include("./shapes.jl")  # submodule Shapes
+
+include("./controls.jl")  # submodule Controls
+
+include("./amplitudes.jl")  # submodule Amplitudes
+
 include("./generators.jl")  # submodule Generators
+
 
 using .Generators
 export liouvillian, hamiltonian

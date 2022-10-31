@@ -1,3 +1,5 @@
+using .Controls: getcontrols
+
 """Propagator for propagation via direct exponentiation (`method=:expprop`)
 
 This is a [`PWCPropagator`](@ref).

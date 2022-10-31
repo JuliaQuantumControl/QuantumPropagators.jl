@@ -5,11 +5,7 @@ using SparseArrays
 
 export Generator, Operator, ScaledOperator
 export hamiltonian, liouvillian
-export discretize, discretize_on_midpoints
-export getcontrols
-export get_tlist_midpoints
-export getcontrolderiv, getcontrolderivs
-export evalcontrols, evalcontrols!, substitute_controls
+import ..Controls: getcontrols, evalcontrols, evalcontrols!, substitute_controls
 
 
 @doc raw"""A time-dependent generator.
@@ -567,176 +563,6 @@ function LinearAlgebra.dot(x, A::ScaledOperator, y)
 end
 
 
-"""Evaluate `control` at every point of `tlist`.
-
-```julia
-values = discretize(control, tlist; via_midpoints=true)
-```
-
-discretizes the given `control` to a Vector of values defined on the points of
-`tlist`.
-
-If `control` is a function, it will will first be evaluated at the midpoint of
-`tlist`, see [`discretize_on_midpoints`](@ref), and then the values on the
-midpoints are converted to values on `tlist`. This discretization is more
-stable than directly evaluationg the control function at the values of `tlist`,
-and ensures that repeated round-trips between [`discretize`](@ref) and
-[`discretize_on_midpoints`](@ref) can be done safely, see the note in the
-documentation of [`discretize_on_midpoints`](@ref).
-
-The latter can still be achieved by passing `via_midpoints=false`. While such a
-direct discretization is suitable e.g. for plotting, but it is unsuitable
-for round-trips between [`discretize`](@ref) and
-[`discretize_on_midpoints`](@ref)  (constant controls on `tlist` may result in
-a zig-zag on the intervals of `tlist`).
-
-If `control` is a vector, it will be returned un-modified if it is of the same
-length as `tlist`. Otherwise, `control` must have one less value than `tlist`,
-and is assumed to be defined on the midpoins of `tlist`. In that case,
-[`discretize`](@ref) acts as the inverse of [`discretize_on_midpoints`](@ref).
-See [`discretize_on_midpoints`](@ref) for how control values on `tlist` and
-control values on the intervals of `tlist` are related.
-"""
-function discretize(control::Function, tlist; via_midpoints=true)
-    if via_midpoints
-        vals_on_midpoints = discretize_on_midpoints(control, tlist)
-        return discretize(vals_on_midpoints, tlist)
-    else
-        return [control(t) for t in tlist]
-    end
-end
-
-function discretize(control::Vector, tlist)
-    if length(control) == length(tlist)
-        return control
-    elseif length(control) == length(tlist) - 1
-        # convert `control` on intervals to values on `tlist`
-        # cf. pulse_onto_tlist in Python krotov package
-        vals = zeros(eltype(control), length(control) + 1)
-        vals[1] = control[1]
-        vals[end] = control[end]
-        for i = 2:length(vals)-1
-            vals[i] = 0.5 * (control[i-1] + control[i])
-        end
-        return vals
-    else
-        throw(ArgumentError("control array must be defined on intervals of tlist"))
-    end
-end
-
-
-"""Shift time grid values the interval midpoints
-
-```julia
-tlist_midpoints = get_tlist_midpoints(tlist)
-```
-
-takes a vector `tlist` of length ``n`` and returns a vector of length ``n-1``
-containing the midpoint values of each interval. The intervals in `tlist` are
-not required to be uniform.
-"""
-function get_tlist_midpoints(tlist)
-    tlist_midpoints = zeros(eltype(tlist), length(tlist) - 1)
-    tlist_midpoints[1] = tlist[1]
-    tlist_midpoints[end] = tlist[end]
-    for i = 2:length(tlist_midpoints)-1
-        dt = tlist[i+1] - tlist[i]
-        tlist_midpoints[i] = tlist[i] + 0.5 * dt
-    end
-    return tlist_midpoints
-end
-
-
-@doc raw"""
-Evaluate `control` at the midpoints of `tlist`.
-
-```julia
-values = discretize_on_midpoints(control, tlist)
-```
-
-discretizes the given `control` to a Vector of values on the midpoints of
-`tlist`. Hence, the resulting `values` will contain one less value than
-`tlist`.
-
-If `control` is a vector of values defined on `tlist` (i.e., of the same length
-as `tlist`), it will be converted to a vector of values on the intervals of
-`tlist`. The value for the first and last "midpoint" will remain the original
-values at the beginning and end of `tlist`, in order to ensure exact bounary
-conditions. For all other midpoints, the value for that midpoint will be
-calculated by "un-averaging".
-
-For example, for a `control` and `tlist` of length 5, consider the following
-diagram:
-
-~~~
-tlist index:       1   2   3   4   5
-tlist:             ⋅   ⋅   ⋅   ⋅   ⋅   input values cᵢ (i ∈ 1..5)
-                   |̂/ ̄ ̄ ̂\ / ̂\ / ̂ ̄ ̄\|̂
-midpoints:         x     x   x     x   output values pᵢ (i ∈ 1..4)
-midpoints index:   1     2   3     4
-~~~
-
-We will have ``p₁=c₁`` for the first value, ``p₄=c₅`` for the last value. For
-all other points, the control values ``cᵢ = \frac{p_{i-1} + p_{i}}{2}`` are the
-average of the values on the midpoints. This implies the "un-averaging" for the
-midpoint values ``pᵢ = 2 c_{i} - p_{i-1}``.
-
-!!! note
-
-    An arbitrary input `control` array may not be compatible with the above
-    averaging formula. In this case, the conversion will be "lossy"
-    ([`discretize`](@ref) will not recover the original `control` array; the
-    difference should be considered a "discretization error"). However, any
-    *further* round-trip conversions between points and intervals are bijective
-    and preserve the boundary conditions. In this case, the
-    [`discretize_on_midpoints`](@ref) and [`discretize`](@ref) methods are each
-    other's inverse. This also implies that for an optimal control procedure,
-    it is safe to modify *midpoint* values. Modifying the the values on the
-    time grid directly on the other hand may accumulate discretization errors.
-
-If `control` is a vector of one less length than `tlist`, it will be returned
-unchanged, under the assumption that the input is already properly discretized.
-
-If `control` is a function, the function will be directly evaluated at the
-midpoints marked as `x` in the above diagram..
-"""
-function discretize_on_midpoints(control::T, tlist) where {T<:Function}
-    return discretize(control, get_tlist_midpoints(tlist); via_midpoints=false)
-end
-
-function discretize_on_midpoints(control::Vector, tlist)
-    if length(control) == length(tlist) - 1
-        return control
-    elseif length(control) == length(tlist)
-        vals = zeros(eltype(control), length(control) - 1)
-        vals[1] = control[1]
-        vals[end] = control[end]
-        for i = 2:length(vals)-1
-            vals[i] = 2 * control[i] - vals[i-1]
-        end
-        return vals
-    else
-        throw(ArgumentError("control array must be defined on the points of tlist"))
-    end
-end
-
-
-"""Extract a Tuple of controls.
-
-```julia
-controls = getcontrols(generator)
-```
-
-extracts the controls from a single dynamical generator.
-
-For example, if `generator = hamiltonian(H0, (H1, ϵ1), (H2, ϵ2))`, extracts
-`(ϵ1, ϵ2)`.
-"""
-function getcontrols(generator::Tuple)
-    return getcontrols(_make_generator(generator...))
-end
-
-
 function getcontrols(generator::Generator)
     controls = []
     slots_dict = IdDict()  # utilized as Set of controls we've seen
@@ -756,70 +582,12 @@ function getcontrols(generator::Generator)
 end
 
 
-getcontrols(ampl::Function) = (ampl,)
-getcontrols(ampl::Vector) = (ampl,)
-getcontrols(ampl::Number) = Tuple([])
-
-
-"""
-```julia
-getcontrols(operator)
-```
-
-for a static operator (matrix) returns an empty tuple.
-"""
-getcontrols(operator::AbstractMatrix) = Tuple([])
-getcontrols(operator::Operator) = Tuple([])
-
-
-
-"""Replace the controls in `generator` with static values.
-
-```julia
-op = evalcontrols(generator, vals_dict)
-```
-
-replaces the time-dependent controls in `generator` with the values in
-`vals_dict` and returns the static operator `op`.
-
-The `vals_dict` is a dictionary (`IdDict`) mapping controls as returned by
-`getcontrols(generator)` to values.
-
-```julia
-op = evalcontrols(generator, vals_dict, tlist, n)
-op = evalcontrols(generator, vals_dict, t)
-```
-
-acts similarly for generators that have explicit time dependencies (apart for
-the controls). The additional parameters indicate that `generator` has explicit
-time dependencies that are well-defined on the intervals of a time grid
-`tlist`, and that `vals_dict` should be assumed to relate to the n'th interval
-of that time grid. Respectively, an additional parameter `t` indicates the
-`generator` is a time-continuous explicit dependency and that `vals_dict`
-contains values defined at time `t`.
-
-# See also:
-
-* [`evalcontrols!`](@ref) to update `op` with new `vals_dict`.
-"""
-function evalcontrols(generator::Tuple, vals_dict::AbstractDict, _...)
-    if isa(generator[1], Tuple)
-        control = generator[1][2]
-        op = vals_dict[control] * generator[1][1]
-    else
-        op = copy(generator[1])
-    end
-    for part in generator[2:end]
-        if isa(part, Tuple)
-            control = part[2]
-            op += vals_dict[control] * part[1]
-        else
-            op += part
-        end
-    end
-    return op
+function getcontrols(generator::Tuple)
+    return getcontrols(_make_generator(generator...))
 end
 
+
+getcontrols(operator::Operator) = Tuple([])
 
 function evalcontrols(generator::Generator, vals_dict::AbstractDict, args...)
     coeffs = []
@@ -828,57 +596,6 @@ function evalcontrols(generator::Generator, vals_dict::AbstractDict, args...)
     end
     coeffs = [coeffs...]  # narrow eltype
     return Operator(generator.ops, coeffs)
-end
-
-"""
-```julia
-aₙ = evalcontrols(ampl, vals_dict)
-```
-
-evaluates a general control amplitude (see [`Generator`](@ref)) by replacing
-each control with the values in `vals_dict`. Returns a number.
-
-Note that for "trivial" amplitudes (where the amplitude is identical to the
-control), this simply looks up the control in `vals_dict`.
-
-For amplitudes with explicit time dependencies (outside of the controls),
-additional parameters `tlist, n` or `t` should be given to indicate the time at
-which the amplitude is to be evaluated.
-"""
-evalcontrols(ampl::Function, vals_dict, _...) = vals_dict[ampl]
-evalcontrols(ampl::Vector, vals_dict, _...) = vals_dict[ampl]
-evalcontrols(num::Number, vals_dict, _...) = num
-
-evalcontrols(operator::AbstractMatrix, _...) = operator
-evalcontrols(operator::Operator, _...) = operator
-
-
-"""Update an existing evaluation of a `generator`.
-
-```julia
-evalcontrols!(op, generator, vals_dict, args...)
-```
-
-performs an in-place update on an `op` the was obtained from a previous call to
-[`evalcontrols`](@ref) with the same `generator`, but a different `val_dict`.
-"""
-function evalcontrols!(op, generator::Tuple, vals_dict::AbstractDict, _...)
-    if generator[1] isa Tuple
-        control = generator[1][2]
-        copyto!(op, generator[1][1])
-        lmul!(vals_dict[control], op)
-    else
-        copyto!(op, generator[1])
-    end
-    for part in generator[2:end]
-        if part isa Tuple
-            control = part[2]
-            axpy!(vals_dict[control], part[1], op)
-        else
-            axpy!(true, part, op)
-        end
-    end
-    return op
 end
 
 
@@ -892,45 +609,9 @@ function evalcontrols!(op::Operator, generator::Generator, vals_dict::AbstractDi
 end
 
 evalcontrols!(op1::T, op2::T, _...) where {T<:AbstractMatrix} = op1
+evalcontrols(operator::Operator, _...) = operator
 evalcontrols!(op1::T, op2::T, _...) where {T<:Operator} = op1
 
-
-"""Substitute the controls inside a `generator` with different `controls`.
-
-```julia
-new_generator = substitute_controls(generator, controls_map)
-```
-
-Creates a new generator from `generator` by replacing any control that is in
-the dict `controls_map` with `controls_map[control]`. Controls that are not in
-`controls_map` are kept unchanged.
-
-The substituted controls must be time-dependent; to substitute static values
-for the controls, converting the time-dependent `generator` into a static
-operator, use [`evalcontrols`](@ref).
-
-Calling `substitute_controls` on a static operator (e.g., [`Operator`](@ref))
-will return it unchanged.
-"""
-function substitute_controls(generator::Tuple, controls_map)
-    new_generator = Any[]
-    for part in generator
-        if part isa Tuple
-            operator, control = part
-            new_part = (operator, get(controls_map, control, control))
-            push!(new_generator, new_part)
-        else
-            push!(new_generator, part)
-        end
-    end
-    return Tuple(new_generator)
-end
-
-
-function substitute_controls(generator::Generator, controls_map)
-    amplitudes = [substitute_controls(ampl, controls_map) for ampl in generator.amplitudes]
-    return Generator(generator.ops, amplitudes)
-end
 
 """
 ```julia
@@ -946,103 +627,13 @@ control), this simply looks up the control in `controls_map`.
 substitute_controls(ampl::Function, controls_map) = get(controls_map, ampl, ampl)
 substitute_controls(ampl::Vector, controls_map) = get(controls_map, ampl, ampl)
 
-# A static operator has no controls and remains unchanged
-substitute_controls(operator::AbstractMatrix, controls_map) = operator
+
+function substitute_controls(generator::Generator, controls_map)
+    amplitudes = [substitute_controls(ampl, controls_map) for ampl in generator.amplitudes]
+    return Generator(generator.ops, amplitudes)
+end
+
 substitute_controls(operator::Operator, controls_map) = operator
-
-
-"""Get a vector of the derivatives of `generator` w.r.t. each control.
-
-```julia
-getcontrolderivs(generator, controls)
-```
-
-return as vector containing the derivative of `generator` with respect to each
-control in `controls`. The elements of the vector are either `nothing` if
-`generator` does not depend on that particular control, or a function `μ(α)`
-that evaluates the derivative for a particular value of the control, see
-[`getcontrolderiv`](@ref).
-"""
-function getcontrolderivs(generator, controls)
-    controlderivs = []
-    for (i, control) in enumerate(controls)
-        push!(controlderivs, getcontrolderiv(generator, control))
-    end
-    return [controlderivs...]  # narrow eltype
-end
-
-getcontrolderivs(operator::AbstractMatrix, controls) = [nothing for c ∈ controls]
-getcontrolderivs(operator::Operator, controls) = [nothing for c ∈ controls]
-
-
-@doc raw"""
-Get the derivative of the generator ``G`` w.r.t. the control ``ϵ(t)``.
-
-```julia
-μ  = getcontrolderiv(generator, control)
-```
-
-returns `nothing` if the `generator` (Hamiltonian or Liouvillian) does not
-depend on `control`, or generator
-
-```math
-μ = \frac{∂G}{∂ϵ(t)}
-```
-
-otherwise. For linear control terms, `μ` will be a static operator, e.g. an
-`AbstractMatrix` or an [`Operator`](@ref). For non-linear controls, `μ` will be
-time-dependent, e.g. a [`Generator`](@ref). In either case,
-[`evalcontrols`](@ref) should be used to evaluate `μ` into a constant operator
-for particular values of the controls and a particular point in time.
-
-For constant generators, e.g. an [`Operator`](@ref), the result is always
-`nothing`.
-"""
-function getcontrolderiv(generator::Tuple, control)
-    return getcontrolderiv(_make_generator(generator...), control)
-end
-
-
-function getcontrolderiv(generator::Generator, control)
-    terms = []
-    drift_offset = length(generator.ops) - length(generator.amplitudes)
-    for (i, ampl) in enumerate(generator.amplitudes)
-        ∂a╱∂ϵ = getcontrolderiv(ampl, control)
-        if ∂a╱∂ϵ == 0.0
-            continue
-        elseif ∂a╱∂ϵ == 1.0
-            mu_op = generator.ops[i+drift_offset]
-            push!(terms, mu_op)
-        else
-            mu_op = generator.ops[i+drift_offset]
-            push!(terms, (mu_op, ∂a╱∂ϵ))
-        end
-    end
-    if length(terms) == 0
-        return nothing
-    else
-        return _make_generator(terms...)
-    end
-end
-
-@doc raw"""
-```julia
-a = getcontrolderiv(ampl, control)
-```
-
-returns the derivative ``∂a_l(t)/∂ϵ_{l'}(t)`` of the given amplitude
-``a_l(\{ϵ_{l''}(t)\}, t)`` with respect to the given control ``ϵ_{l'}(t)``. For
-"trivial" amplitudes, where ``a_l(t) ≡ ϵ_l(t)``, the result with be either
-`1.0` or `0.0` (depending on whether `ampl ≡ control`). For non-trivial
-amplitudes, the result may be another amplitude that depends on the controls
-and potentially on time, but can be evaluated to a constant with
-[`evalcontrols`](@ref).
-"""
-getcontrolderiv(ampl::Function, control) = (ampl ≡ control) ? 1.0 : 0.0
-getcontrolderiv(ampl::Vector, control) = (ampl ≡ control) ? 1.0 : 0.0
-
-getcontrolderiv(operator::AbstractMatrix, control) = nothing
-getcontrolderiv(operator::Operator, control) = nothing
 
 
 """Run a check on the given `generator` relative to `state`.
@@ -1130,6 +721,7 @@ function check_generator(generator, state, throw_error=true)
     end
 
     # getcontrolderiv
+    #=
     if hasmethod(getcontrolderiv, (GT, eltype(controls)))
         for control in controls
             try
@@ -1169,6 +761,7 @@ function check_generator(generator, state, throw_error=true)
     else
         push!(errors, "getcontrolderiv(::$GT, …) is not implemented")
     end
+    =#
 
     # getcontrolderivs has a default implementation, so we don't need to check
     # it
@@ -1183,6 +776,7 @@ function check_generator(generator, state, throw_error=true)
     return true
 
 end
+
 
 
 """Run a check on the given `operator` relative to `state`.
@@ -1319,6 +913,7 @@ function check_amplitude(ampl; throw_error=true)
     end
 
     # getcontrolderiv
+    #=
     if hasmethod(getcontrolderiv, (AT, eltype(controls)))
         for control in controls
             try
@@ -1353,6 +948,7 @@ function check_amplitude(ampl; throw_error=true)
     else
         push!(errors, "getcontrolderiv(::$AT, …) for amplitude is not implemented")
     end
+    =#
 
     if length(errors) > 0
         for error in errors
@@ -1364,5 +960,6 @@ function check_amplitude(ampl; throw_error=true)
     return true
 
 end
+
 
 end

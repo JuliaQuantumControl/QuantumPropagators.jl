@@ -23,6 +23,8 @@
 # functions defined in this file are always called explicitly, not implicitly
 # via dispatch on PiecewisePropagator.
 
+using .Controls: discretize, discretize_on_midpoints, evalcontrols, evalcontrols!
+
 
 function _pwc_process_parameters(parameters, controls, tlist)
     if isnothing(parameters)

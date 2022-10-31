@@ -1,6 +1,7 @@
 using Test
 using QuantumPropagators
 using QuantumPropagators.Generators
+using QuantumPropagators.Controls
 using LinearAlgebra
 using Distributions
 using QuantumControlBase.TestUtils

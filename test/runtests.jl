@@ -26,6 +26,11 @@ using SafeTestsets
         include("test_operator_linalg.jl")
     end
 
+    print("\n* Shapes (test_shapes.jl):")
+    @time @safetestset "Shapes" begin
+        include("test_shapes.jl")
+    end
+
     print("\n* Controls (test_controls.jl):")
     @time @safetestset "Controls" begin
         include("test_controls.jl")

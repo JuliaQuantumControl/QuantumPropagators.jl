@@ -59,7 +59,7 @@ The highest-level API of the `QuantumPropagators.jl` package consists of a singl
 
 * [`propagate`](@ref) — Propagate a quantum state over an entire time grid under a given generator
 
-At a slightly lower level, propagation of quantum states in encapsulated by [The Propagator Interface](@ref):
+At a slightly lower level, propagation of quantum states in encapsulated by [The Propagator interface](@ref):
 
 * [`initprop`](@ref) — Initialize a `propagator` object, which is of some concrete (method-dependent) sub-type of [`AbstractPropagator`](@ref QuantumPropagators.AbstractPropagator)
 * [`reinitprop!`](@ref) — Re-initialize the `propagator`
@@ -84,6 +84,9 @@ The above list of methods constitutes the entire *public* interface of `QuantumP
 The full list of sub-modules is
 
 * [`QuantumPropagators.Generators`](@ref QuantumPropagatorsGeneratorsAPI)
+* [`QuantumPropagators.Shapes`](@ref QuantumPropagatorsShapesAPI)
+* [`QuantumPropagators.Controls`](@ref QuantumPropagatorsControlsAPI)
+* [`QuantumPropagators.Amplitudes`](@ref QuantumPropagatorsAmplitudesAPI)
 * [`QuantumPropagators.Storage`](@ref QuantumPropagatorsStorageAPI)
 * [`QuantumPropagators.Cheby`](@ref QuantumPropagatorsChebyAPI)
 * [`QuantumPropagators.Newton`](@ref QuantumPropagatorsNewtonAPI)
@@ -186,6 +189,28 @@ open(outfile, "w") do out
         methods that define how these generators contain controls and control
         amplitudes. These methods must be defined for any custom generator or
         control amplitude.
+        """
+    )
+    write_module_api(
+        out,
+        QuantumPropagators.Shapes,
+        """The following routines define useful functin ``S(t)`` that can be
+        used for control functions or amplitudes.
+        """
+    )
+    write_module_api(
+        out,
+        QuantumPropagators.Controls,
+        """The following routines define method that must be defined for any
+        control function, or for generators with respect to control functions.
+        """
+    )
+    write_module_api(
+        out,
+        QuantumPropagators.Amplitudes,
+        raw"""The following types define control amplitudes
+        ``a(\{ϵ_l(t)\}, t)`` that depend on one or more control functions
+        ``ϵ_l(t)``.
         """
     )
     write_module_api(

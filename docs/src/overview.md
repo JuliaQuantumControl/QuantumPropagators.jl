@@ -149,7 +149,7 @@ The `QuantumPropagators` API is structured similarly to the [DifferentialEquatio
 
 * The [`reinitprop!`](@ref) function is similar to [`DifferentialEquations.reinit!`](https://diffeq.sciml.ai/stable/basics/integrator/#SciMLBase.reinit!)
 
-* [The Propagator Interface](@ref) is similar to DifferentialEquations' [Integrator Interface](https://diffeq.sciml.ai/stable/basics/integrator/)
+* [The Propagator interface](@ref) is similar to DifferentialEquations' [Integrator Interface](https://diffeq.sciml.ai/stable/basics/integrator/)
 
 * [`propstep!`](@ref) corresponds to [`DifferentialEquations.step!`](https://diffeq.sciml.ai/stable/basics/integrator/#SciMLBase.step!)
 

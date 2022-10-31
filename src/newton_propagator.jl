@@ -1,3 +1,5 @@
+using .Controls: getcontrols
+
 """Propagator for Newton propagation (`method=:newton`).
 
 This is a [`PWCPropagator`](@ref).

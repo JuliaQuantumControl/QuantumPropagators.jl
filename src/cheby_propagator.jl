@@ -1,3 +1,5 @@
+using .Controls: getcontrols, evalcontrols, discretize
+
 """Propagator for Chebychev propagation (`method=:cheby`).
 
 This is a [`PWCPropagator`](@ref).
@@ -50,12 +52,13 @@ initializes a [`ChebyPropagator`](@ref).
 # Method-specific keyword arguments
 
 * `control_ranges`: a dict the maps the controls in `generator` (see
-  [`getcontrols`](@ref)) to a tuple of min/max values. The Chebychev
-  coefficients will be calculated based on a spectral envelope that assumes
-  that each control can take arbitrary values within the min/max range. If not
-  given, the ranges are determined automatically. Specifying manual control
-  ranges can be useful when the the control amplitudes (`parameters`) may
-  change during the propagation, e.g. in a sequential-update control scheme.
+  [`getcontrols`](@ref QuantumPropagators.Controls.getcontrols)) to a tuple of
+  min/max values. The Chebychev coefficients will be calculated based on a
+  spectral envelope that assumes that each control can take arbitrary values
+  within the min/max range. If not given, the ranges are determined
+  automatically. Specifying manual control ranges can be useful when the the
+  control amplitudes (`parameters`) may change during the propagation, e.g. in
+  a sequential-update control scheme.
 * `specrange_method`: Method to pass to the [`specrange`](@ref
   QuantumPropagators.SpectralRange.specrange) function
 * `specrange_buffer`: An additional factor by which to enlarge the estimated
