@@ -2,7 +2,7 @@ module Amplitudes
 
 export LockedAmplitude, ShapedAmplitude
 
-import ..Controls: getcontrols, evalcontrols, substitute_controls
+import ..Controls: getcontrols, evalcontrols, substitute_controls, discretize_on_midpoints
 
 
 #### LockedAmplitude ##########################################################
