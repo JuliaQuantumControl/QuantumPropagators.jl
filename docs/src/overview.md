@@ -98,31 +98,31 @@ Open quantum systems are handled identically to closed quantum system, except th
 
 ## The Propagator interface
 
-As a lower-level interface than [`propagate`](@ref), the `QuantumPropagators` package defines an interface for "propagator" objects. These are initialized via [`initprop`](@ref) as, e.g.,
+As a lower-level interface than [`propagate`](@ref), the `QuantumPropagators` package defines an interface for "propagator" objects. These are initialized via [`init_prop`](@ref) as, e.g.,
 
 ```
-using QuantumPropagators: initprop
+using QuantumPropagators: init_prop
 
-propagator = initprop(Ψ₀, H, tlist)
+propagator = init_prop(Ψ₀, H, tlist)
 ```
 
 The `propagator` is a propagation-method-dependent object with the interface described by [`AbstractPropagator`](@ref).
 
-The  [`propstep!`](@ref) function can then be used to advance the `propagator`:
+The  [`prop_step!`](@ref) function can then be used to advance the `propagator`:
 
 ```@meta
 DocTestSetup = quote
-    using QuantumPropagators: initprop
-    propagator = initprop(Ψ₀, H, tlist)
+    using QuantumPropagators: init_prop
+    propagator = init_prop(Ψ₀, H, tlist)
 end
 ```
 
 ```jldoctest overview
-using QuantumPropagators: propstep!
+using QuantumPropagators: prop_step!
 
-Ψ = propstep!(propagator)  # single step
+Ψ = prop_step!(propagator)  # single step
 
-while !isnothing(propstep!(propagator)); end  # go to end
+while !isnothing(prop_step!(propagator)); end  # go to end
 Ψ = propagator.state
 
 print("Ψ = $(round.(Ψ; digits=3)))\n")
@@ -136,7 +136,7 @@ t = 0.5π
 
 ## Backward propagation
 
-When [`propagate`](@ref) or [`initprop`](@ref) are called with `backward=true`, the propagation is initialized to run backward. The initial state is then defined at `propagator.t == tlist[end]` and each [`propstep!`](@ref) moves to the previous point in `tlist`. The equation of motion is the Schrödinger or Liouville equation with a negative $dt$. Note that the propagation uses the `generator` as it is defined: no automatic adjoint will be taken.
+When [`propagate`](@ref) or [`init_prop`](@ref) are called with `backward=true`, the propagation is initialized to run backward. The initial state is then defined at `propagator.t == tlist[end]` and each [`prop_step!`](@ref) moves to the previous point in `tlist`. The equation of motion is the Schrödinger or Liouville equation with a negative $dt$. Note that the propagation uses the `generator` as it is defined: no automatic adjoint will be taken.
 
 
 ## Connection to DifferentialEquations.jl
@@ -145,13 +145,13 @@ The `QuantumPropagators` API is structured similarly to the [DifferentialEquatio
 
 * The [`propagate`](@ref) function is similar to [`DifferentialEquations.solve`](https://diffeq.sciml.ai/stable/basics/overview/#Solving-the-Problems)
 
-* The [`initprop`](@ref) function is similar to [`DifferentialEquations.init`](https://diffeq.sciml.ai/stable/basics/integrator/#Initialization-and-Stepping)
+* The [`init_prop`](@ref) function is similar to [`DifferentialEquations.init`](https://diffeq.sciml.ai/stable/basics/integrator/#Initialization-and-Stepping)
 
-* The [`reinitprop!`](@ref) function is similar to [`DifferentialEquations.reinit!`](https://diffeq.sciml.ai/stable/basics/integrator/#SciMLBase.reinit!)
+* The [`reinit_prop!`](@ref) function is similar to [`DifferentialEquations.reinit!`](https://diffeq.sciml.ai/stable/basics/integrator/#SciMLBase.reinit!)
 
 * [The Propagator interface](@ref) is similar to DifferentialEquations' [Integrator Interface](https://diffeq.sciml.ai/stable/basics/integrator/)
 
-* [`propstep!`](@ref) corresponds to [`DifferentialEquations.step!`](https://diffeq.sciml.ai/stable/basics/integrator/#SciMLBase.step!)
+* [`prop_step!`](@ref) corresponds to [`DifferentialEquations.step!`](https://diffeq.sciml.ai/stable/basics/integrator/#SciMLBase.step!)
 
 * [`set_state!`](@ref) corresponds to [`DifferentialEquations.set_u!`](https://diffeq.sciml.ai/stable/basics/integrator/#SciMLBase.set_u!)
 

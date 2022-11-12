@@ -5,7 +5,7 @@ using SparseArrays
 
 export Generator, Operator, ScaledOperator
 export hamiltonian, liouvillian
-import ..Controls: getcontrols, evalcontrols, evalcontrols!, substitute_controls
+import ..Controls: get_controls, evalcontrols, evalcontrols!, substitute_controls
 
 
 @doc raw"""A time-dependent generator.
@@ -237,7 +237,7 @@ operators are considered "drift" terms.
 In most cases, each control amplitude will simply be a control function or
 vector of pulse values. In general, `ampl` can be an arbitrary object that
 depends on one or more controls, which must be obtainable via
-[`getcontrols(ampl)`](@ref getcontrols).
+[`get_controls(ampl)`](@ref get_controls).
 
 The `hamiltonian` function will generally return a [`Generator`](@ref)
 instance. However, if none of the given terms are time-dependent, it may return
@@ -563,11 +563,11 @@ function LinearAlgebra.dot(x, A::ScaledOperator, y)
 end
 
 
-function getcontrols(generator::Generator)
+function get_controls(generator::Generator)
     controls = []
     slots_dict = IdDict()  # utilized as Set of controls we've seen
     for (i, ampl) in enumerate(generator.amplitudes)
-        for control in getcontrols(ampl)
+        for control in get_controls(ampl)
             if control in keys(slots_dict)
                 # We've seen this control before, so we just record the slot
                 # where it is referenced
@@ -582,12 +582,12 @@ function getcontrols(generator::Generator)
 end
 
 
-function getcontrols(generator::Tuple)
-    return getcontrols(_make_generator(generator...))
+function get_controls(generator::Tuple)
+    return get_controls(_make_generator(generator...))
 end
 
 
-getcontrols(operator::Operator) = Tuple([])
+get_controls(operator::Operator) = Tuple([])
 
 function evalcontrols(generator::Generator, vals_dict::AbstractDict, args...)
     coeffs = []
@@ -657,16 +657,16 @@ function check_generator(generator, state, throw_error=true)
 
     local control, controls, operator, μ
 
-    # getcontrols
-    if hasmethod(getcontrols, (GT,))
+    # get_controls
+    if hasmethod(get_controls, (GT,))
         try
-            controls = getcontrols(generator)
+            controls = get_controls(generator)
         catch exc
-            @error("getcontrols(::$GT) returns an invalid result $exc")
+            @error("get_controls(::$GT) returns an invalid result $exc")
             throw_error ? rethrow() : return false
         end
     else
-        @error("getcontrols(::$GT) is not implemented")
+        @error("get_controls(::$GT) is not implemented")
         throw_error ? error("Invalid generator") : return false
     end
     # TODO: check controls (must be discretizable) etc.
@@ -720,12 +720,12 @@ function check_generator(generator, state, throw_error=true)
         push!(errors, "substitute_controls(::$GT, …) is not implemented")
     end
 
-    # getcontrolderiv
+    # get_control_deriv
     #=
-    if hasmethod(getcontrolderiv, (GT, eltype(controls)))
+    if hasmethod(get_control_deriv, (GT, eltype(controls)))
         for control in controls
             try
-                μ = getcontrolderiv(generator, control)
+                μ = get_control_deriv(generator, control)
                 if hasmethod(
                     evalcontrols,
                     (typeof(μ), typeof(vals_dict), typeof(tlist), Int64)
@@ -735,35 +735,35 @@ function check_generator(generator, state, throw_error=true)
                 else
                     push!(
                         errors,
-                        "getcontrolderiv(::$GT, …) does not return a proper generator"
+                        "get_control_deriv(::$GT, …) does not return a proper generator"
                     )
                 end
             catch exc
-                push!(errors, "getcontrolderiv(::$GT, …) is invalid: $exc")
+                push!(errors, "get_control_deriv(::$GT, …) is invalid: $exc")
             end
         end
         v = rand()
         dummy_control = t -> v
         try
-            μ = getcontrolderiv(generator, dummy_control)
+            μ = get_control_deriv(generator, dummy_control)
             if !isnothing(μ)
                 push!(
                     errors,
-                    "getcontrolderiv(::$GT, …) does not return `nothing` for a control that the generator does not depend on"
+                    "get_control_deriv(::$GT, …) does not return `nothing` for a control that the generator does not depend on"
                 )
             end
         catch exc
             push!(
                 errors,
-                "getcontrolderiv(::$GT, …)) is invalid for a control that the generator does not depend on: $exc"
+                "get_control_deriv(::$GT, …)) is invalid for a control that the generator does not depend on: $exc"
             )
         end
     else
-        push!(errors, "getcontrolderiv(::$GT, …) is not implemented")
+        push!(errors, "get_control_deriv(::$GT, …) is not implemented")
     end
     =#
 
-    # getcontrolderivs has a default implementation, so we don't need to check
+    # get_control_derivs has a default implementation, so we don't need to check
     # it
 
     if length(errors) > 0
@@ -868,16 +868,16 @@ function check_amplitude(ampl; throw_error=true)
 
     errors = String[]
 
-    # getcontrols
-    if hasmethod(getcontrols, (AT,))
+    # get_controls
+    if hasmethod(get_controls, (AT,))
         try
-            controls = getcontrols(ampl)
+            controls = get_controls(ampl)
         catch exc
-            @error("getcontrols(::$AT) for amplitude returns an invalid result $exc")
+            @error("get_controls(::$AT) for amplitude returns an invalid result $exc")
             throw_error ? rethrow() : return false
         end
     else
-        @error("getcontrols(::$AT) for amplitude is not implemented")
+        @error("get_controls(::$AT) for amplitude is not implemented")
         throw_error ? error("Invalid control amplitude") : return false
     end
 
@@ -912,41 +912,41 @@ function check_amplitude(ampl; throw_error=true)
         throw_error ? error("Invalid control amplitude") : return false
     end
 
-    # getcontrolderiv
+    # get_control_deriv
     #=
-    if hasmethod(getcontrolderiv, (AT, eltype(controls)))
+    if hasmethod(get_control_deriv, (AT, eltype(controls)))
         for control in controls
             try
-                d = getcontrolderiv(ampl, control)
+                d = get_control_deriv(ampl, control)
                 val = evalcontrols(d, vals_dict, tlist, 1)
                 if !(val isa Number)
                     push!(
                         errors,
-                        "getcontrolderiv(::$AT, …) for amplitude does not return something that evaluates to a number"
+                        "get_control_deriv(::$AT, …) for amplitude does not return something that evaluates to a number"
                     )
                 end
             catch exc
-                push!(errors, "getcontrolderiv(::$AT, …) for amplitude is invalid: $exc")
+                push!(errors, "get_control_deriv(::$AT, …) for amplitude is invalid: $exc")
             end
         end
         v = rand()
         dummy_control = t -> v
         try
-            d = getcontrolderiv(ampl, dummy_control)
+            d = get_control_deriv(ampl, dummy_control)
             if d ≠ 0.0
                 push!(
                     errors,
-                    "getcontrolderiv(::$AT, …) for amplitude does not return `0.0` for a control that the amplitude does not depend on"
+                    "get_control_deriv(::$AT, …) for amplitude does not return `0.0` for a control that the amplitude does not depend on"
                 )
             end
         catch exc
             push!(
                 errors,
-                "getcontrolderiv(::$AT, …)) for amplitude is invalid for a control that the generator does not depend on: $exc"
+                "get_control_deriv(::$AT, …)) for amplitude is invalid for a control that the generator does not depend on: $exc"
             )
         end
     else
-        push!(errors, "getcontrolderiv(::$AT, …) for amplitude is not implemented")
+        push!(errors, "get_control_deriv(::$AT, …) for amplitude is not implemented")
     end
     =#
 

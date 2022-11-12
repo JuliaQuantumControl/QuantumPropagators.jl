@@ -1,4 +1,4 @@
-using .Controls: getcontrols
+using .Controls: get_controls
 
 """Propagator for Newton propagation (`method=:newton`).
 
@@ -27,7 +27,7 @@ set_t!(propagator::NewtonPropagator, t) = _pwc_set_t!(propagator, t)
 
 """
 ```julia
-newton_propagator = initprop(
+newton_propagator = init_prop(
     state,
     generator,
     tlist,
@@ -54,7 +54,7 @@ initializes a [`NewtonPropagator`](@ref).
 * `func`, `norm_min`, `relerr`, `max_restarts`: parameter to pass to
   [`newton!`](@ref QuantumPropagators.Newton.newton!)
 """
-function initprop(
+function init_prop(
     state,
     generator,
     tlist,
@@ -71,7 +71,7 @@ function initprop(
     _...
 )
     tlist = convert(Vector{Float64}, tlist)
-    controls = getcontrols(generator)
+    controls = get_controls(generator)
     G = _pwc_get_max_genop(generator, controls, tlist)
 
     parameters = _pwc_process_parameters(parameters, controls, tlist)
@@ -106,7 +106,7 @@ function initprop(
 end
 
 
-function propstep!(propagator::NewtonPropagator)
+function prop_step!(propagator::NewtonPropagator)
     Ψ = propagator.state
     H = propagator.genop
     n = propagator.n

@@ -24,7 +24,7 @@ using .Generators
 export liouvillian, hamiltonian
 
 include("./propagator.jl")
-export initprop, reinitprop!, propstep!, set_state!
+export init_prop, reinit_prop!, prop_step!, set_state!
 # not exported: set_t!, choose_propmethod
 
 include("./pwc_utils.jl")

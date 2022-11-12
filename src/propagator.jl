@@ -1,6 +1,6 @@
 """Abstract base type for all `Propagator` objects.
 
-All `Propagator` objects must be instantiated via [`initprop`](@ref) and
+All `Propagator` objects must be instantiated via [`init_prop`](@ref) and
 implement the following interface.
 
 # Properties
@@ -14,8 +14,8 @@ implement the following interface.
 * `backward`: Boolean flag to indicate whether the propagation moves forward or
   backward in time
 * `inplace`: Boolean flag to indicate whether `propagator.state` is modified
-  in-place or is recreated by every call of `propstep!` or `set_state!`. For
-  `inplace=true`, we find `Ψ = propagator.state; propstep!(propagator);
+  in-place or is recreated by every call of `prop_step!` or `set_state!`. For
+  `inplace=true`, we find `Ψ = propagator.state; prop_step!(propagator);
   propagator.state === Ψ` to be `true`, while for `inplace=false` it is
   `false`.
 
@@ -24,9 +24,9 @@ should be considered private.
 
 # Methods
 
-* [`reinitprop!`](@ref) — reset the propagator to a new initial state at the
+* [`reinit_prop!`](@ref) — reset the propagator to a new initial state at the
   beginning of the time grid (or the end, for backward propagation)
-* [`propstep!`](@ref) – advance the propagator by one step forward (or
+* [`prop_step!`](@ref) – advance the propagator by one step forward (or
   backward) on the time grid.
 * [`set_state!`](@ref) — safely mutate the current quantum `state` of the
   propagation. Note that directly mutating the `state` property is not safe.
@@ -49,8 +49,8 @@ abstract type AbstractPropagator end
 
 A piecewise propagator is determined by a single parameter per control and time
 grid interval. Consequently, the `propagator.parameters` are a dictionary
-mapping the controls found in the `generator` via [`getcontrols`](@ref
-QuantumPropagators.Controls.getcontrols) to a vector of values defined on the
+mapping the controls found in the `generator` via [`get_controls`](@ref
+QuantumPropagators.Controls.get_controls) to a vector of values defined on the
 intervals of the time grid, see [`discretize_on_midpoints`](@ref). This does
 not necessarily imply that these values are the piecewise-constant amplitudes
 for the intervals. A general piecwise propagatore might use interpolation to
@@ -131,7 +131,7 @@ end
 """Initialize a `Propagator`.
 
 ```julia
-propagator = initprop(
+propagator = init_prop(
     state, generator, tlist;
     method=:auto,
     backward=false,
@@ -162,14 +162,14 @@ time grid `tlist` under the time-dependent generator (Hamiltonian/Liouvillian)
   given `state`, `tlist`, and `generator`, cf. [`choose_propmethod`](@ref)
 * `backward`: If `true`, initialize the propagator for a backward propagation.
   The resulting `propagator.t` will be `tlist[end]`, and subsequent calls to
-  [`propstep!`](@ref) will move backward on `tlist`.
+  [`prop_step!`](@ref) will move backward on `tlist`.
 * `inplace`: If `true`, the `state` property of the resulting propagator will
-  be changed in-place by any call to [`propstep!`](@ref). If `false`, each call
-  to [`propstep!`](@ref) changes the reference for `propgator.state`, and the
-  progation will not use any in-place operations. Not all propagation methods
-  may support both in-place and not-in-place propagation. In-place propagation
-  is generally more efficient but may not be compatible, e.g., with automatic
-  differentiation.
+  be changed in-place by any call to [`prop_step!`](@ref). If `false`, each
+  call to [`prop_step!`](@ref) changes the reference for `propgator.state`, and
+  the progation will not use any in-place operations. Not all propagation
+  methods may support both in-place and not-in-place propagation. In-place
+  propagation is generally more efficient but may not be compatible, e.g., with
+  automatic differentiation.
 * `piecewise`: If given a a boolean, `true` enforces that the resulting
   propagator is a [`PiecewisePropagator`](@ref), and `false` enforces is not to
   be a [`PiecewisePropagator`](@ref)
@@ -185,10 +185,10 @@ The type of the returned `propagator` is a sub-type of
 
 # See also
 
-* [`reinitprop!`](@ref) — Re-initialize a propagator
+* [`reinit_prop!`](@ref) — Re-initialize a propagator
 * [`propagate`](@ref) — Higher-level propagation interface
 """
-function initprop(
+function init_prop(
     state,
     generator,
     tlist,
@@ -204,7 +204,7 @@ function initprop(
     if verbose
         @info "Auto-choosing propagation method $(repr(typeof(method).parameters[1]))"
     end
-    propagator = initprop(state, generator, tlist, method; backward=backward, kwargs...)
+    propagator = init_prop(state, generator, tlist, method; backward=backward, kwargs...)
     if piecewise ≡ true
         if !(propagator isa PiecewisePropagator)
             error("Cannot initalize propagator as piecewise with method=$(repr(method))")
@@ -220,10 +220,10 @@ function initprop(
     return propagator
 end
 
-function initprop(state, generator, tlist, method; kwargs...)
+function init_prop(state, generator, tlist, method; kwargs...)
     throw(
         TypeError(
-            :initprop,
+            :init_prop,
             "`method` must be a known symbol, not $(repr(method))",
             Symbol,
             typeof(method)
@@ -233,14 +233,14 @@ end
 
 
 # `method` as a keyword argument
-function initprop(state, generator, tlist; method=Val(:auto), kwargs...)
-    return initprop(state, generator, tlist, method; kwargs...)
+function init_prop(state, generator, tlist; method=Val(:auto), kwargs...)
+    return init_prop(state, generator, tlist, method; kwargs...)
 end
 
 
 # `method` as a symbol
-function initprop(state, generator, tlist, method::Symbol; kwargs...)
-    return initprop(state, generator, tlist, Val(method); kwargs...)
+function init_prop(state, generator, tlist, method::Symbol; kwargs...)
+    return init_prop(state, generator, tlist, Val(method); kwargs...)
 end
 
 
@@ -297,7 +297,7 @@ function choose_propmethod(
             if inplace
                 method = Val(:newton)
             end
-            controls = getcontrols(generator)
+            controls = get_controls(generator)
             genop = _pwc_get_max_genop(generator, controls, tlist)
             if has_real_eigvals(genop) ≡ true
                 dt = _get_uniform_dt(tlist)
@@ -317,7 +317,7 @@ end
 """Re-initialize a propagator.
 
 ```julia
-reinitprop!(propagator, state; kwargs...)
+reinit_prop!(propagator, state; kwargs...)
 ```
 
 resets the `propagator` to `state` at the beginning of the time grid,
@@ -329,7 +329,7 @@ on re-initialization, such as refreshing expansion coefficients for
 [`ChebyPropagator`](@ref). In this case, the `kwargs` may be additional keyword
 arguments specific to the concrete type of propagator.
 """
-function reinitprop!(propagator, state; kwargs...)
+function reinit_prop!(propagator, state; kwargs...)
     set_state!(propagator, state)
     if propagator.backward
         set_t!(propagator, propagator.tlist[end])
@@ -342,18 +342,18 @@ end
 """Advance the `propagator` by a single time step.
 
 ```julia
-state = propstep!(propagator)
+state = prop_step!(propagator)
 ```
 
 returns the state obtained from propagating to the next point on the time grid
 from `propagator.t`, respectively the previous point if `propagator.backward`
 is true.
 
-When the propagation would lead out of the time grid, `propstep!` leaves
+When the propagation would lead out of the time grid, `prop_step!` leaves
 `propagator` unchanged and returns `nothing`. Thus, a return value of `nothing`
 may be used to signal that a propagation has completed.
 """
-function propstep! end
+function prop_step! end
 
 """Set the current `state` of the `propagator`.
 
@@ -362,7 +362,7 @@ set_state!(propagator, state)
 ```
 
 sets the `propagator.state` property. In order to mutate the current state
-after a call to [`propstep!`](@ref), the following pattern is recommended:
+after a call to [`prop_step!`](@ref), the following pattern is recommended:
 
 ```
 Ψ = propagator.state

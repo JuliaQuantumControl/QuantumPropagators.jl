@@ -1,4 +1,4 @@
-using .Controls: getcontrols
+using .Controls: get_controls
 
 """Propagator for propagation via direct exponentiation (`method=:expprop`)
 
@@ -26,7 +26,7 @@ set_t!(propagator::ExpPropagator, t) = _pwc_set_t!(propagator, t)
 
 
 # We may want to choose the defaults for convert_state, convert_operator in
-# initprop based on the type of objects we are dealing with. See e.g.
+# init_prop based on the type of objects we are dealing with. See e.g.
 # GradVector/GradgenOperator
 _exp_prop_convert_state(state) = typeof(state)
 _exp_prop_convert_operator(::Any) = Any
@@ -36,7 +36,7 @@ _exp_prop_convert_operator(::ScaledOperator) = Matrix{ComplexF64}
 
 """
 ```julia
-exp_propagator = initprop(
+exp_propagator = init_prop(
     state,
     generator,
     tlist,
@@ -72,7 +72,7 @@ methods to calculate `func` are not defined. Often, it is easier to temporarily
 convert them to standard complex matrices and vectors than to implement the
 missing methods.
 """
-function initprop(
+function init_prop(
     state,
     generator,
     tlist,
@@ -94,7 +94,7 @@ function initprop(
         # so it can be an abstract type.
     end
     tlist = convert(Vector{Float64}, tlist)
-    controls = getcontrols(generator)
+    controls = get_controls(generator)
     G = _pwc_get_max_genop(generator, controls, tlist)
 
     parameters = _pwc_process_parameters(parameters, controls, tlist)
@@ -128,7 +128,7 @@ function initprop(
 end
 
 
-function propstep!(propagator::ExpPropagator)
+function prop_step!(propagator::ExpPropagator)
     n = propagator.n
     tlist = getfield(propagator, :tlist)
     (0 < n < length(tlist)) || return nothing

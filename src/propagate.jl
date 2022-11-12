@@ -46,7 +46,7 @@ state = propagate(
     observables=(<store state>, ),
     callback=nothing,
     showprogress=false,
-    initprop_kwargs...)
+    init_prop_kwargs...)
 ```
 
 propagates `state` of the entire time grid and returns the propagates states,
@@ -81,7 +81,7 @@ or a storage array of data collected during the propagation.
 * `callback`: Function to call after each propagation step. See Notes below.
 * `showprogess`: Whether to show a progress bar. See Notes below.
 
-All remaining keyword arguments are passed to [`initprop`](@ref) to initialize
+All remaining keyword arguments are passed to [`init_prop`](@ref) to initialize
 the [`Propagator`](@ref AbstractPropagator) that is used internally to drive
 the optimization. Unknown keyword arguments will be ignored.
 
@@ -140,7 +140,7 @@ stored states / observable data if `storage=true`.
 
 # See also
 
-* [`initprop`](@ref) — Propagate via a [`Propagator`](@ref AbstractPropagator)
+* [`init_prop`](@ref) — Propagate via a [`Propagator`](@ref AbstractPropagator)
   object
 """
 function propagate(state, generator, tlist; method=Val(:auto), kwargs...)
@@ -167,7 +167,7 @@ function propagate(
 )
     backward = get(kwargs, :backward, false)
 
-    propagator = initprop(state, generator, tlist, method; kwargs...)
+    propagator = init_prop(state, generator, tlist, method; kwargs...)
 
     return_storage = false
     if storage === true
@@ -199,7 +199,7 @@ function propagate(
     end
 
     for (i, t_end) in intervals
-        propstep!(propagator)
+        prop_step!(propagator)
         if storage ≠ nothing
             Storage.write_to_storage!(
                 storage,

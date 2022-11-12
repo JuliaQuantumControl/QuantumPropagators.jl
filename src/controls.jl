@@ -1,7 +1,7 @@
 module Controls
 
 export discretize, discretize_on_midpoints
-export getcontrols
+export get_controls
 export get_tlist_midpoints
 export evalcontrols, evalcontrols!, substitute_controls
 
@@ -165,7 +165,7 @@ end
 """Extract a Tuple of controls.
 
 ```julia
-controls = getcontrols(generator)
+controls = get_controls(generator)
 ```
 
 extracts the controls from a single dynamical generator.
@@ -173,19 +173,19 @@ extracts the controls from a single dynamical generator.
 For example, if `generator = hamiltonian(H0, (H1, ϵ1), (H2, ϵ2))`, extracts
 `(ϵ1, ϵ2)`.
 """
-getcontrols(ampl::Function) = (ampl,)
-getcontrols(ampl::Vector) = (ampl,)
-getcontrols(ampl::Number) = Tuple([])
+get_controls(ampl::Function) = (ampl,)
+get_controls(ampl::Vector) = (ampl,)
+get_controls(ampl::Number) = Tuple([])
 
 
 """
 ```julia
-getcontrols(operator)
+get_controls(operator)
 ```
 
 for a static operator (matrix) returns an empty tuple.
 """
-getcontrols(operator::AbstractMatrix) = Tuple([])
+get_controls(operator::AbstractMatrix) = Tuple([])
 
 
 
@@ -199,7 +199,7 @@ replaces the time-dependent controls in `generator` with the values in
 `vals_dict` and returns the static operator `op`.
 
 The `vals_dict` is a dictionary (`IdDict`) mapping controls as returned by
-`getcontrols(generator)` to values.
+`get_controls(generator)` to values.
 
 ```julia
 op = evalcontrols(generator, vals_dict, tlist, n)

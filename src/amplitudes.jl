@@ -2,7 +2,7 @@ module Amplitudes
 
 export LockedAmplitude, ShapedAmplitude
 
-import ..Controls: getcontrols, evalcontrols, substitute_controls, discretize_on_midpoints
+import ..Controls: get_controls, evalcontrols, substitute_controls, discretize_on_midpoints
 
 
 #### LockedAmplitude ##########################################################
@@ -70,7 +70,7 @@ end
 
 (ampl::LockedContinuousAmplitude)(t::Float64) = ampl.shape(t)
 
-getcontrols(ampl::LockedAmplitude) = ()
+get_controls(ampl::LockedAmplitude) = ()
 
 substitute_controls(ampl::LockedAmplitude, controls_map) = ampl
 
@@ -91,7 +91,7 @@ end
 # An amplitude that has `control` as the first field
 abstract type ControlAmplitude end
 
-getcontrols(ampl::ControlAmplitude) = (ampl.control,)
+get_controls(ampl::ControlAmplitude) = (ampl.control,)
 
 function substitute_controls(ampl::CT, controls_map) where {CT<:ControlAmplitude}
     control = get(controls_map, ampl.control, ampl.control)

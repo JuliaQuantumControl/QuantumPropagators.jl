@@ -8,29 +8,29 @@ using QuantumPropagators: Generator, Operator
 using QuantumControlBase.TestUtils: random_hermitian_matrix
 
 
-@testset "Simple getcontrols" begin
+@testset "Simple get_controls" begin
 
     H₀ = random_hermitian_matrix(5, 1.0)
     H₁ = random_hermitian_matrix(5, 1.0)
     H₂ = random_hermitian_matrix(5, 1.0)
 
-    @test length(getcontrols(H₀)) == 0
+    @test length(get_controls(H₀)) == 0
 
     H = (nothing, (nothing, nothing))
-    @test_throws MethodError getcontrols(H)
+    @test_throws MethodError get_controls(H)
 
     ϵ₁ = t -> t
     ϵ₂ = t -> 0.0
     H = (H₀, (H₁, ϵ₁), (H₂, ϵ₂))
-    @test getcontrols(H) == (ϵ₁, ϵ₂)
+    @test get_controls(H) == (ϵ₁, ϵ₂)
 
     H = (H₀, (H₁, ϵ₁), (H₂, ϵ₁))
-    @test getcontrols(H) == (ϵ₁,)
+    @test get_controls(H) == (ϵ₁,)
 
     u₁ = [0.1, 1.0]
     u₂ = [0.1, 2.0]
     H = (H₁, (H₂, u₁), (H₂, u₂))
-    @test getcontrols(H) == (u₁, u₂)
+    @test get_controls(H) == (u₁, u₂)
 
 end
 

@@ -61,9 +61,9 @@ The highest-level API of the `QuantumPropagators.jl` package consists of a singl
 
 At a slightly lower level, propagation of quantum states in encapsulated by [The Propagator interface](@ref):
 
-* [`initprop`](@ref) — Initialize a `propagator` object, which is of some concrete (method-dependent) sub-type of [`AbstractPropagator`](@ref QuantumPropagators.AbstractPropagator)
-* [`reinitprop!`](@ref) — Re-initialize the `propagator`
-* [`propstep!`](@ref) — Advance the `propagator`  by a single time step forward or backward
+* [`init_prop`](@ref) — Initialize a `propagator` object, which is of some concrete (method-dependent) sub-type of [`AbstractPropagator`](@ref QuantumPropagators.AbstractPropagator)
+* [`reinit_prop!`](@ref) — Re-initialize the `propagator`
+* [`prop_step!`](@ref) — Advance the `propagator`  by a single time step forward or backward
 * [`set_state!`](@ref) — Mutate the current quantum `state` of the `propagator`.
 * [`set_t!`](@ref QuantumPropagators.set_t!) — Mutate the current time of the `propagator` (**not exported**)
 

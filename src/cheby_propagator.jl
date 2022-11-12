@@ -1,4 +1,4 @@
-using .Controls: getcontrols, evalcontrols, discretize
+using .Controls: get_controls, evalcontrols, discretize
 
 """Propagator for Chebychev propagation (`method=:cheby`).
 
@@ -29,7 +29,7 @@ set_t!(propagator::ChebyPropagator, t) = _pwc_set_t!(propagator, t)
 
 """
 ```julia
-cheby_propagator = initprop(
+cheby_propagator = init_prop(
     state,
     generator,
     tlist;
@@ -52,8 +52,8 @@ initializes a [`ChebyPropagator`](@ref).
 # Method-specific keyword arguments
 
 * `control_ranges`: a dict the maps the controls in `generator` (see
-  [`getcontrols`](@ref QuantumPropagators.Controls.getcontrols)) to a tuple of
-  min/max values. The Chebychev coefficients will be calculated based on a
+  [`get_controls`](@ref QuantumPropagators.Controls.get_controls)) to a tuple
+  of min/max values. The Chebychev coefficients will be calculated based on a
   spectral envelope that assumes that each control can take arbitrary values
   within the min/max range. If not given, the ranges are determined
   automatically. Specifying manual control ranges can be useful when the the
@@ -74,7 +74,7 @@ initializes a [`ChebyPropagator`](@ref).
 * `specrange_kwargs`: All further keyword arguments are passed to the
   [`specrange`](@ref QuantumPropagators.SpectralRange.specrange) function
 """
-function initprop(
+function init_prop(
     state,
     generator,
     tlist,
@@ -91,7 +91,7 @@ function initprop(
     specrange_kwargs...
 )
     tlist = convert(Vector{Float64}, tlist)
-    controls = getcontrols(generator)
+    controls = get_controls(generator)
     controlvals = [discretize(control, tlist) for control in controls]
 
     G = _pwc_get_max_genop(generator, controls, tlist)
@@ -163,7 +163,7 @@ _transform_control_ranges(c, ϵ_min, ϵ_max, check) = (ϵ_min, ϵ_max)
 
 """
 ```julia
-reinitprop!(
+reinit_prop!(
     propagator::ChebyPropagator,
     state;
     transform_control_ranges=((c, ϵ_min, ϵ_max, check) => (ϵ_min, ϵ_max)),
@@ -204,7 +204,7 @@ amplitudes in `propagator.parameters`.
   will re-calculate the Chebychev coefficients only if the current amplitudes
   differ by more than a factor of two from the ranges that were used when
   initializing the propagator (`control_ranges` parameter in
-  [`initprop`](@ref), which would have had to overestimate the actual
+  [`init_prop`](@ref), which would have had to overestimate the actual
   amplitudes by at least a factor of two).  When re-calculating, the
   `control_ranges` will overestimate the amplitudes by a factor of five. With
   this `transform_control_ranges`, the propagation will be stable as long as
@@ -219,7 +219,7 @@ amplitudes in `propagator.parameters`.
 
 All other keyword arguments are ignored.
 """
-function reinitprop!(
+function reinit_prop!(
     propagator::ChebyPropagator,
     state;
     transform_control_ranges=_transform_control_ranges,
@@ -298,7 +298,7 @@ QuantumPropagators.SpectralRange.specrange) for those operators.
 * `generator`: dynamical generator, e.g. a time-dependent
 * `tlist`: The time grid for the propagation
 * `control_ranges`: a dict that maps controls that occur in `generator` (cf.
-  [`getcontrols`](@ref) to a tuple of mimimum and maximum amplitude for that
+  [`get_controls`](@ref) to a tuple of mimimum and maximum amplitude for that
   control
 * `method`: method name to pass to  [`specrange`](@ref
   QuantumPropagators.SpectralRange.specrange)
@@ -322,7 +322,7 @@ function cheby_get_spectral_envelope(generator, tlist, control_ranges, method; k
 end
 
 
-function propstep!(propagator::ChebyPropagator)
+function prop_step!(propagator::ChebyPropagator)
     Ψ = propagator.state
     H = propagator.genop
     n = propagator.n
