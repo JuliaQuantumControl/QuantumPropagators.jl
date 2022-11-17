@@ -3,7 +3,7 @@ module Controls
 export discretize, discretize_on_midpoints
 export get_controls
 export get_tlist_midpoints
-export evalcontrols, evalcontrols!, substitute_controls
+export evaluate, evaluate!, substitute
 
 using LinearAlgebra
 
@@ -185,50 +185,172 @@ get_controls(operator)
 
 for a static operator (matrix) returns an empty tuple.
 """
-get_controls(operator::AbstractMatrix) = Tuple([])
+function get_controls(operator::AbstractMatrix)
+    return Tuple([])
+end
 
 
 
-"""Replace the controls in `generator` with static values.
+"""Evaluate all controls.
+
+In general, `evaluate(object, args...; vals_dict=IdDict())` evaluates the
+`object` for a specific point in time indicated by the positional `args`. Any
+control in `object` is evaluated at the specified point in time. Alternatively,
+the `vals_dict` maps a controls to value ("plug in this value for the given
+control")
+
+For example,
 
 ```julia
-op = evalcontrols(generator, vals_dict)
+op = evaluate(generator, t)
 ```
 
-replaces the time-dependent controls in `generator` with the values in
-`vals_dict` and returns the static operator `op`.
-
-The `vals_dict` is a dictionary (`IdDict`) mapping controls as returned by
-`get_controls(generator)` to values.
+evaluates `generator` at time `t`. This requires that any control in
+`generator` is a callable that takes `t` as a single argument.
 
 ```julia
-op = evalcontrols(generator, vals_dict, tlist, n)
-op = evalcontrols(generator, vals_dict, t)
+op = evaluate(generator, tlist, n)
 ```
 
-acts similarly for generators that have explicit time dependencies (apart for
-the controls). The additional parameters indicate that `generator` has explicit
-time dependencies that are well-defined on the intervals of a time grid
-`tlist`, and that `vals_dict` should be assumed to relate to the n'th interval
-of that time grid. Respectively, an additional parameter `t` indicates the
-`generator` is a time-continuous explicit dependency and that `vals_dict`
-contains values defined at time `t`.
+evaluates `generator` for the n'th interval of `tlist`. This uses the
+definitions for the midpoints in [`discretize_on_midpoints`](@ref).
+The controls in `generator` may be vectors (see [`discretize`](@ref),
+[`discretize_on_midpoints`](@ref)) or callables of `t`.
+
+```julia
+op = evaluate(generator, t; vals_dict)
+op = evaluate(generator, tlist, n; vals_dict)
+```
+
+resolves any explicit time dependencies in `generator` at the specified point
+in time, but uses the value in the given `vals_dict` for any control in
+`vals_dict`.
+
+
+```julia
+a = evaluate(ampl, tlist, n; vals_dict=IdDict())
+a = evaluate(ampl, t; vals_dict=IdDict())
+```
+
+evaluates a control amplitude to a scalar by evaluating any explicit time
+dependency, and by replacing each control with the corresponding value in
+`vals_dict`.
+
+Calling `evaluate` for an object with no implicit or explicit time dependence
+should return the object unchanged.
+
+For generators without any explicit time dependence,
+
+```julia
+op = evaluate(generator; vals_dict)
+```
+
+can be used. The `vals_dict` in this case must contina values for all controls
+in `generator`.
 
 # See also:
 
-* [`evalcontrols!`](@ref) to update `op` with new `vals_dict`.
+* [`evaluate!`](@ref) — update an existing operator with a re-evaluation of a
+generator at a different point in time.
 """
-function evalcontrols(generator::Tuple, vals_dict::AbstractDict, _...)
+function evaluate(object, args...; vals_dict=IdDict())
+    # Fallback: If `object` has to components, just look up `object` in
+    # `vals_dict`
+    return get(vals_dict, object, object)
+end
+
+
+function evaluate(operator::AbstractMatrix, args...; kwargs...)
+    # objects without any explicit or explicit time dependency evaluate to
+    # themselves
+    return operator
+end
+
+
+# Midpoint of n'th interval of tlist, but snap to beginning/end (that's
+# because any S(t) is likely exactly zero at the beginning and end, and we
+# want to use that value for the first and last time interval)
+function _t(tlist, n)
+    @assert 1 <= n <= (length(tlist) - 1)  # n is an *interval* of `tlist`
+    if n == 1
+        t = tlist[begin]
+    elseif n == length(tlist) - 1
+        t = tlist[end]
+    else
+        dt = tlist[n+1] - tlist[n]
+        t = tlist[n] + dt / 2
+    end
+    return t
+end
+
+
+function evaluate(func::Function, tlist::Vector, n::Int64; vals_dict=IdDict())
+    if haskey(vals_dict, func)
+        return vals_dict[func]
+    else
+        return func(_t(tlist, n))
+    end
+end
+
+
+function evaluate(func::Function, t::Float64; vals_dict=IdDict())
+    if haskey(vals_dict, func)
+        return vals_dict[func]
+    else
+        return func(t)
+    end
+end
+
+
+function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict=IdDict())
+    if haskey(vals_dict, control)
+        return vals_dict[control]
+    else
+        if length(control) == length(tlist) - 1
+            return control[n]
+        elseif length(control) == length(tlist)
+            # convert to midpoint values
+            if n == 1
+                return control[1]
+            elseif n == length(tlist)
+                return control[n]
+            else
+                return 2 * control[n] - control[n-1]
+            end
+        else
+            error(
+                "control (length $(length(control))) must be discretized either on `tlist` (length $(length(tlist))) or on the midpoints of `tlist`"
+            )
+        end
+    end
+end
+
+
+function evaluate(generator::Tuple, args...; vals_dict=IdDict())
     if isa(generator[1], Tuple)
         control = generator[1][2]
-        op = vals_dict[control] * generator[1][1]
+        coeff = evaluate(control, args...; vals_dict)
+        if coeff isa Number
+            op = coeff * generator[1][1]
+        else
+            error(
+                "In `evaluate(::$(typeof(generator)), …)`, the control $control does not evaluate to a number with the given arguments $args, vals_dict=$vals_dict"
+            )
+        end
     else
         op = copy(generator[1])
     end
     for part in generator[2:end]
         if isa(part, Tuple)
             control = part[2]
-            op += vals_dict[control] * part[1]
+            coeff = evaluate(control, args...; vals_dict)
+            if coeff isa Number
+                op += coeff * part[1]
+            else
+                error(
+                    "In `evaluate(::$(typeof(generator)), …)`, the control $control does not evaluate to a number with the given arguments $args, vals_dict=$vals_dict"
+                )
+            end
         else
             op += part
         end
@@ -236,32 +358,33 @@ function evalcontrols(generator::Tuple, vals_dict::AbstractDict, _...)
     return op
 end
 
-evalcontrols(num::Number, vals_dict, _...) = num
-
-evalcontrols(operator::AbstractMatrix, _...) = operator
-
 
 """Update an existing evaluation of a `generator`.
 
 ```julia
-evalcontrols!(op, generator, vals_dict, args...)
+evaluate!(op, generator, args..; vals_dict=IdDict())
 ```
 
 performs an in-place update on an `op` the was obtained from a previous call to
-[`evalcontrols`](@ref) with the same `generator`, but a different `val_dict`.
+[`evaluate`](@ref) with the same `generator`, but for a different point in time
+and/or different values in `vals_dict`.
 """
-function evalcontrols!(op, generator::Tuple, vals_dict::AbstractDict, _...)
+function evaluate!(op, generator::Tuple, args...; vals_dict=IdDict())
     if generator[1] isa Tuple
         control = generator[1][2]
         copyto!(op, generator[1][1])
-        lmul!(vals_dict[control], op)
+        coeff = evaluate(control, args...; vals_dict)
+        @assert coeff isa Number
+        lmul!(coeff, op)
     else
         copyto!(op, generator[1])
     end
     for part in generator[2:end]
         if part isa Tuple
             control = part[2]
-            axpy!(vals_dict[control], part[1], op)
+            coeff = evaluate(control, args...; vals_dict)
+            @assert coeff isa Number
+            axpy!(coeff, part[1], op)
         else
             axpy!(true, part, op)
         end
@@ -270,39 +393,56 @@ function evalcontrols!(op, generator::Tuple, vals_dict::AbstractDict, _...)
 end
 
 
-"""Substitute the controls inside a `generator` with different `controls`.
+function evaluate!(op::T, generator::T, args...; kwargs...) where {T}
+    if op ≡ generator
+        return op
+    else
+        # If they're not identical, they shouldn't be of the same type. If
+        # there's some weird custom type where static and timedependent
+        # objects can be of the same type, they should define a custom method.
+        error("typeof(op) = typeof(generator), but op ≢ generator")
+    end
+end
+
+
+"""Substitute inside the given object.
 
 ```julia
-new_generator = substitute_controls(generator, controls_map)
+object = substitute(object, replacements)
 ```
 
-Creates a new generator from `generator` by replacing any control that is in
-the dict `controls_map` with `controls_map[control]`. Controls that are not in
-`controls_map` are kept unchanged.
+returns a modified object with the replacements defined in the given
+`replacements` dictionary. Things that can be replaced include operators,
+controls, and amplitudes. For example,
 
-The substituted controls must be time-dependent; to substitute static values
-for the controls, converting the time-dependent `generator` into a static
-operator, use [`evalcontrols`](@ref).
+```julia
+generator = substitute(generator::Generator, replacements)
+operator = substitute(operator::Operator, replacements)
+amplitude = substitute(amplitude, controls_replacements)
+```
 
-Calling `substitute_controls` on a static operator will return it unchanged.
+Note that `substitute` cannot be used to replace dynamic quantities, e.g.
+controls, with static value. Use [`evaluate`](@ref) instead for that purpose.
 """
-function substitute_controls(generator::Tuple, controls_map)
+function substitute(object::T, replacements) where {T}
+    return get(replacements, object, object)
+end
+
+
+function substitute(generator::Tuple, replacements::AbstractDict)
     new_generator = Any[]
     for part in generator
         if part isa Tuple
             operator, control = part
-            new_part = (operator, get(controls_map, control, control))
-            push!(new_generator, new_part)
+            new_operator = substitute(operator, replacements)
+            new_control = substitute(control, replacements)
+            push!(new_generator, (new_operator, new_control))
         else
-            push!(new_generator, part)
+            push!(new_generator, substitute(part, replacements))
         end
     end
     return Tuple(new_generator)
 end
-
-
-# A static operator has no controls and remains unchanged
-substitute_controls(operator::AbstractMatrix, controls_map) = operator
 
 
 end

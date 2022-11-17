@@ -5,7 +5,7 @@ using SparseArrays
 
 export Generator, Operator, ScaledOperator
 export hamiltonian, liouvillian
-import ..Controls: get_controls, evalcontrols, evalcontrols!, substitute_controls
+import ..Controls: get_controls, evaluate, evaluate!, substitute
 
 
 @doc raw"""A time-dependent generator.
@@ -39,7 +39,7 @@ should not be mutated.
 # See also
 
 * [`Operator`](@ref) for static generators, which may be obtained from a
-  `Generator` via [`evalcontrols`](@ref evalcontrols).
+  `Generator` via [`evaluate`](@ref).
 """
 struct Generator{OT,AT}
 
@@ -85,7 +85,7 @@ constant `Number`. If the number of coefficients is less than the
 number of operators, the first `ops` are considered to have ``c_l = 1``.
 
 An `Operator` object would generally not be instantiated directly, but be
-obtained from a [`Generator`](@ref) via [`evalcontrols`](@ref evalcontrols).
+obtained from a [`Generator`](@ref) via [`evaluate`](@ref).
 """
 struct Operator{OT,CT<:Number}
 
@@ -151,6 +151,10 @@ function LinearAlgebra.ishermitian(O::Operator{OT,CT}) where {OT,CT}
 end
 
 
+function evaluate(op::Operator, args...; kwargs...)
+    return op
+end
+
 
 """A static operator with a scalar pre-factor.
 
@@ -204,6 +208,11 @@ Base.Array(O::ScaledOperator) = Array{ComplexF64}(O)
 Base.size(O::ScaledOperator) = size(O.operator)
 
 LinearAlgebra.ishermitian(O::ScaledOperator) = (isreal(O.coeff) && ishermitian(O.operator))
+
+
+function evaluate(op::ScaledOperator, args...; kwargs...)
+    return op
+end
 
 
 """Initialize a (usually time-dependent) Hamiltonian.
@@ -332,13 +341,6 @@ function _make_generator(terms...; check=false)
         if (AT <: Number)
             return Operator(ops, amplitudes)
         else
-            if check
-                for (i, ampl) in enumerate(amplitudes)
-                    if !check_amplitude(ampl; throw_error=false)
-                        @warn("Collected amplitude #$i is invalid")
-                    end
-                end
-            end
             return Generator(ops, amplitudes)
         end
     end
@@ -589,376 +591,51 @@ end
 
 get_controls(operator::Operator) = Tuple([])
 
-function evalcontrols(generator::Generator, vals_dict::AbstractDict, args...)
+
+function evaluate(generator::Generator, args...; vals_dict=IdDict())
     coeffs = []
     for ampl in generator.amplitudes
-        push!(coeffs, evalcontrols(ampl, vals_dict, args...))
+        coeff = evaluate(ampl, args...; vals_dict)
+        if coeff isa Number
+            push!(coeffs, coeff)
+        else
+            error(
+                "In `evaluate($generator, …)`, the amplitude $ampl does not evaluate to a number with the given arguments $args, vals_dict=$vals_dict"
+            )
+        end
     end
     coeffs = [coeffs...]  # narrow eltype
     return Operator(generator.ops, coeffs)
 end
 
 
-function evalcontrols!(op::Operator, generator::Generator, vals_dict::AbstractDict, args...)
+function evaluate!(op::Operator, generator::Generator, args...; vals_dict=IdDict())
     @assert length(op.ops) == length(generator.ops)
     @assert all(O ≡ P for (O, P) in zip(op.ops, generator.ops))
     for (i, ampl) in enumerate(generator.amplitudes)
-        op.coeffs[i] = evalcontrols(ampl, vals_dict, args...)
+        coeff = evaluate(ampl, args...; vals_dict)
+        @assert coeff isa Number
+        op.coeffs[i] = coeff
     end
     return op
 end
 
-evalcontrols!(op1::T, op2::T, _...) where {T<:AbstractMatrix} = op1
-evalcontrols(operator::Operator, _...) = operator
-evalcontrols!(op1::T, op2::T, _...) where {T<:Operator} = op1
 
-
-"""
-```julia
-ampl = substitute_controls(ampl, controls_map)
-```
-
-returns a new amplitude by replacing the original controls that the amplitude
-might depend on by the controls in `controls_map`.
-
-Note that for "trivial" amplitudes (where the amplitude is identical to the
-control), this simply looks up the control in `controls_map`.
-"""
-substitute_controls(ampl::Function, controls_map) = get(controls_map, ampl, ampl)
-substitute_controls(ampl::Vector, controls_map) = get(controls_map, ampl, ampl)
-
-
-function substitute_controls(generator::Generator, controls_map)
-    amplitudes = [substitute_controls(ampl, controls_map) for ampl in generator.amplitudes]
-    return Generator(generator.ops, amplitudes)
+function substitute(generator::Generator, replacements)
+    if generator ∈ keys(replacements)
+        return replacements[generator]
+    end
+    ops = [substitute(op, replacements) for op in generator.ops]
+    amplitudes = [substitute(ampl, replacements) for ampl in generator.amplitudes]
+    return Generator(ops, amplitudes)
 end
 
-substitute_controls(operator::Operator, controls_map) = operator
-
-
-"""Run a check on the given `generator` relative to `state`.
-
-```julia
-check_generator(generator, state; throw_error=true)
-```
-
-performs a thorough check that all required methods are defined for the type of
-the given `generator` under the assumption that `generator` describes the
-dynamics of the given `state`.
-
-Returns `true` if the `generator` type passes all checks. Otherwise, throws an
-error if `throw_error=true` (default) or return `false`.
-
-Use this to check a custom type for a dynamic generator.
-"""
-function check_generator(generator, state, throw_error=true)
-
-    GT = typeof(generator)
-
-    local control, controls, operator, μ
-
-    # get_controls
-    if hasmethod(get_controls, (GT,))
-        try
-            controls = get_controls(generator)
-        catch exc
-            @error("get_controls(::$GT) returns an invalid result $exc")
-            throw_error ? rethrow() : return false
-        end
-    else
-        @error("get_controls(::$GT) is not implemented")
-        throw_error ? error("Invalid generator") : return false
+function substitute(operator::Operator, replacements)
+    if operator ∈ keys(replacements)
+        return replacements[operator]
     end
-    # TODO: check controls (must be discretizable) etc.
-
-    errors = String[]
-
-    tlist = [0.0, 1.0]
-    vals_dict = IdDict(ϵ => 1.0 for ϵ in controls)
-
-    # evalcontrols
-    if hasmethod(evalcontrols, (GT, typeof(vals_dict), typeof(tlist), Int64))
-        try
-            operator = evalcontrols(generator, vals_dict, tlist, 1)
-        catch exc
-            @error("evalcontrols(::$GT, …) is invalid: $exc")
-            throw_error ? rethrow() : return false
-        end
-        try
-            check_operator(operator, state)
-        catch exc
-            push!(errors, "evalcontrols does not return a valid operator: $exc")
-        end
-    else
-        @error("evalcontrols(::$GT, vals_dict, tlist, n) is not implemented")
-        throw_error ? error("Invalid generator") : return false
-    end
-
-    # evalcontrols!
-    if hasmethod(
-        evalcontrols!,
-        (typeof(operator), GT, typeof(vals_dict), typeof(tlist), Int64)
-    )
-        try
-            evalcontrols!(operator, generator, vals_dict, tlist, 1)
-        catch exc
-            push!(errors, "evalcontrols!(…, ::$GT, …) is invalid: $exc")
-        end
-    else
-        push!(errors, "evalcontrols!(op, ::$GT, vals_dict, tlist, n) is not implemented")
-    end
-
-    # substitute_controls
-    controls_map = IdDict(ϵ => ϵ for ϵ in controls)
-    if hasmethod(substitute_controls, (GT, typeof(controls_map)))
-        try
-            substitute_controls(generator, controls_map)
-        catch exc
-            push!(errors, "substitute_controls(::$GT, …) is invalid: $exc")
-        end
-    else
-        push!(errors, "substitute_controls(::$GT, …) is not implemented")
-    end
-
-    # get_control_deriv
-    #=
-    if hasmethod(get_control_deriv, (GT, eltype(controls)))
-        for control in controls
-            try
-                μ = get_control_deriv(generator, control)
-                if hasmethod(
-                    evalcontrols,
-                    (typeof(μ), typeof(vals_dict), typeof(tlist), Int64)
-                )
-                    μ_op = evalcontrols(μ, vals_dict, tlist, 1)
-                    check_operator(μ_op, state)
-                else
-                    push!(
-                        errors,
-                        "get_control_deriv(::$GT, …) does not return a proper generator"
-                    )
-                end
-            catch exc
-                push!(errors, "get_control_deriv(::$GT, …) is invalid: $exc")
-            end
-        end
-        v = rand()
-        dummy_control = t -> v
-        try
-            μ = get_control_deriv(generator, dummy_control)
-            if !isnothing(μ)
-                push!(
-                    errors,
-                    "get_control_deriv(::$GT, …) does not return `nothing` for a control that the generator does not depend on"
-                )
-            end
-        catch exc
-            push!(
-                errors,
-                "get_control_deriv(::$GT, …)) is invalid for a control that the generator does not depend on: $exc"
-            )
-        end
-    else
-        push!(errors, "get_control_deriv(::$GT, …) is not implemented")
-    end
-    =#
-
-    # get_control_derivs has a default implementation, so we don't need to check
-    # it
-
-    if length(errors) > 0
-        for error in errors
-            @error(error)
-        end
-        throw_error ? error("Invalid generator") : return false
-    end
-
-    return true
-
-end
-
-
-
-"""Run a check on the given `operator` relative to `state`.
-
-```julia
-check_operator(operator, state; throw_error=true)
-```
-
-performs a thorough check that all required methods are defined for the type of
-the given `operator`. Most importantly, check that `mul!` is implemented to
-multiply the `operator` to the given `state`. Note that `copy(state)` must be
-implemented.
-
-Return `true` if the `operator` passes all checks. Otherwise, throws an
-error if `throw_error=true` (default) or return `false`.
-
-Use this to check a custom type for an operator.
-"""
-function check_operator(operator, state; throw_error=true)
-
-    OT = typeof(operator)
-    ST = typeof(state)
-    local state2
-    errors = String[]
-
-    # copy/copyto! (warn)
-    if hasmethod(copy, (OT,))
-        try
-            op2 = copy(operator)
-            if hasmethod(copyto!, (typeof(op2), OT,))
-                try
-                    copyto!(op2, operator)
-                catch exc
-                    push!(errors, "copyto!(…, ::$OT) is invalid: $exc")
-                end
-            else
-                @warn("copyto!(…, ::$OT) is not implemented")
-            end
-        catch exc
-            push!(errors, "copy(::$OT))) is invalid: $exc")
-        end
-    else
-        @warn("copy(::$OT) is not implemented")
-    end
-
-    # mul!
-    if hasmethod(mul!, (ST, OT, ST, Float64, Float64))
-        state2 = copy(state)
-        try
-            mul!(state2, operator, state, rand(), rand())
-        catch exc
-            push!(errors, "mul!(…, ::$OT, …) is invalid: $exc")
-        end
-    else
-        push!(errors, "mul!(…, ::$OT, …) is not implemented")
-    end
-
-    if length(errors) > 0
-        for error in errors
-            @error(error)
-        end
-        throw_error ? error("Invalid operator") : return false
-    end
-
-    return true
-
-end
-
-
-"""Run a check on the given control amplitude.
-
-```julia
-check_amplitude(ampl; throw_error=true)
-```
-
-checks that `ampl` fulfills the requirements of a control amplitude in a
-[`Generator`](@ref).
-
-Return `true` if the `ampl` passes all checks. Otherwise, throws an
-error if `throw_error=true` (default) or return `false`.
-
-Use this to check a custom type for an amplitude.
-"""
-function check_amplitude(ampl; throw_error=true)
-
-    local control, controls, val
-
-    AT = typeof(ampl)
-
-    errors = String[]
-
-    # get_controls
-    if hasmethod(get_controls, (AT,))
-        try
-            controls = get_controls(ampl)
-        catch exc
-            @error("get_controls(::$AT) for amplitude returns an invalid result $exc")
-            throw_error ? rethrow() : return false
-        end
-    else
-        @error("get_controls(::$AT) for amplitude is not implemented")
-        throw_error ? error("Invalid control amplitude") : return false
-    end
-
-    # substitute_controls
-    controls_map = IdDict(ϵ => ϵ for ϵ in controls)
-    if hasmethod(substitute_controls, (AT, typeof(controls_map)))
-        try
-            substitute_controls(ampl, controls_map)
-        catch exc
-            push!(errors, "substitute_controls(::$AT, …) for amplitude is invalid: $exc")
-        end
-    else
-        push!(errors, "substitute_controls(::$AT, …) for amplitude is not implemented")
-    end
-
-    vals_dict = IdDict(ϵ => 1.0 for ϵ in controls)
-
-    # evalcontrols
-    if hasmethod(evalcontrols, (AT, typeof(vals_dict), Vector{Float64}, Int64))
-        tlist = [0.0, 1.0]
-        try
-            val = evalcontrols(ampl, vals_dict, tlist, 1)
-        catch exc
-            @error("evalcontrols(::$AT, …) for amplitude is invalid: $exc")
-            throw_error ? rethrow() : return false
-        end
-        if !(val isa Number)
-            push!(errors, "evalcontrols(::$AT, …) for amplitude does not return a number")
-        end
-    else
-        @error("evalcontrols(::$AT, …) for amplitude is not implemented")
-        throw_error ? error("Invalid control amplitude") : return false
-    end
-
-    # get_control_deriv
-    #=
-    if hasmethod(get_control_deriv, (AT, eltype(controls)))
-        for control in controls
-            try
-                d = get_control_deriv(ampl, control)
-                val = evalcontrols(d, vals_dict, tlist, 1)
-                if !(val isa Number)
-                    push!(
-                        errors,
-                        "get_control_deriv(::$AT, …) for amplitude does not return something that evaluates to a number"
-                    )
-                end
-            catch exc
-                push!(errors, "get_control_deriv(::$AT, …) for amplitude is invalid: $exc")
-            end
-        end
-        v = rand()
-        dummy_control = t -> v
-        try
-            d = get_control_deriv(ampl, dummy_control)
-            if d ≠ 0.0
-                push!(
-                    errors,
-                    "get_control_deriv(::$AT, …) for amplitude does not return `0.0` for a control that the amplitude does not depend on"
-                )
-            end
-        catch exc
-            push!(
-                errors,
-                "get_control_deriv(::$AT, …)) for amplitude is invalid for a control that the generator does not depend on: $exc"
-            )
-        end
-    else
-        push!(errors, "get_control_deriv(::$AT, …) for amplitude is not implemented")
-    end
-    =#
-
-    if length(errors) > 0
-        for error in errors
-            @error(error)
-        end
-        throw_error ? error("Invalid control amplitude") : return false
-    end
-
-    return true
-
+    ops = [substitute(op, replacements) for op in operator.ops]
+    return Operator(ops, operator.coeffs)
 end
 
 

@@ -1,4 +1,4 @@
-using .Controls: get_controls, evalcontrols, discretize
+using .Controls: get_controls, evaluate, discretize
 
 """Propagator for Chebychev propagation (`method=:cheby`).
 
@@ -311,9 +311,9 @@ function cheby_get_spectral_envelope(generator, tlist, control_ranges, method; k
     # amplitude ≠ control function). For now, we just take any explicit time
     # dependency in the middle of the time grid.
     n = length(tlist) ÷ 2
-    G_min = evalcontrols(generator, min_vals, tlist, n)
+    G_min = evaluate(generator, tlist, n; vals_dict=min_vals)
     max_vals = IdDict(control => r[2] for (control, r) ∈ control_ranges)
-    G_max = evalcontrols(generator, max_vals, tlist, n)
+    G_max = evaluate(generator, tlist, n; vals_dict=max_vals)
     E_min, E_max = SpectralRange.specrange(G_max, method; kwargs...)
     _E_min, _E_max = SpectralRange.specrange(G_min, method; kwargs...)
     E_min = (_E_min < E_min) ? _E_min : E_min

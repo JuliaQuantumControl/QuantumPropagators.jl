@@ -2,7 +2,7 @@ module Amplitudes
 
 export LockedAmplitude, ShapedAmplitude
 
-import ..Controls: get_controls, evalcontrols, substitute_controls, discretize_on_midpoints
+import ..Controls: get_controls, evaluate, substitute, discretize_on_midpoints
 
 
 #### LockedAmplitude ##########################################################
@@ -72,13 +72,15 @@ end
 
 get_controls(ampl::LockedAmplitude) = ()
 
-substitute_controls(ampl::LockedAmplitude, controls_map) = ampl
+function substitute(ampl::LockedAmplitude, replacements)
+    return get(replacements, ampl, ampl)
+end
 
-function evalcontrols(ampl::LockedPulseAmplitude, vals_dict, tlist, n)
+function evaluate(ampl::LockedPulseAmplitude, tlist, n; _...)
     return ampl.shape[n]
 end
 
-function evalcontrols(ampl::LockedContinuousAmplitude, vals_dict, tlist, n)
+function evaluate(ampl::LockedContinuousAmplitude, vals_dict, tlist, n)
     # It's technically possible to determine t from (tlist, n), but maybe we
     # shouldn't
     error("LockedAmplitude must be initialized with tlist")
@@ -93,9 +95,13 @@ abstract type ControlAmplitude end
 
 get_controls(ampl::ControlAmplitude) = (ampl.control,)
 
-function substitute_controls(ampl::CT, controls_map) where {CT<:ControlAmplitude}
-    control = get(controls_map, ampl.control, ampl.control)
-    CT(control, (getfield(ampl, field) for field in fieldnames(CT)[2:end])...)
+function substitute(ampl::CT, replacements) where {CT<:ControlAmplitude}
+    if ampl in keys(replacements)
+        return replacements[ampl]
+    else
+        control = substitute(ampl.control, replacements)
+        CT(control, (getfield(ampl, field) for field in fieldnames(CT)[2:end])...)
+    end
 end
 
 
@@ -168,33 +174,10 @@ end
 (ampl::ShapedContinuousAmplitude)(t::Float64) = ampl.shape(t) * ampl.control(t)
 
 
-"""
-```julia
-aₙ = evalcontrols(ampl, vals_dict)
-```
-
-evaluates a general control amplitude by replacing each control with the
-values in `vals_dict`. Returns a number.
-
-Note that for "trivial" amplitudes (where the amplitude is identical to the
-control), this simply looks up the control in `vals_dict`.
-
-For amplitudes with explicit time dependencies (outside of the controls),
-additional parameters `tlist, n` or `t` should be given to indicate the time at
-which the amplitude is to be evaluated.
-"""
-evalcontrols(ampl::Function, vals_dict, _...) = vals_dict[ampl]
-evalcontrols(ampl::Vector, vals_dict, _...) = vals_dict[ampl]
-
-
-function evalcontrols(ampl::ShapedPulseAmplitude, vals_dict, tlist, n)
-    return ampl.shape[n] * vals_dict[ampl.control]
-end
-
-function evalcontrols(ampl::ShapedContinuousAmplitude, vals_dict, tlist, n)
-    # It's technically possible to determind t from (tlist, n), but maybe we
-    # shouldn't
-    error("ShapedAmplitude must be initialized with tlist")
+function evaluate(ampl::ShapedPulseAmplitude, args...; vals_dict=IdDict())
+    S_t = evaluate(ampl.shape, args...; vals_dict)
+    ϵ_t = evaluate(ampl.control, args...; vals_dict)
+    return S_t * ϵ_t
 end
 
 

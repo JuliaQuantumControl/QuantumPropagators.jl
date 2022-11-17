@@ -104,12 +104,13 @@ end
     @test norm(ρ̇ - ρ̇_LvN) < 1e-15
 
     L = liouvillian(H, c_ops; convention=:LvN)
-    ℒ = L.ops[1] + L.ops[2] * L.amplitudes[1](0)
-    L0 = evalcontrols(L, IdDict(ϵ => ϵ(0)))
+    t = 0.0
+    ℒ = L.ops[1] + L.ops[2] * L.amplitudes[1](t)
+    L0 = evaluate(L, t)
     @test norm(ℒ - Array(L0)) < 1e-12
 
     L = liouvillian(hamiltonian(H...), c_ops; convention=:LvN)
-    L0 = evalcontrols(L, IdDict(ϵ => ϵ(0)))
+    L0 = evaluate(L, t)
     @test norm(ℒ - Array(L0)) < 1e-12
 
     ρ̇_LvN = (

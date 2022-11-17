@@ -23,7 +23,7 @@
 # functions defined in this file are always called explicitly, not implicitly
 # via dispatch on PiecewisePropagator.
 
-using .Controls: discretize, discretize_on_midpoints, evalcontrols, evalcontrols!
+using .Controls: discretize, discretize_on_midpoints, evaluate, evaluate!
 
 
 function _pwc_process_parameters(parameters, controls, tlist)
@@ -71,7 +71,7 @@ function _pwc_get_max_genop(generator, controls, tlist)
     n = length(tlist) ÷ 2
     max_vals =
         IdDict(control => maximum(controlvals[i]) for (i, control) in enumerate(controls))
-    return evalcontrols(generator, max_vals, tlist, n)
+    return evaluate(generator, tlist, n; vals_dict=max_vals)
 end
 
 
@@ -79,14 +79,14 @@ function _pwc_set_genop!(propagator::PiecewisePropagator, n)
     vals_dict = IdDict(c => propagator.parameters[c][n] for c in propagator.controls)
     generator = getfield(propagator, :generator)
     tlist = propagator.tlist
-    evalcontrols!(propagator.genop, generator, vals_dict, tlist, n)
+    evaluate!(propagator.genop, generator, tlist, n; vals_dict=vals_dict)
 end
 
 function _pwc_get_genop(propagator::PiecewisePropagator, n)
     vals_dict = IdDict(c => propagator.parameters[c][n] for c in propagator.controls)
     generator = getfield(propagator, :generator)
     tlist = propagator.tlist
-    evalcontrols(generator, vals_dict, tlist, n)
+    evaluate(generator, tlist, n; vals_dict=vals_dict)
 end
 
 

@@ -57,7 +57,7 @@ initializes an [`ExpPropagator`](@ref).
 # Method-specific keyword arguments
 
 * `func`: The function to evaluate. The argument `H_dt` is obtained by
-  constructing an operator `H` from `generator` via the [`evalcontrols`](@ref)
+  constructing an operator `H` from `generator` via the [`evaluate`](@ref)
   function and the multiplied with the time step `dt` for the current time
   interval. The propagation then simply multiplies the return value of `func`
   with the current state
