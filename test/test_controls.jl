@@ -120,12 +120,19 @@ end
     evaluate!(Op, H, [0.0, 1.0], 1; vals_dict)
     @test norm(Array(Op) - (H₀ + 2.2 * H₁ + 2.3 * H₂)) < 1e-15
 
-    @test_throws "does not evaluate to a number" begin
-        evaluate(H)
-    end
+    if VERSION >= v"1.8.0"
 
-    @test_throws "does not evaluate to a number" begin
-        evaluate(H; vals_dict=IdDict(ϵ₁ => 1.2))
+        # older versions of Julia do not support substring matching in
+        # @test_throws
+
+        @test_throws "does not evaluate to a number" begin
+            evaluate(H)
+        end
+
+        @test_throws "does not evaluate to a number" begin
+            evaluate(H; vals_dict=IdDict(ϵ₁ => 1.2))
+        end
+
     end
 
     H = hamiltonian((H₁, ϵ₁), (H₂, ϵ₂))
