@@ -1,64 +1,68 @@
-# Dynamic Generators
+# Dynamical Generators
 
-The [`propagate`](@ref QuantumPropagators.propagate) routine simulates the dynamics of a state ``|Ψ⟩`` or ``ρ̂`` under the assumption that that time derivative of the state is described by a `generator`. The exact equation of motion is implicit in the [`Propagator`](@ref QuantumPropagators.AbstractPropagator), but all propagators implemented in the `QuantumPropagators` package assume that the generator is the time-dependent Hamiltonian ``Ĥ(t)`` in the Schrödinger equation (``ħ=1``)
+The [`propagate`](@ref QuantumPropagators.propagate) routine simulates the dynamics of a state ``|Ψ⟩`` or ``ρ̂`` under the assumption that the dynamics are described by a `generator` object. The exact equation of motion is implicit in the [`Propagator`](@ref QuantumPropagators.AbstractPropagator), but all propagators implemented in the `QuantumPropagators` package assume that the generator is the time-dependent Hamiltonian ``Ĥ(t)`` in the Schrödinger equation (``ħ=1``)
 
+```@raw html
+<a id="eq-se"></a>
+```
 ```math
+\tag{SE}
 i \frac{∂}{∂t} |Ψ⟩ = Ĥ(t) |Ψ⟩\,.
 ```
 
-The exact same form is also assumed in open quantum systems,
+## Operators
+
+When evaluating the right-hand-side of Eq. [(SE)](#eq-se), the time-dependent `generator` ``Ĥ(t)`` is first evaluated into a static `operator` object ``Ĥ`` for a specific point in time via the [`QuantumPropagators.Controls.evaluate`](@ref) function. The 5-argument [`LinearAlgebra.mul!`](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.mul!) the implements the application of the operator to the state ``|Ψ⟩``.
+
+
+
+## Hamiltonians
+
+The built-in [`hamiltonian`](@ref) function initializes a [`Generator`](@ref QuantumPropagators.Generators.Generator) object encapsulating a generator of the most general form
+
+```@raw html
+<a id="eq-generator"></a>
+```
+```math
+\tag{Generator}
+Ĥ(t) = Ĥ_0 + \sum_l a_l(\{ϵ_{l'}(t)\}, t) \, Ĥ_l\,.
+```
+
+The Hamiltonian consists of an (optional) drift term ``Ĥ_0`` and an arbitrary number of control terms that separate into a scalar *control amplitude* ``a_l(\{ϵ_{l'}(t)\}, t)`` and a static control operator  ``Ĥ_l``. Each *control amplitude* may consist of one or more *control function* ``ϵ_{l'}(t)``. Most commonly, ``a_l(t) ≡ ϵ_l(t)``, and thus the Hamiltonian is of the simpler form
+
+```math
+Ĥ(t) = Ĥ_0 + \sum_l ϵ_l(t) \, Ĥ_l\,.
+```
+
+The [`evaluate`](@ref QuantumPropagators.Controls.evaluate) function evaluates time-dependent [`Generator`](@ref QuantumPropagators.Generators.Generator) instances into static [`Operator`](@ref QuantumPropagators.Generators.Operator) objects.
+
+
+## Control Amplitudes
+
+The distinction between control amplitudes and control functions becomes important only in the context of optimal control, where the control functions are directly modified by optimal control, whereas the control amplitudes determine how the control functions couple to the control operators, or account for explicit time dependencies in the Hamiltonian.
+
+Just as the [`evaluate`](@ref QuantumPropagators.Controls.evaluate) function evaluates time-dependent generators into static operators, it also evaluates control amplitudes or control functions to scalar values.
+
+
+## Liouvillians
+
+In an open quantum system, the equation of motion is assumed to take the exact same form
+as in Eq. [(SE)](#eq-se),
 
 ```math
 i \frac{∂}{∂t} ρ̂ = L(t) ρ̂\,,
 ```
 
-where ``L`` is the Liouvillian up to a factor of ``i``, see [`liouvillian`](@ref) with `convention=:TDSE`.
+where ``L`` is the Liouvillian up to a factor of ``i``.
 
-## Control Functions
+The object representing ``L`` should be constructed with the [`liouvillian`](@ref) function, **with `convention=:TDSE`**. Just like [`hamiltonian`](@ref), this returns a [`Generator`](@ref QuantumPropagators.Generators.Generator) instance that [`evaluate`](@ref QuantumPropagators.Controls.evaluate) turns into a static [`Operator`](@ref QuantumPropagators.Generators.Operator) to be applied to a vectorized (!) state ``ρ̂``.
 
-While the generator may have an explicit time dependency, in the context of optimal control the time dependency will usually be implicit in a dependency of the generator on one or more control functions. That is, ``Ĥ(t) = Ĥ(\{ϵ_l(t)\}, t)``. Any object passed to [`propagate`](@ref) as a `generator` must implement the following methods:
+## Arbitrary Generators
 
-* [`QuantumPropagators.Controls.get_controls`](@ref) — extract the controls ``\{ϵ_l(t)\}`` from ``Ĥ(\{ϵ_l(t)\}, t)``
-* [`QuantumPropagators.Controls.evaluate`](@ref), [`QuantumPropagators.Controls.evaluate!`](@ref) — plug in values for the controls as well as any explicit time dependency to produce a static operator from the time-dependent generator
-* [`QuantumPropagators.Controls.substitute`](@ref)  — replace the controls with different (e.g., optimized) controls, producing a new time-dependent generator
+For any Hamiltonian or Liouvillian that is more general than the form in Eq. [(Generator)](#eq-generator), a custom type would have to be implemented.  In general, the [methods defined in the `QuantumPropagators.Controls` module](@ref QuantumPropagatorsControlsAPI) (respectively [`QuantumControl.Controls`](https://juliaquantumcontrol.github.io/QuantumControl.jl/stable/api/quantum_control/#QuantumControlControlsAPI) in the broader context of optimal control) determine the relationship between generator, operators, and controls and must be implemented for that custom type.
 
-```raw COMMENT
-* [`QuantumPropagators.Controls.get_control_deriv`](@ref) — return ``\frac{∂ Ĥ(\{ϵ_{l'}(t)\}, t)}{∂ ϵ_l(t)}``. The result may be `nothing` if ``Ĥ(t)`` does not depend on the particular ``ϵ_l(t)``, a static operator if ``Ĥ(t)`` is linear in the control ``ϵ_l(t)`` and has no explicit time dependency, or a new time-dependent generator to be evaluated via [`evaluate`](@ref QuantumPropagators.Generators.evaluate) otherwise.
-```
+In particular,
 
-When writing a custom generator type, the [`QuantumPropagators.Generators.check_generator`](@ref) routine should be used to check that all of these methods are implemented.
-
-## Built-in [`hamiltonian`](@ref) and [`liouvillian`](@ref) Generators.
-
-While any generator ``Ĥ(t) = Ĥ(\{ϵ_l(t)\}, t)`` can be implemented via a custom type, the built-in [`hamiltonian`](@ref) and [`liouvillian`](@ref) initialize a [`Generator`](@ref QuantumPropagators.Generators.Generator) object encapsulating a generator of the form
-
-```math
-Ĥ(t) = Ĥ_0 + \sum_l a_l(\{ϵ_{l'}(t)\}, t) \, Ĥ_l\,,
-```
-
-that is, an (optional) drift term ``Ĥ₀`` and an arbitrary number of control terms that separate into a scalar control amplitude ``a_l(\{ϵ_{l'}(t)\}, t)`` and a static control operator  ``Ĥ_l``.
-
-## Control Amplitudes
-
-In the form represented by a [`Generator`](@ref QuantumPropagators.Generators.Generator), the time-dependence of the control terms is via control amplitudes ``a_l(\{ϵ_{l'}(t)\}, t)``, which may depend on one or more control function ``\{ϵ_{l'}(t)\}``. In most cases, ``a_l(t) ≡ ϵ_l(t)``. Any other dependency of the control amplitudes on the control functions must be implemented via a custom type, for which the following methods must be defined:
-
-* [`QuantumPropagators.Controls.get_controls`](@ref)
-* [`QuantumPropagators.Controls.evaluate`](@ref)
-* [`QuantumPropagators.Controls.substitute`](@ref)
-
-These are similar to the equivalent methods for a custom generator. However, [`QuantumPropagators.Controls.evaluate`](@ref) for an amplitude returns a number, not an operator.
-
-```raw COMMENT
-Also, [`QuantumPropagators.Controls.get_control_deriv`](@ref) returns `0.0` if the control amplitude does not depend on a particular control function, instead of `nothing`.
-```
-
-Any custom amplitude implementation should be checked with [`QuantumPropagators.Generators.check_amplitude`](@ref)
-
-
-## Operators
-
-The [`QuantumPropagators.Controls.evaluate`](@ref) method applied to a generator returns a static operator. For any operator object the 5-argument [`LinearAlgebra.mul!`](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.mul!) must be implemented to apply the operator to a state.
-
-For a [`Generator`](@ref QuantumPropagators.Generators.Generator) instance obtained from [`hamiltonian`](@ref) or [`liouvillian`](@ref), the resulting operator will be an [`Operator`](@ref QuantumPropagators.Generators.Operator) instance. Any custom type intended as an operator should use [`QuantumPropagators.Generators.check_operator`](@ref) to verify the implementation.
-
-In practice, an operator might also be used as a generator (for a propagation without any time dependency). For any custom operator type that should support this, the implementation should also be checked with [`QuantumPropagators.Generators.check_generator`](@ref).
+* [`QuantumPropagators.Controls.get_controls`](@ref) extracts the time-dependent control functions from a generator.
+* [`QuantumPropagators.Controls.evaluate`](@ref) and [`evaluate!`](@ref QuantumPropagators.Controls.evaluate!) convert time-dependent generators into static operators, or control amplitudes/functions into scalar values.
+* [`QuantumPropagators.Controls.substitute`](@ref) substitute control amplitudes or control functions for other control amplitudes or control functions.
