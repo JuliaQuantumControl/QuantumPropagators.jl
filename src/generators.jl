@@ -594,13 +594,13 @@ get_controls(operator::Operator) = Tuple([])
 
 function evaluate(generator::Generator, args...; vals_dict=IdDict())
     coeffs = []
-    for ampl in generator.amplitudes
+    for (i, ampl) in enumerate(generator.amplitudes)
         coeff = evaluate(ampl, args...; vals_dict)
         if coeff isa Number
             push!(coeffs, coeff)
         else
             error(
-                "In `evaluate($generator, …)`, the amplitude $ampl does not evaluate to a number with the given arguments $args, vals_dict=$vals_dict"
+                "In `evaluate($generator, $args, vals_dict=$vals_dict)`, the amplitude $i evaluates to $(typeof(coeff)), not a number"
             )
         end
     end

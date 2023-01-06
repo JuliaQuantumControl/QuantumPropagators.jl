@@ -326,6 +326,11 @@ function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict=IdDict())
 end
 
 
+function evaluate(control::Vector, t::Float64; kwargs...)
+    error("`evaluate(control::Vector, t::Float64)` is invalid. Use e.g. `evaluate(…, tlist, n)`.")
+end
+
+
 function evaluate(generator::Tuple, args...; vals_dict=IdDict())
     if isa(generator[1], Tuple)
         control = generator[1][2]

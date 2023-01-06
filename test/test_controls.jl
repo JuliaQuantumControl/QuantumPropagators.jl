@@ -125,11 +125,11 @@ end
         # older versions of Julia do not support substring matching in
         # @test_throws
 
-        @test_throws "does not evaluate to a number" begin
+        @test_throws "not a number" begin
             evaluate(H)
         end
 
-        @test_throws "does not evaluate to a number" begin
+        @test_throws "not a number" begin
             evaluate(H; vals_dict=IdDict(ϵ₁ => 1.2))
         end
 
@@ -145,6 +145,29 @@ end
     @test norm(Array(Op) - (2.2 * H₁ + 2.3 * H₂)) < 1e-15
 
 end
+
+
+@testset "vector controls substitution" begin
+
+    H₀ = random_hermitian_matrix(5, 1.0)
+    H₁ = random_hermitian_matrix(5, 1.0)
+    H₂ = random_hermitian_matrix(5, 1.0)
+    ϵ₁ = [0.0, 0.1, 0.5, 0.1, 0.0]
+    ϵ₂ = [0.0, 0.1, 0.5, 0.1, 0.0]
+
+    tlist = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
+
+    H = hamiltonian(H₀, (H₁, ϵ₁), (H₂, ϵ₂))
+
+    Op = evaluate(H, tlist, 3)
+    @test norm(Array(Op) - (H₀ + 0.5*H₁ + 0.5*H₂)) < 1e-15
+
+    @test_throws "evaluate(control::Vector, t::Float64)` is invalid" begin
+        Op = evaluate(H, 0.0)
+    end
+
+end
+
 
 @testset "Tuple substitute" begin
     H₀ = random_hermitian_matrix(5, 1.0)
