@@ -160,10 +160,20 @@ end
     H = hamiltonian(H₀, (H₁, ϵ₁), (H₂, ϵ₂))
 
     Op = evaluate(H, tlist, 3)
-    @test norm(Array(Op) - (H₀ + 0.5*H₁ + 0.5*H₂)) < 1e-15
+    @test norm(Array(Op) - (H₀ + 0.5 * H₁ + 0.5 * H₂)) < 1e-15
 
-    @test_throws "evaluate(control::Vector, t::Float64)` is invalid" begin
-        Op = evaluate(H, 0.0)
+    if VERSION >= v"1.8.0"  # substring matching supported
+
+        @test_throws "evaluate(control::Vector, t::Float64)` is invalid" begin
+            Op = evaluate(H, 0.0)
+        end
+
+    else
+
+        @test_throws ErrorException begin
+            Op = evaluate(H, 0.0)
+        end
+
     end
 
 end

@@ -169,7 +169,10 @@ function cheby!(Ψ, H, dt, wrk; kwargs...)
         lmul!(c, v2)
         if check_normalization
             map_norm = abs(dot(v1, v2)) / (2 * norm(v1)^2)
-            @assert(map_norm <= (1.0 + ϵ), "Incorrect normalization (E_min=$(E_min), Δ=$(Δ))")
+            @assert(
+                map_norm <= (1.0 + ϵ),
+                "Incorrect normalization (E_min=$(E_min), Δ=$(Δ))"
+            )
         end
         # v2 += v0
         axpy!(true, v0, v2)
@@ -229,7 +232,10 @@ function cheby(Ψ, H, dt, wrk; kwargs...)
         v2 = c * v2
         if check_normalization
             map_norm = abs(dot(v1, v2)) / (2 * norm(v1)^2)
-            @assert(map_norm <= (1.0 + ϵ), "Incorrect normalization (E_min=$(E_min), Δ=$(Δ))")
+            @assert(
+                map_norm <= (1.0 + ϵ),
+                "Incorrect normalization (E_min=$(E_min), Δ=$(Δ))"
+            )
         end
         v2 += v0
 

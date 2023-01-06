@@ -327,7 +327,9 @@ end
 
 
 function evaluate(control::Vector, t::Float64; kwargs...)
-    error("`evaluate(control::Vector, t::Float64)` is invalid. Use e.g. `evaluate(…, tlist, n)`.")
+    error(
+        "`evaluate(control::Vector, t::Float64)` is invalid. Use e.g. `evaluate(…, tlist, n)`."
+    )
 end
 
 
