@@ -129,14 +129,11 @@ three-argument `mul!` for `Ψ` and `H`.
 """
 function cheby!(Ψ, H, dt, wrk; kwargs...)
 
-    E_min = get(kwargs, :E_min, nothing)
+    E_min = get(kwargs, :E_min, wrk.E_min)
     check_normalization = get(kwargs, :check_normalization, false)
 
     Δ = wrk.Δ
-    β::typeof(wrk.E_min) = (Δ / 2) + wrk.E_min  # "normfactor"
-    if E_min ≠ nothing
-        β = (Δ / 2) + E_min
-    end
+    β::Float64 = (Δ / 2) + E_min  # "normfactor"
     @assert abs(dt) ≈ abs(wrk.dt) "wrk was initialized for dt=$(wrk.dt), not dt=$dt"
     if dt > 0
         c = -2im / Δ
@@ -172,7 +169,7 @@ function cheby!(Ψ, H, dt, wrk; kwargs...)
         lmul!(c, v2)
         if check_normalization
             map_norm = abs(dot(v1, v2)) / (2 * norm(v1)^2)
-            @assert(map_norm <= (1.0 + ϵ), "Incorrect normalization (E_min, wrk.Δ)")
+            @assert(map_norm <= (1.0 + ϵ), "Incorrect normalization (E_min=$(E_min), Δ=$(Δ))")
         end
         # v2 += v0
         axpy!(true, v0, v2)
@@ -199,14 +196,11 @@ acts like [`cheby!`](@ref) but does not modify `Ψ` in-place.
 """
 function cheby(Ψ, H, dt, wrk; kwargs...)
 
-    E_min = get(kwargs, :E_min, nothing)
+    E_min = get(kwargs, :E_min, wrk.E_min)
     check_normalization = get(kwargs, :check_normalization, false)
 
     Δ = wrk.Δ
-    β::typeof(wrk.E_min) = (Δ / 2) + wrk.E_min  # "normfactor"
-    if E_min ≠ nothing
-        β = (Δ / 2) + E_min
-    end
+    β::Float64 = (Δ / 2) + E_min  # "normfactor"
     @assert dt ≈ wrk.dt "wrk was initialized for dt=$(wrk.dt), not dt=$dt"
     if dt > 0
         c = -2im / Δ
@@ -235,7 +229,7 @@ function cheby(Ψ, H, dt, wrk; kwargs...)
         v2 = c * v2
         if check_normalization
             map_norm = abs(dot(v1, v2)) / (2 * norm(v1)^2)
-            @assert(map_norm <= (1.0 + ϵ), "Incorrect normalization (E_min, wrk.Δ)")
+            @assert(map_norm <= (1.0 + ϵ), "Incorrect normalization (E_min=$(E_min), Δ=$(Δ))")
         end
         v2 += v0
 
