@@ -71,6 +71,8 @@ initializes a [`ChebyPropagator`](@ref).
   normalized, i.e., that the spectral range of `generator` has not been
   underestimated. This slowes down the propagation, but is advisable for novel
   `generators`.
+* `uniform_dt_tolerance=1e-12`: How much the intervals of `tlist` are allowed
+  to vary while still being considered constant.
 * `specrange_kwargs`: All further keyword arguments are passed to the
   [`specrange`](@ref QuantumPropagators.SpectralRange.specrange) function
 """
@@ -88,6 +90,7 @@ function init_prop(
     specrange_buffer=0.01,
     cheby_coeffs_limit=1e-12,
     check_normalization=false,
+    uniform_dt_tolerance=1e-12,
     specrange_kwargs...
 )
     tlist = convert(Vector{Float64}, tlist)
@@ -120,12 +123,9 @@ function init_prop(
     δ = specrange_buffer * Δ
     E_min = E_min - δ / 2
     Δ = Δ + δ
-    dt = _get_uniform_dt(tlist)
+    dt = _get_uniform_dt(tlist; tol=uniform_dt_tolerance, warn=true)
     if isnothing(dt)
         error("Chebychev propagation only works on a uniform time grid")
-    end
-    for i = 3:length(tlist)
-        @assert isapprox(tlist[i] - tlist[i-1], dt, atol=1e-12)
     end
     wrk = Cheby.ChebyWrk(state, Δ, E_min, dt; limit=cheby_coeffs_limit)
     n = 1

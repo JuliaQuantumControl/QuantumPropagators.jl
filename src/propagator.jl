@@ -1,3 +1,5 @@
+using Printf
+
 """Abstract base type for all `Propagator` objects.
 
 All `Propagator` objects must be instantiated via [`init_prop`](@ref) and
@@ -244,10 +246,15 @@ function init_prop(state, generator, tlist, method::Symbol; kwargs...)
 end
 
 
-function _get_uniform_dt(tlist::Vector)
+function _get_uniform_dt(tlist::Vector; tol=1e-12, warn=false)
     dt = float(tlist[2] - tlist[1])
     for i = 2:length(tlist)-1
-        if !((tlist[i+1] - tlist[i]) ≈ dt)
+        dt_i = tlist[i+1] - tlist[i]
+        Δ = abs(dt_i - dt)
+        if Δ > tol
+            if warn
+                @warn "Non-uniform time grid: dt = $(@sprintf("%.2e", dt_i)) in interval $i differs from the first dt=$(@sprintf("%.2e", dt)) by Δ = $(@sprintf("%.2e", Δ)) > tol = $(@sprintf("%.2e", tol))"
+            end
             return nothing
         end
     end
