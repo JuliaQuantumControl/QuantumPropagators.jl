@@ -27,11 +27,11 @@ _parentmodule(m, pkg) = parentmodule(m)
 _parentmodule(m::Number, pkg) = pkg
 
 
-"""Return a list of symbols for all the sub-modules of `pkg`.
+"""Return a list of Module instances for all the sub-modules of `pkg`.
 """
 function get_submodules(pkg)
     return [
-        m for m in names(pkg, all=true)
+        getfield(pkg, m) for m in names(pkg, all=true)
         if (getfield(pkg, m) isa Module) && !(m == Symbol(pkg))
     ]
 end
@@ -51,7 +51,22 @@ function canonical_name(obj)
 end
 
 
-sub_modules = get_submodules(QuantumPropagators)
+module_api_id(mod) = replace("$mod", "." => "") * "API"
+
+
+function summarize_submodules(pkg)
+    lines = String[
+        "The full list of sub-modules and their public members is:",
+        ""
+    ]
+    for mod in get_submodules(pkg)
+        push!(lines, "* [`$mod`](@ref $(module_api_id(mod)))")
+        for name in get_local_members(mod, all=false)
+            push!(lines, "    * [`$name`](@ref $mod.$name)")
+        end
+    end
+    return join(lines, "\n")
+end
 
 
 PREAMBLE = raw"""
@@ -81,37 +96,25 @@ To support the `storage` feature of [`propagate`](@ref), the following routines 
 
 The above list of methods constitutes the entire *public* interface of `QuantumPropagators`. At the lowest level, further functionality is provided by sub-modules like [`QuantumPropagators.Cheby`](@ref QuantumPropagatorsChebyAPI), which defines a standalone API specifically for the Chebychev propagation method.
 
-The full list of sub-modules is
-
-* [`QuantumPropagators.Generators`](@ref QuantumPropagatorsGeneratorsAPI)
-* [`QuantumPropagators.Shapes`](@ref QuantumPropagatorsShapesAPI)
-* [`QuantumPropagators.Controls`](@ref QuantumPropagatorsControlsAPI)
-* [`QuantumPropagators.Amplitudes`](@ref QuantumPropagatorsAmplitudesAPI)
-* [`QuantumPropagators.Storage`](@ref QuantumPropagatorsStorageAPI)
-* [`QuantumPropagators.Cheby`](@ref QuantumPropagatorsChebyAPI)
-* [`QuantumPropagators.Newton`](@ref QuantumPropagatorsNewtonAPI)
-* [`QuantumPropagators.ExpProp`](@ref QuantumPropagatorsExpPropAPI)
-* [`QuantumPropagators.SpectralRange`](@ref QuantumPropagatorsSpectralRangeAPI)
-* [`QuantumPropagators.Arnoldi`](@ref QuantumPropagatorsArnoldiAPI)
-"""
+""" * summarize_submodules(QuantumPropagators)
 
 
-function write_module_api(out, pkg, description)
+function write_module_api(out, mod, description; reference_title="Reference")
 
     members = [
-        m for m in names(pkg)
+        m for m in names(mod)
         if !(
-            (String(Symbol(pkg)) |> endswith(".$m")) ||
-            m == Symbol(pkg)
+            (String(Symbol(mod)) |> endswith(".$m")) ||
+            m == Symbol(mod)
         )
     ]
 
-    public_members = get_local_members(pkg, all=false)
+    public_members = get_local_members(mod, all=false)
 
-    all_local_members = get_local_members(pkg, all=true)
+    all_local_members = get_local_members(mod, all=true)
 
     documented_members = [
-        k.var for k in keys(Documenter.DocSystem.getmeta(pkg))
+        k.var for k in keys(Documenter.DocSystem.getmeta(mod))
     ]
     documented_private_members = [
         name for name in documented_members
@@ -123,24 +126,24 @@ function write_module_api(out, pkg, description)
         if m ∉ public_members
     ]
 
-    write(out, "\n\n## [`$pkg`](@id $(replace("$pkg", "." => ""))API)\n\n")
+    write(out, "\n\n## [`$mod`](@id $(module_api_id(mod)))\n\n")
     if length(description) > 0
         write(out, "\n\n")
         write(out, description)
         write(out, "\n\n")
     end
-    write(out, "\n\n### Reference\n\n")
+    write(out, "\n\n### $reference_title\n\n")
     if length(public_members) > 0
         write(out, "\nPublic Members:\n\n")
         for name ∈ public_members
-            println(out, "* [`$name`](@ref $pkg.$name)")
+            println(out, "* [`$name`](@ref $mod.$name)")
         end
         write(out, "\n")
     end
     if length(reexported_members) > 0
         write(out, "\nRe-exported Members:\n\n")
         for name ∈ reexported_members
-            obj = getfield(pkg, name)
+            obj = getfield(mod, name)
             ref = canonical_name(obj)
             println(out, "* [`$name`](@ref $ref)")
         end
@@ -149,7 +152,7 @@ function write_module_api(out, pkg, description)
     if length(documented_private_members) > 0
         write(out, "\nPrivate Members:\n")
         for name ∈ documented_private_members
-            println(out, "* [`$name`](@ref $pkg.$name)")
+            println(out, "* [`$name`](@ref $mod.$name)")
         end
         write(out, "\n")
     end
@@ -157,7 +160,7 @@ function write_module_api(out, pkg, description)
         write(out, "\n\n#### Public members\n\n")
         println(out, "```@docs")
         for name ∈ public_members
-            println(out, "$pkg.$name")
+            println(out, "$mod.$name")
         end
         println(out, "```")
     end
@@ -165,7 +168,7 @@ function write_module_api(out, pkg, description)
         write(out, "\n\n#### Private members\n\n")
         println(out, "```@docs")
         for name ∈ documented_private_members
-            println(out, "$pkg.$name")
+            println(out, "$mod.$name")
         end
         println(out, "```")
     end
@@ -180,7 +183,12 @@ open(outfile, "w") do out
     write(out, "EditURL = \"../../generate_api.jl\"\n")
     write(out, "```\n\n")
     write(out, "# API")
-    write_module_api(out, QuantumPropagators, PREAMBLE)
+    write_module_api(
+        out,
+        QuantumPropagators,
+        PREAMBLE;
+        reference_title="Reference for top-level `QuantumPropagators` module"
+    )
     write_module_api(
         out,
         QuantumPropagators.Generators,

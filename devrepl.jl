@@ -14,6 +14,8 @@
 using Pkg
 using Downloads: download
 
+ENV["GKSwstype"] = 100
+
 cd(@__DIR__)
 Pkg.activate("test")
 
