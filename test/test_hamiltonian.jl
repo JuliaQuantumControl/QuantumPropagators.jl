@@ -5,8 +5,8 @@ using LinearAlgebra
 using QuantumPropagators
 using QuantumPropagators: Generator, Operator
 using QuantumControlBase
-using QuantumControlBase.TestUtils:
-    random_hermitian_matrix, random_real_matrix, random_state_vector, QuantumTestLogger
+using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
+using QuantumControlTestUtils: QuantumTestLogger
 
 _OT(::Generator{OT,AT}) where {OT,AT} = OT
 _AT(::Generator{OT,AT}) where {OT,AT} = AT
@@ -17,9 +17,9 @@ _CT(::Operator{OT,CT}) where {OT,CT}  = CT
 
 @testset "Operator interface" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
     Ψ = random_state_vector(5)
 
     H = Operator([H₀, H₁, H₂], [1.1, 2.1])
@@ -116,10 +116,10 @@ end
 
 @testset "Generator interface" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
     ϵ₁ = t -> 1.0
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₂ = random_matrix(5; hermitian=true)
     ϵ₂ = t -> 1.0
 
     H = hamiltonian(H₀)
@@ -162,7 +162,7 @@ end
     QuantumPropagators.Controls.get_controls(::BrokenGenerator3) = (ϵ₁, ϵ₂)
     QuantumPropagators.Controls.evalcontrols(::BrokenGenerator3, _...) = H₀
     QuantumControlBase.get_control_deriv(::BrokenGenerator3, _) =
-        random_hermitian_matrix(5, 1.0)
+        random_matrix(5; hermitian=true)
     @test_throws ErrorException("Invalid generator") begin
         with_logger(test_logger) do
             @info "BrokenGenerator3"
@@ -220,10 +220,10 @@ end
 
 @testset "standard Hamiltonians" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
     ϵ₁ = t -> 1.0
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₂ = random_matrix(5; hermitian=true)
     ϵ₂ = t -> 1.0
 
     H = hamiltonian(H₀)
@@ -291,7 +291,7 @@ end
 
 @testset "pathologial Hamiltonians" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
 
     @test_throws ErrorException("Generator has no terms") begin
         H = hamiltonian()
@@ -306,10 +306,10 @@ end
 
 @testset "vector control Hamiltonians" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
     ϵ₁ = rand(10)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₂ = random_matrix(5; hermitian=true)
     ϵ₂ = rand(10)
 
     H = hamiltonian(H₀, (H₁, ϵ₁), (H₂, ϵ₂))
@@ -324,11 +324,11 @@ end
 
 @testset "pathological Hamiltonians" begin
 
-    H₀_r = random_real_matrix(5, 1.0)
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
+    H₀_r = random_matrix(5; complex=false)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
     ϵ₁ = t -> 1.0
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₂ = random_matrix(5; hermitian=true)
     ϵ₂ = t -> 1.0
     ϵ₂_v = rand(10)
 

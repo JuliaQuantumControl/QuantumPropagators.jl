@@ -4,7 +4,7 @@ using Test
 using LinearAlgebra
 using QuantumPropagators
 using QuantumPropagators.SpectralRange
-using QuantumControlBase.TestUtils
+using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
 
 
 @testset "Ritz values (non-Herm)" begin
@@ -13,7 +13,7 @@ using QuantumControlBase.TestUtils
 
     N = 1000
     ρ = 10  # spectral radius
-    X = random_complex_matrix(N, ρ)
+    X = random_matrix(N; spectral_radius=ρ)
     Ψ = random_state_vector(N)
     # a non_Hermitian X requires significantly more iterations to converge than
     # the default
@@ -45,7 +45,7 @@ end
 
     N = 1000
     ρ = 10  # spectral radius
-    H = random_hermitian_matrix(N, ρ)
+    H = random_matrix(N; spectral_radius=ρ, hermitian=true)
     Ψ = random_state_vector(N)
     # for a Hermitian H, lower default (cf. specrange) should be ok
     ritzvals = QuantumPropagators.SpectralRange.ritzvals(H, Ψ, 20, 60; prec=1e-3)
@@ -77,8 +77,8 @@ end
 
     N = 1000
     ρ = 10  # spectral radius
-    s = 0.1  # sparsity
-    H = random_hermitian_sparse_matrix(N, ρ, s)
+    density = 0.1
+    H = random_matrix(N; hermitian=true, spectral_radius=ρ, density)
 
     evals = eigvals(Array(H))
     SHOWVALS && @show evals[1], evals[end]

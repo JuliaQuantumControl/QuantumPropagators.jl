@@ -2,7 +2,7 @@ using Test
 using LinearAlgebra
 using QuantumPropagators
 using QuantumPropagators.Newton
-using QuantumControlBase.TestUtils
+using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
 
 @testset "random Hermitian" begin
 
@@ -26,7 +26,7 @@ using QuantumControlBase.TestUtils
     dt = 0.5
 
     if SERIALIZATION < 2
-        H = random_hermitian_matrix(N, ρ)
+        H = random_matrix(N; spectral_radius=ρ, hermitian=true)
         Ψ₀ = random_state_vector(N)
     end
 
@@ -89,7 +89,7 @@ end
     dt = 0.5
 
     if SERIALIZATION < 2
-        H = random_complex_matrix(N, ρ)
+        H = random_matrix(N; spectral_radius=ρ)
         Ψ₀ = random_state_vector(N)
     end
 
@@ -141,12 +141,12 @@ end
     # Input
     N = 32
     ρ = 10  # approximate spectral radius
-    sparsity = 0.5
+    density = 0.5
 
     dt = 0.5
 
     if SERIALIZATION < 2
-        L = random_complex_sparse_matrix(N^2, ρ, sparsity)
+        L = random_matrix(N^2; spectral_radius=ρ, density)
         Ψ₀ = random_state_vector(N)
         ρ₀ = reshape(Ψ₀ * Ψ₀', :)
     end

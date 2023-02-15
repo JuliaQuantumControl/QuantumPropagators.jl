@@ -5,14 +5,14 @@ using QuantumPropagators
 using QuantumPropagators.Generators
 using QuantumPropagators.Controls
 using QuantumPropagators: Generator, Operator
-using QuantumControlBase.TestUtils: random_hermitian_matrix
+using QuantumControlTestUtils.RandomObjects: random_matrix
 
 
 @testset "Simple get_controls" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
 
     @test length(get_controls(H₀)) == 0
 
@@ -36,9 +36,9 @@ end
 
 
 @testset "Tuple evaluate" begin
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
     ϵ₁(t) = 1.0
     ϵ₂(t) = 1.0
     H = (H₀, (H₁, ϵ₁), (H₂, ϵ₂))
@@ -89,9 +89,9 @@ end
 
 @testset "Generator evaluate" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
     ϵ₁ = t -> 1.0
     ϵ₂ = t -> 1.0
 
@@ -149,9 +149,9 @@ end
 
 @testset "vector controls substitution" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
     ϵ₁ = [0.0, 0.1, 0.5, 0.1, 0.0]
     ϵ₂ = [0.0, 0.1, 0.5, 0.1, 0.0]
 
@@ -180,9 +180,9 @@ end
 
 
 @testset "Tuple substitute" begin
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
     ϵ₁ = t -> 1.0
     ϵ₂ = t -> 1.0
     H = (H₀, (H₁, ϵ₁), (H₂, ϵ₂))
@@ -205,9 +205,9 @@ end
 
 @testset "Generator substitute" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
     ϵ₁ = t -> 1.0
     ϵ₂ = t -> 1.0
     H = hamiltonian(H₀, (H₁, ϵ₁), (H₂, ϵ₂))
@@ -250,9 +250,9 @@ end
 
 @testset "Nonlinear substitute" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
     ϵ₁ = t -> 1.0
     ϵ₂ = t -> 1.0
 

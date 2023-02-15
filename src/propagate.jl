@@ -1,6 +1,8 @@
 using LinearAlgebra
 using ProgressMeter
 
+using .Storage: init_storage, write_to_storage!
+
 
 # Return `true` if `H` has only real eigenvalues, `false` if `H` has
 # eigenvalues with a non-zero imaginary part, and `nothing` if field of the
@@ -93,9 +95,9 @@ QuantumPropagators.Cheby.cheby!)) only support a uniform time grid.
 
 If `storage` is given as an Array, it will be filled with data determined by
 the `observables`. The default "observable" results in the propagated states at
-every point in time being stored.
-The `storage` array should be created with [`init_storage`](@ref). See its
-documentation for details.
+every point in time being stored.  The `storage` array should be created with
+[`QuantumControl.Storage.init_storage`](@ref init_storage). See its documentation for
+details.
 
 The `storage` parameter may also be given as `true`, and a new storage array
 will be created internally with [`init_storage`](@ref) and returned instead of
@@ -179,11 +181,11 @@ function propagate(
     if backward
         intervals = Iterators.reverse(intervals)
         if storage ≠ nothing
-            Storage.write_to_storage!(storage, lastindex(tlist), state, observables)
+            write_to_storage!(storage, lastindex(tlist), state, observables)
         end
     else
         if storage ≠ nothing
-            Storage.write_to_storage!(storage, 1, state, observables)
+            write_to_storage!(storage, 1, state, observables)
         end
     end
 
@@ -201,7 +203,7 @@ function propagate(
     for (i, t_end) in intervals
         prop_step!(propagator)
         if storage ≠ nothing
-            Storage.write_to_storage!(
+            write_to_storage!(
                 storage,
                 i + (backward ? 0 : 1),
                 propagator.state,

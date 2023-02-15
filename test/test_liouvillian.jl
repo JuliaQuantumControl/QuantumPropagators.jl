@@ -4,7 +4,7 @@ using QuantumPropagators.Generators
 using QuantumPropagators.Controls
 using LinearAlgebra
 using Distributions
-using QuantumControlBase.TestUtils
+using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
 using SparseArrays
 
 
@@ -66,8 +66,8 @@ end
 
     ketbra(i, j) = ket(i) * bra(j)
 
-    Ĥ₀ = random_hermitian_matrix(N, 1)
-    Ĥ₁ = random_hermitian_matrix(N, 0.1)
+    Ĥ₀ = random_matrix(N; hermitian=true, spectral_radius=1)
+    Ĥ₁ = random_matrix(N; hermitian=true, spectral_radius=0.1)
 
     ϵ(t) = 1.0
     H = (Ĥ₀, (Ĥ₁, ϵ))

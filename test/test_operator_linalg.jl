@@ -1,15 +1,15 @@
 using Test
 using LinearAlgebra
-using QuantumControlBase.TestUtils: random_hermitian_matrix, random_state_vector
+using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
 
 using QuantumPropagators: Generator, Operator, ScaledOperator
 
 
 @testset "Operator mul!" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
 
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
     H = H₀ + 2.1 * H₁ + 1.1 * H₂
@@ -43,9 +43,9 @@ end
 
 @testset "Operator copy" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
 
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
     Op2 = copy(Op)
@@ -74,9 +74,9 @@ end
 
 @testset "Operator array conversion" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
 
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
     H = H₀ + 2.1 * H₁ + 1.1 * H₂
@@ -128,9 +128,9 @@ end
 
 @testset "Operator dot" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
 
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
     H = H₀ + 2.1 * H₁ + 1.1 * H₂
@@ -147,9 +147,9 @@ end
 
 @testset "ScaledOperator mul!" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
 
     @test norm(Array(ScaledOperator(0.5, H₀)) - 0.5 * H₀) < 1e-12
 
@@ -191,9 +191,9 @@ end
 
 @testset "ScaledOperator dot" begin
 
-    H₀ = random_hermitian_matrix(5, 1.0)
-    H₁ = random_hermitian_matrix(5, 1.0)
-    H₂ = random_hermitian_matrix(5, 1.0)
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
 
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1]) * 0.5
     @test Op isa ScaledOperator

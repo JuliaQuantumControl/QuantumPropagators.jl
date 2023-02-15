@@ -1,6 +1,6 @@
 # Storage of states or expectation values
 
-The [`propagate`](@ref) routine allows the storage of data for every point of the time grid.  This is done by passing it a `storage` object created with [`init_storage`](@ref), or simply `storage=true` in order to create the appropriate storage automatically.
+The [`propagate`](@ref) routine allows the storage of data for every point of the time grid.  This is done by passing it a `storage` object created with [`QuantumPropagators.Storage.init_storage`](@ref), or simply `storage=true` in order to create the appropriate storage automatically.
 
 By default, the `storage` will be used to store the propagated states at each point in time. More generally, what goes into `storage` can be customized via the `observables` parameter of [`propagate`](@ref).
 
@@ -9,7 +9,7 @@ After each propagation step, with a propagate state at time slot `i`,
 * [`QuantumPropagators.Storage.map_observables`](@ref) generates `data` from the propagated state
 * [`QuantumPropagators.Storage.write_to_storage!`](@ref) places that `data` into `storage` for time slot `i`
 
-After [`propagate`](@ref) returns, the [`get_from_storage!`](@ref) routine can be used to extract data from any time slot. This interface hides the internal memory organization of `storage`, which is set up by [`init_storage`](@ref) based on the type of `state` and the given `observables`. This system can can extended with multiple dispatch, allowing to optimize the `storage` for custom data types. Obviously, [`init_storage`](@ref), [`map_observables`](@ref QuantumPropagators.Storage.map_observables), [`write_to_storage!`](@ref), and [`get_from_storage!`](@ref) must all be consistent.
+After [`propagate`](@ref) returns, the [`QuantumPropagators.Storage.get_from_storage!`](@ref) routine can be used to extract data from any time slot. This interface hides the internal memory organization of `storage`, which is set up by [`init_storage`](@ref QuantumPropagators.Storage.init_storage) based on the type of `state` and the given `observables`. This system can can extended with multiple dispatch, allowing to optimize the `storage` for custom data types. Obviously, [`init_storage`](@ref QuantumPropagators.Storage.init_storage), [`map_observables`](@ref QuantumPropagators.Storage.map_observables), [`write_to_storage!`](@ref QuantumPropagators.Storage.write_to_storage!), and [`get_from_storage!`](@ref QuantumPropagators.Storage.get_from_storage!) must all be consistent.
 
 The default implementation of these routine uses either a standard Vector or a Matrix as `storage`.
 

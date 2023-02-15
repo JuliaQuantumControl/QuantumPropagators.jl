@@ -8,9 +8,6 @@ include("./expprop.jl")   # submodule ExpProp
 
 include("./storage.jl")   # submodule Storage
 
-using .Storage
-export init_storage, write_to_storage!, get_from_storage!
-
 include("./shapes.jl")  # submodule Shapes
 
 include("./controls.jl")  # submodule Controls
@@ -24,8 +21,8 @@ using .Generators
 export liouvillian, hamiltonian
 
 include("./propagator.jl")
-export init_prop, reinit_prop!, prop_step!, set_state!
-# not exported: set_t!, choose_propmethod
+export init_prop, reinit_prop!, prop_step!
+# not exported: set_t!, set_state!, choose_propmethod
 
 include("./pwc_utils.jl")
 include("./cheby_propagator.jl")

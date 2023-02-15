@@ -32,9 +32,9 @@ should be considered private.
   backward) on the time grid.
 * [`set_state!`](@ref) — safely mutate the current quantum `state` of the
   propagation. Note that directly mutating the `state` property is not safe.
-  However, `Ψ = propagator.state; mutate!(Ψ), set_state!(propagator, Ψ)` is
-  guaranteed to be safe and efficient for both in-place and not-in-place
-  propagators.
+  However, `Ψ = propagator.state; foo_mutate!(Ψ), set_state!(propagator, Ψ)`
+  for some mutating function `foo_mutate!` is guaranteed to be safe and
+  efficient for both in-place and not-in-place propagators.
 * [`set_t!`](@ref QuantumPropagators.set_t!) — safely mutate the current time
   (`propagator.t`), snapping to the values of `tlist`.
 
@@ -373,16 +373,17 @@ after a call to [`prop_step!`](@ref), the following pattern is recommended:
 
 ```
 Ψ = propagator.state
-mutate!(Ψ)
+foo_mutate!(Ψ)
 set_state!(propagator, Ψ)
 ```
 
-This is guaranteed to work efficiently both for in-place and not-in-place
-propagators, without incurring unnecessary copies.
+where `foo_mutate!` is some function that mutates `Ψ`.  This is guaranteed to
+work efficiently both for in-place and not-in-place propagators, without
+incurring unnecessary copies.
 
 !!! warning
     ```
-    mutate!(propagator.state)
+    foo_mutate!(propagator.state)
     ```
 
     by itself is not a safe operation. Always follow it by

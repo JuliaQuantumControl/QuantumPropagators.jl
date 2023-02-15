@@ -79,7 +79,10 @@ At a slightly lower level, propagation of quantum states in encapsulated by [The
 * [`init_prop`](@ref) — Initialize a `propagator` object, which is of some concrete (method-dependent) sub-type of [`AbstractPropagator`](@ref QuantumPropagators.AbstractPropagator)
 * [`reinit_prop!`](@ref) — Re-initialize the `propagator`
 * [`prop_step!`](@ref) — Advance the `propagator`  by a single time step forward or backward
-* [`set_state!`](@ref) — Mutate the current quantum `state` of the `propagator`.
+
+In some cases, the ability to mutate the propagator after each propagation step can be useful. This can be achieved with the following private methods:
+
+* [`set_state!`](@ref QuantumPropagators.set_state!) — Mutate the current quantum `state` of the `propagator` (**not exported**)
 * [`set_t!`](@ref QuantumPropagators.set_t!) — Mutate the current time of the `propagator` (**not exported**)
 
 The dynamics of a quantum state are determined by a time-dependent dynamical generator (a Hamiltonian or Liouvillian).
@@ -88,14 +91,9 @@ The `QuantumPropagators` package re-exports the two main initialization routines
 * [`hamiltonian`](@ref) — Construct a time-dependent generator for a propagation in Hilbert space under the Schrödinger equation
 * [`liouvillian`](@ref) — Construct a time-dependent generator for a propagation in Liouville space under the master equation in Lindblad form
 
-To support the `storage` feature of [`propagate`](@ref), the following routines from [the `Storage` sub-module](@ref QuantumPropagatorsStorageAPI) are re-exported in `QuantumPropagators`:
+To set up the time-dependent control fields in a Hamiltonian, methods from the submodules [`QuantumPropagators.Controls`](@ref QuantumPropagatorsControlsAPI), [`QuantumPropagators.Shapes`](@ref QuantumPropagatorsShapesAPI), and [`QuantumPropagators.Amplitudes`](@ref QuantumPropagatorsAmplitudesAPI) can be used.
 
-* [`init_storage`](@ref) – Create a storage array for propagated states or expectation values
-* [`write_to_storage!`](@ref) – Place data into storage
-* [`get_from_storage!`](@ref) – Obtain data from storage (in-place)
-
-The above list of methods constitutes the entire *public* interface of `QuantumPropagators`. At the lowest level, further functionality is provided by sub-modules like [`QuantumPropagators.Cheby`](@ref QuantumPropagatorsChebyAPI), which defines a standalone API specifically for the Chebychev propagation method.
-
+The above constitutes the main interface of `QuantumPropagators`. At the lowest level, further functionality is provided by sub-modules like [`QuantumPropagators.Cheby`](@ref QuantumPropagatorsChebyAPI), which defines a standalone API specifically for the Chebychev propagation method.
 """ * summarize_submodules(QuantumPropagators)
 
 
@@ -226,10 +224,7 @@ open(outfile, "w") do out
         QuantumPropagators.Storage,
         """The following routines allow to manage and extend storage arrays
         `storage` parameter in [`propagate`](@ref). See [Storage of states or
-        expectation values](@ref) for more details. Note that the high-level
-        routines [`init_storage`](@ref), [`write_to_storage!`](@ref), and
-        [`get_from_storage!`](@ref) are also re-exported in the top-level
-        [QuantumPropagators](@ref QuantumPropagatorsAPI) directly.
+        expectation values](@ref) for more details.
         """
     )
     write_module_api(
