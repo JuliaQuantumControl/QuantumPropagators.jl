@@ -1,6 +1,7 @@
 using QuantumPropagators
 using Documenter
 using Pkg
+using QuantumCitations
 
 DocMeta.setdocmeta!(
     QuantumPropagators,
@@ -19,7 +20,10 @@ println("Starting makedocs")
 
 include("generate_api.jl")
 
-makedocs(;
+bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:numeric)
+
+makedocs(
+    bib;
     authors=AUTHORS,
     sitename="QuantumPropagators.jl",
     modules=[QuantumPropagators],
@@ -27,7 +31,7 @@ makedocs(;
     format=Documenter.HTML(;
         prettyurls=true,
         canonical="https://juliaquantumcontrol.github.io/QuantumPropagators.jl",
-        assets=String[],
+        assets=String["assets/citations.css"],
         footer="[$NAME.jl]($GITHUB) v$VERSION docs powered by [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl)."
     ),
     pages=[
@@ -43,6 +47,7 @@ makedocs(;
         "Howtos" => "howto.md",
         "Benchmarks" => "benchmarks.md",
         "API" => "api/quantumpropagators.md",
+        "References" => "references.md",
     ]
 )
 
