@@ -36,9 +36,9 @@ function flattop_sinsq(t, t₀, T, t_rise, t_fall=t_rise)
     f::Float64 = 0.0
     if t₀ ≤ t ≤ T
         f = 1.0
-        if t ≤ t₀ + t_rise
+        if t < t₀ + t_rise
             f = sin(π * (t - t₀) / (2.0 * t_rise))^2
-        elseif t ≥ T - t_fall
+        elseif t > T - t_fall
             f = sin(π * (t - T) / (2.0 * t_fall))^2
         end
     end
@@ -50,9 +50,9 @@ function flattop_blackman(t, t₀, T, t_rise, t_fall=t_rise)
     f::Float64 = 0.0
     if t₀ ≤ t ≤ T
         f = 1.0
-        if t ≤ t₀ + t_rise
+        if t < t₀ + t_rise
             f = blackman(t, t₀, t₀ + 2 * t_rise)
-        elseif t ≥ T - t_fall
+        elseif t > T - t_fall
             f = blackman(t, T - 2 * t_fall, T)
         end
     end
