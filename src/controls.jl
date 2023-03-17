@@ -31,9 +31,9 @@ for round-trips between [`discretize`](@ref) and
 [`discretize_on_midpoints`](@ref)  (constant controls on `tlist` may result in
 a zig-zag on the intervals of `tlist`).
 
-If `control` is a vector, it will be returned un-modified if it is of the same
-length as `tlist`. Otherwise, `control` must have one less value than `tlist`,
-and is assumed to be defined on the midpoins of `tlist`. In that case,
+If `control` is a vector, a copy of `control` will be returned if it is of the
+same length as `tlist`. Otherwise, `control` must have one less value than
+`tlist`, and is assumed to be defined on the midpoins of `tlist`. In that case,
 [`discretize`](@ref) acts as the inverse of [`discretize_on_midpoints`](@ref).
 See [`discretize_on_midpoints`](@ref) for how control values on `tlist` and
 control values on the intervals of `tlist` are related.
@@ -49,7 +49,7 @@ end
 
 function discretize(control::Vector, tlist)
     if length(control) == length(tlist)
-        return control
+        return copy(control)
     elseif length(control) == length(tlist) - 1
         # convert `control` on intervals to values on `tlist`
         # cf. pulse_onto_tlist in Python krotov package
@@ -135,8 +135,9 @@ midpoint values ``pᵢ = 2 c_{i} - p_{i-1}``.
     it is safe to modify *midpoint* values. Modifying the the values on the
     time grid directly on the other hand may accumulate discretization errors.
 
-If `control` is a vector of one less length than `tlist`, it will be returned
-unchanged, under the assumption that the input is already properly discretized.
+If `control` is a vector of one less length than `tlist`, a copy of `control`
+will be returned, under the assumption that the input is already properly
+discretized.
 
 If `control` is a function, the function will be directly evaluated at the
 midpoints marked as `x` in the above diagram..
@@ -147,7 +148,7 @@ end
 
 function discretize_on_midpoints(control::Vector, tlist)
     if length(control) == length(tlist) - 1
-        return control
+        return copy(control)
     elseif length(control) == length(tlist)
         vals = zeros(eltype(control), length(control) - 1)
         vals[1] = control[1]
