@@ -26,8 +26,6 @@ makedocs(
     bib;
     authors=AUTHORS,
     sitename="QuantumPropagators.jl",
-    modules=[QuantumPropagators],
-    repo="https://github.com/JuliaQuantumControl/QuantumPropagators.jl/blob/{commit}{path}#{line}",
     format=Documenter.HTML(;
         prettyurls=true,
         canonical="https://juliaquantumcontrol.github.io/QuantumPropagators.jl",
