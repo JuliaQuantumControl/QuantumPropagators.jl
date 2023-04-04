@@ -223,8 +223,8 @@ open(outfile, "w") do out
         out,
         QuantumPropagators.Storage,
         """The following routines allow to manage and extend storage arrays
-        `storage` parameter in [`propagate`](@ref). See [Storage of states or
-        expectation values](@ref) for more details.
+        `storage` parameter in [`propagate`](@ref). See the discussion of
+        [Expectation Values](@ref) for more details.
         """
     )
     write_module_api(

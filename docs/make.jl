@@ -38,7 +38,7 @@ makedocs(
         "Overview" => "overview.md",
         "Dynamical Generators" => "generators.md",
         "Propagation Methods" => "methods.md",
-        "Storage" => "storage.md",
+        "Expectation Values" => "storage.md",
         hide("Examples" => "examples/index.md", [
         # "Example 1" => joinpath("examples", "1.md"),
         # "Example 2" => joinpath("examples", "2.md"),

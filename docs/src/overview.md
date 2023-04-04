@@ -58,7 +58,7 @@ The `storage` parameter provides a powerful way to obtain arbitrary dynamic quan
 * If given a pre-allocated storage array, fill it with the propagated states at each point in time, and return the final state.
 * If given in combination with `observables`, put arbitrary "observable" data derived from the propagated states in the storage array.
 
-See [Storage of states or expectation values](@ref) for details.
+See the discussion of [Expectation Values](@ref) for details.
 
 
 ## Propagation methods
@@ -136,7 +136,7 @@ t = 0.5π
 
 ## Backward propagation
 
-When [`propagate`](@ref) or [`init_prop`](@ref) are called with `backward=true`, the propagation is initialized to run backward. The initial state is then defined at `propagator.t == tlist[end]` and each [`prop_step!`](@ref) moves to the previous point in `tlist`. The equation of motion is the Schrödinger or Liouville equation with a negative $dt$. Note that the propagation uses the `generator` as it is defined: no automatic adjoint will be taken.
+When [`propagate`](@ref) or [`init_prop`](@ref) are called with `backward=true`, the propagation is initialized to run backward. The initial state is then defined at `propagator.t == tlist[end]` and each [`prop_step!`](@ref) moves to the previous point in `tlist`. The equation of motion is the Schrödinger or Liouville equation with a negative $dt$. For a Hermitian `generator`, doing a forward propagation followed by a backward propagation will recover the initial state. For a non-Hermitian `generator`, this no longer holds. Note that in optimal control methods such as GRAPE or Krotov's method, obtaining gradients involves a "backward propagation with the adjoint generator" (when the generator is non-Hermitian and adjoint/non-adjoint makes a difference). The [`propagate`](@ref) routine with `backward=true` will not automatically take this adjoint of the `generator`; instead, the adjoint generator must be passed explicitly.
 
 
 ## Connection to DifferentialEquations.jl

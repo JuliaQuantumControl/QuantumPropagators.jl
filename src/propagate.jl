@@ -2,6 +2,7 @@ using LinearAlgebra
 using ProgressMeter
 
 using .Storage: init_storage, write_to_storage!
+import .Storage: map_observables
 
 
 # Return `true` if `H` has only real eigenvalues, `false` if `H` has
@@ -17,12 +18,12 @@ function has_real_eigvals(H)
 end
 
 
-# Default "observable" for storing the propagated state. We want to keep this
-# private, as the routine is not safe unless it is the *only*
-# observable. If state storage needs to be combined with other observables
-# `state->copy(state)` would need to be used.
-_store_state(state) = copy(state)
-_store_state(state::Vector) = state
+# Default "observables" for just storing the propagated state. We want to keep
+# this private: It doesn't combine with other observables and depends on
+# internals of the default init_storage.
+struct _StoreState end
+map_observables(::_StoreState, tlist, i, state) = copy(state)
+map_observables(::_StoreState, tlist, i, state::Vector) = state
 
 
 # Work around https://github.com/timholy/ProgressMeter.jl/issues/214
@@ -45,7 +46,7 @@ state = propagate(
     piecewise=nothing,
     pwc=nothing,
     storage=nothing,
-    observables=(<store state>, ),
+    observables=<store state>,
     callback=nothing,
     showprogress=false,
     init_prop_kwargs...)
@@ -96,8 +97,8 @@ QuantumPropagators.Cheby.cheby!)) only support a uniform time grid.
 If `storage` is given as an Array, it will be filled with data determined by
 the `observables`. The default "observable" results in the propagated states at
 every point in time being stored.  The `storage` array should be created with
-[`QuantumControl.Storage.init_storage`](@ref init_storage). See its documentation for
-details.
+[`QuantumControl.Storage.init_storage`](@ref init_storage). See its
+documentation for details.
 
 The `storage` parameter may also be given as `true`, and a new storage array
 will be created internally with [`init_storage`](@ref) and returned instead of
@@ -163,7 +164,7 @@ function propagate(
     method::Val;
     storage=nothing,
     showprogress=false,
-    observables=(_store_state,),
+    observables=_StoreState(),
     callback=nothing,
     kwargs...
 )
@@ -181,11 +182,11 @@ function propagate(
     if backward
         intervals = Iterators.reverse(intervals)
         if storage ≠ nothing
-            write_to_storage!(storage, lastindex(tlist), state, observables)
+            write_to_storage!(storage, lastindex(tlist), state, observables, tlist)
         end
     else
         if storage ≠ nothing
-            write_to_storage!(storage, 1, state, observables)
+            write_to_storage!(storage, 1, state, observables, tlist)
         end
     end
 
@@ -207,7 +208,8 @@ function propagate(
                 storage,
                 i + (backward ? 0 : 1),
                 propagator.state,
-                observables
+                observables,
+                tlist
             )
         end
         if callback ≠ nothing

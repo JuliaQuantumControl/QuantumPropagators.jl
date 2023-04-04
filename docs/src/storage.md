@@ -1,4 +1,4 @@
-# Storage of states or expectation values
+# Expectation Values
 
 The [`propagate`](@ref) routine allows the storage of data for every point of the time grid.  This is done by passing it a `storage` object created with [`QuantumPropagators.Storage.init_storage`](@ref), or simply `storage=true` in order to create the appropriate storage automatically.
 
@@ -9,7 +9,7 @@ After each propagation step, with a propagate state at time slot `i`,
 * [`QuantumPropagators.Storage.map_observables`](@ref) generates `data` from the propagated state
 * [`QuantumPropagators.Storage.write_to_storage!`](@ref) places that `data` into `storage` for time slot `i`
 
-After [`propagate`](@ref) returns, the [`QuantumPropagators.Storage.get_from_storage!`](@ref) routine can be used to extract data from any time slot. This interface hides the internal memory organization of `storage`, which is set up by [`init_storage`](@ref QuantumPropagators.Storage.init_storage) based on the type of `state` and the given `observables`. This system can can extended with multiple dispatch, allowing to optimize the `storage` for custom data types. Obviously, [`init_storage`](@ref QuantumPropagators.Storage.init_storage), [`map_observables`](@ref QuantumPropagators.Storage.map_observables), [`write_to_storage!`](@ref QuantumPropagators.Storage.write_to_storage!), and [`get_from_storage!`](@ref QuantumPropagators.Storage.get_from_storage!) must all be consistent.
+After [`propagate`](@ref) returns, the [`QuantumPropagators.Storage.get_from_storage!`](@ref) routine can be used to extract data from any time slot. This interface hides the internal memory organization of `storage`, which is set up by [`init_storage`](@ref QuantumPropagators.Storage.init_storage) based on the type of `state` and the given `observables`. This system can be extended with multiple dispatch, allowing to optimize the `storage` for custom data types. Obviously, [`init_storage`](@ref QuantumPropagators.Storage.init_storage), [`map_observables`](@ref QuantumPropagators.Storage.map_observables), [`write_to_storage!`](@ref QuantumPropagators.Storage.write_to_storage!), and [`get_from_storage!`](@ref QuantumPropagators.Storage.get_from_storage!) must all be consistent.
 
 The default implementation of these routine uses either a standard Vector or a Matrix as `storage`.
 
@@ -29,15 +29,16 @@ vector `[⟨Ô₁⟩, ⟨Ô₂A]⟩]` at time slot `i`. Alternatively, `storag
 
 Usually, the `observables` should be functions acting on the `state`, but [`map_observables`](@ref QuantumPropagators.Storage.map_observables) can be extended to other types of observables as well. For example, the situation were `state` is a vector and the `observables` are matrices is also supported; if  `Ô₁`, `Ô₂` are matrices,
 ~~~julia
-observables=(Ô₁, Ô)
+observables=(Ô₁, Ô₂)
 ~~~
 would have the same result of storing the expectation values of those two operators.
 
-The `observables` are not required to yield real values: the term "observables"
+The `observables` are not required to yield real values: the term "observable"
 is used very loosely here. We could directly calculate, e.g., the complex
-amplitude α of a coherent state in quantum optics, the number of levels with
-non-zero population (as an integer), or the propagated state transformed from a
-moving frame to a lab frame.
+amplitude α of a coherent state in quantum optics, or the number of levels with
+non-zero population (as an integer).
+
+It is possible to have time-dependent "observables", for example, to store "lab-frame" states from a propagation in a (time-dependent) [rotating frame](https://en.wikipedia.org/wiki/Rotating-wave_approximation). This is supported by default by passing a function with the three arguments `state`, `tlist`, `i` as an observable, where `state` is defined to be at time `tlist[i]`.
 
 If there are multiple observables that return data of different types, by default `storage` will be a Vector that contains tuples with the result for each observable. For example, with
 

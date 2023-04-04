@@ -36,25 +36,27 @@ function init_storage(state, tlist::AbstractVector)
 end
 
 function init_storage(state, tlist, observables)
-    data = map_observables(observables, state)
+    data = map_observables(observables, tlist, 1, state)
+    # We're assuming type stability here: the `typeof(data)` must not depend
+    # on the time index
     nt = length(tlist)
     return init_storage(data, nt)
 end
 
-init_storage(data, nt::Integer) = Vector{typeof(data)}(undef, nt)
+init_storage(data::T, nt::Integer) where {T} = Vector{T}(undef, nt)
 
-init_storage(data::Vector, nt::Integer) = Matrix{eltype(data)}(undef, length(data), nt)
+init_storage(data::Vector{T}, nt::Integer) where {T} = Matrix{T}(undef, length(data), nt)
 
 
 """Obtain "observable" data from `state`.
 
 ```julia
-data = map_observables(observables, state)
+data = map_observables(observables, tlist, i, state)
 ```
 
-calculates the data for a tuple of `observables` applied to `state`.
-For a single observable (tuple of length 1), simply return the result of
-[`map_observable`](@ref).
+calculates the data for a tuple of `observables` applied to `state` defined at
+time `tlist[i]`. For a single observable (tuple of length 1), simply return the
+result of [`map_observable`](@ref).
 
 For multiple observables, return the tuple resulting from applying
 [`map_observable`](@ref) for each observable. If the tuple is "uniform" (all
@@ -62,11 +64,11 @@ elements are of the same type, e.g. if each observable calculates the
 expectation value of a Hermitian operator), it is converted to a Vector. This
 allows for compact storage in a storage array, see [`init_storage`](@ref).
 """
-function map_observables(observables, state)
+function map_observables(observables, tlist, i, state)
     if length(observables) == 1
-        return map_observable(observables[1], state)
+        return map_observable(observables[1], tlist, i, state)
     else
-        val_tuple = Tuple(map_observable(O, state) for O in observables)
+        val_tuple = Tuple(map_observable(O, tlist, i, state) for O in observables)
         uniform_type = typeof(val_tuple[1])
         is_uniform = all(typeof(v) == uniform_type for v in val_tuple[2:end])
         if is_uniform
@@ -81,21 +83,39 @@ end
 """Apply a single `observable` to `state`.
 
 ```julia
-data = map_observable(observable, state)
+data = map_observable(observable, tlist, i, state)
 ```
 
-By default, `observable` is assumed to be callable, and the above is equivalent
-to `data = observable(state)`.
+By default, `observable` can be one of the following:
 
-If `observable` is a matrix and `state` is a vector evaluate the expectation
-value of the observable as `dot(state, observable, state)`.
-
+* A function taking the three arguments `state`, `tlist`, `i`, where `state` is
+  defined at time `tlist[i]`.
+* A function taking a single argument `state`, under the assumption that the
+  observable is time-independent
+* A matrix for which to calculate the expectation value with respect to the
+  vector `state`.
 """
-function map_observable(observable, state)
-    return observable(state)
+function map_observable(
+    observable::F,
+    tlist::TT,
+    i::IT,
+    state::ST
+) where {F<:Function,TT,IT,ST}
+    # This runtime dispatch on the number of positional argument has a very
+    # small overhead. To avoid it entirely, define a new method specifically
+    # for a specific function (map_observable(observable::typeof(myfunc), ...)
+    if length(methods(observable, (ST, TT, IT))) > 0
+        return observable(state, tlist, i)
+    elseif length(methods(observable, (ST,))) > 0
+        return observable(state)
+    else
+        error(
+            "The `observable` function $observable must take either the single argument `state`, or the three arguments `state`, `tlist`, and `i`."
+        )
+    end
 end
 
-function map_observable(observable::AbstractMatrix, state::AbstractVector)
+function map_observable(observable::AbstractMatrix, tlist, i, state::AbstractVector)
     return dot(state, observable, state)
 end
 
@@ -103,12 +123,12 @@ end
 """Place data into `storage` for time slot `i`.
 
 ```julia
-write_to_storage!(storage, i, state, observables)
+write_to_storage!(storage, i, state, observables, tlist)
 ```
 
-For a `storage` array created by [`init_storage`](@ref), store the data obtains
-from [`map_observables`](@ref) into the `storage` for time slot `i`. This
-delegates to the more general
+For a `storage` array created by [`init_storage`](@ref), store the data
+obtained from [`map_observables`](@ref) into the `storage` for time slot `i`.
+This delegates to the more general
 
 ```julia
 write_to_storage!(storage, i, data)
@@ -123,8 +143,8 @@ column of the matrix.
 For a given type of `storage` and `data`, it is the developer's responsibility
 that `init_storage` and `write_to_storage!` are compatible.
 """
-function write_to_storage!(storage, i::Integer, state, observables)
-    data = map_observables(observables, state)
+function write_to_storage!(storage, i::Integer, state, observables, tlist)
+    data = map_observables(observables, tlist, i, state)
     write_to_storage!(storage, i, data)
 end
 
@@ -143,7 +163,7 @@ end
 get_from_storage!(state, storage, i)
 ```
 
-extracts data from the `storage` for the i'th time slot. Invese of
+extracts data from the `storage` for the i'th time slot. Inverse of
 [`write_to_storage!`](@ref)
 """
 get_from_storage!(state, storage::AbstractVector, i) = copyto!(state, storage[i])
