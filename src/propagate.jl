@@ -94,11 +94,19 @@ In general, there is no requirement that `tlist` has a constant time step,
 although some propagation methods (most notably [`cheby!`](@ref
 QuantumPropagators.Cheby.cheby!)) only support a uniform time grid.
 
-If `storage` is given as an Array, it will be filled with data determined by
-the `observables`. The default "observable" results in the propagated states at
-every point in time being stored.  The `storage` array should be created with
-[`QuantumControl.Storage.init_storage`](@ref init_storage). See its
-documentation for details.
+If `storage` is given as a container pre-allocated via [`init_storage`](@ref),
+it will be filled with data determined by the `observables`. Specifically,
+after each propagation step,
+
+```julia
+data = map_observables(observables, tlist, i, state)
+write_to_storage!(storage, i, data)
+```
+
+is executed, where `state` is defined at time `tlist[i]`.
+See [`map_observables`](@ref) and [`write_to_storage!`](@ref) for details. The
+default values for `observables` results simply in the propagated states at
+every point in time being stored.
 
 The `storage` parameter may also be given as `true`, and a new storage array
 will be created internally with [`init_storage`](@ref) and returned instead of
@@ -182,11 +190,11 @@ function propagate(
     if backward
         intervals = Iterators.reverse(intervals)
         if storage ≠ nothing
-            write_to_storage!(storage, lastindex(tlist), state, observables, tlist)
+            _write_to_storage!(storage, lastindex(tlist), state, observables, tlist)
         end
     else
         if storage ≠ nothing
-            write_to_storage!(storage, 1, state, observables, tlist)
+            _write_to_storage!(storage, 1, state, observables, tlist)
         end
     end
 
@@ -204,7 +212,7 @@ function propagate(
     for (i, t_end) in intervals
         prop_step!(propagator)
         if storage ≠ nothing
-            write_to_storage!(
+            _write_to_storage!(
                 storage,
                 i + (backward ? 0 : 1),
                 propagator.state,
@@ -222,4 +230,12 @@ function propagate(
     else
         return propagator.state
     end
+end
+
+
+@inline function _write_to_storage!(storage, i::Integer, state, observables, tlist)
+    # This specific implementation is referenced in the documentation of
+    # `propagate`. It should not be customized.
+    data = map_observables(observables, tlist, i, state)
+    write_to_storage!(storage, i, data)
 end
