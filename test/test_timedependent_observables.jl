@@ -61,7 +61,6 @@ using QuantumPropagators: propagate
     ])
 
     to_lab(Ψ, tlist, i) = Û⁺(tlist[i]) * Ψ
-    @show typeof(to_lab(ket(0, 1), tlist, lastindex(tlist)))
     states_lab = propagate(
         Ψ₀,
         Ĥ,
@@ -71,8 +70,6 @@ using QuantumPropagators: propagate
         method=:expprop,
         inplace=false
     )
-    @show typeof(states_lab)
-    @show states_lab
     for (Ψ_lab, Ψ_rot, t) in zip(states_lab, states, tlist)
         @test norm(Ψ_lab - ket(cos(Ω * t / 2), 𝕚 * exp(𝕚 * ω_l * t) * sin(Ω * t / 2))) ≈ 0.0
         @test norm(Û(t) * Ψ_lab - Ψ_rot) ≈ 0.0
