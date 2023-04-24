@@ -544,6 +544,13 @@ end
 
 Base.:*(O::Operator, α::Number) = α * O
 
+function Base.:*(O::Operator, Ψ)
+    Φ = copy(Ψ)
+    mul!(Φ, O, Ψ)
+    return Φ
+end
+
+
 Base.convert(::Type{MT}, O::Operator) where {MT<:Matrix} = convert(MT, Array(O))
 Base.convert(::Type{MT}, O::ScaledOperator) where {MT<:Matrix} = convert(MT, Array(O))
 
@@ -553,6 +560,13 @@ function Base.:*(α::Number, O::ScaledOperator)
 end
 
 Base.:*(O::ScaledOperator, α::Number) = α * O
+
+
+function Base.:*(O::ScaledOperator, Ψ)
+    Φ = copy(Ψ)
+    mul!(Φ, O, Ψ)
+    return Φ
+end
 
 
 function LinearAlgebra.mul!(C, A::ScaledOperator, B, α, β)
@@ -590,6 +604,7 @@ end
 
 
 get_controls(operator::Operator) = Tuple([])
+get_controls(operator::ScaledOperator) = Tuple([])
 
 
 function evaluate(generator::Generator, args...; vals_dict=IdDict())

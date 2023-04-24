@@ -1,6 +1,7 @@
 using Test
 using LinearAlgebra
 using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
+using QuantumControlTestUtils.Interfaces: check_operator
 
 using QuantumPropagators: Generator, Operator, ScaledOperator
 
@@ -39,7 +40,19 @@ using QuantumPropagators: Generator, Operator, ScaledOperator
     ϕ_expected = 2 * ϕ0 + (2 * H) * Ψ
     @test norm(ϕ - ϕ_expected) < 1e-12
 
+
 end
+
+
+@testset "Operator interface" begin
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
+    Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
+    Ψ = random_state_vector(5)
+    @test check_operator(Op; state=Ψ)
+end
+
 
 @testset "Operator copy" begin
 
@@ -206,4 +219,15 @@ end
     c2 = dot(ϕ, H, Ψ)
     @test abs(c1 - c2) < 1e-12
 
+end
+
+
+@testset "ScaledOperator interface" begin
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    H₂ = random_matrix(5; hermitian=true)
+    Op = Operator([H₀, H₁, H₂], [2.1, 1.1]) * 0.5
+    @test Op isa ScaledOperator
+    Ψ = random_state_vector(5)
+    @test check_operator(Op; state=Ψ)
 end
