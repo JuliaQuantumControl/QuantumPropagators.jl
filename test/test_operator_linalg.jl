@@ -1,7 +1,7 @@
 using Test
 using LinearAlgebra
 using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
-using QuantumControlTestUtils.Interfaces: check_operator
+using QuantumPropagators.Interfaces: check_operator
 
 using QuantumPropagators: Generator, Operator, ScaledOperator
 

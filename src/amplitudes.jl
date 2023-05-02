@@ -3,6 +3,7 @@ module Amplitudes
 export LockedAmplitude, ShapedAmplitude
 
 import ..Controls: get_controls, evaluate, substitute, discretize_on_midpoints
+using ..Controls: _t
 
 
 #### LockedAmplitude ##########################################################
@@ -80,10 +81,18 @@ function evaluate(ampl::LockedPulseAmplitude, tlist, n; _...)
     return ampl.shape[n]
 end
 
-function evaluate(ampl::LockedContinuousAmplitude, vals_dict, tlist, n)
-    # It's technically possible to determine t from (tlist, n), but maybe we
-    # shouldn't
-    error("LockedAmplitude must be initialized with tlist")
+function evaluate(ampl::LockedPulseAmplitude, t; _...)
+    error(
+        "A LockedAmplitude initialized on a `tlist` can only be evaluated with arguments `tlist, n`."
+    )
+end
+
+function evaluate(ampl::LockedContinuousAmplitude, tlist, n; _...)
+    return ampl(_t(tlist, n))
+end
+
+function evaluate(ampl::LockedContinuousAmplitude, t; _...)
+    return ampl(t)
 end
 
 
@@ -174,7 +183,7 @@ end
 (ampl::ShapedContinuousAmplitude)(t::Float64) = ampl.shape(t) * ampl.control(t)
 
 
-function evaluate(ampl::ShapedPulseAmplitude, args...; vals_dict=IdDict())
+function evaluate(ampl::ShapedAmplitude, args...; vals_dict=IdDict())
     S_t = evaluate(ampl.shape, args...; vals_dict)
     ϵ_t = evaluate(ampl.control, args...; vals_dict)
     return S_t * ϵ_t

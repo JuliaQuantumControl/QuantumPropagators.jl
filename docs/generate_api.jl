@@ -270,6 +270,13 @@ open(outfile, "w") do out
         [Newton Propagation](@ref QuantumPropagatorsNewtonAPI)
         """
     )
+    write_module_api(
+        out,
+        QuantumPropagators.Interfaces,
+        """The following routines allow to test whether custom data structures
+        match the interface requirements of `QuantumPropagators`.
+        """
+    )
     write(out, """
 
     ## Index

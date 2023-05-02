@@ -4,6 +4,7 @@ using LinearAlgebra
 
 using QuantumPropagators
 using QuantumPropagators: Generator, Operator
+using QuantumPropagators.Interfaces: check_generator, check_state
 using QuantumControlBase
 using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
 using QuantumControlTestUtils: QuantumTestLogger
@@ -84,6 +85,21 @@ _CT(::Operator{OT,CT}) where {OT,CT}  = CT
     @test H.amplitudes[1] ≡ ϵ₁
 
 end
+
+
+@testset "Hamiltonian interface" begin
+    H₀ = random_matrix(5; hermitian=true)
+    H₁ = random_matrix(5; hermitian=true)
+    ϵ₁ = t -> 1.0
+    H₂ = random_matrix(5; hermitian=true)
+    ϵ₂ = t -> 1.0
+    H = hamiltonian(H₀, (H₁, ϵ₁), H₂)
+    Ψ = random_state_vector(5)
+    tlist = collect(range(0, 2; length=20))
+    @test check_state(Ψ; normalized=true)
+    @test check_generator(H; state=Ψ, tlist)
+end
+
 
 @testset "pathologial Hamiltonians" begin
 

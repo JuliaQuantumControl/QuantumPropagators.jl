@@ -36,6 +36,11 @@ using SafeTestsets
         include("test_controls.jl")
     end
 
+    print("\n* Amplitudes (test_amplitudes.jl):")
+    @time @safetestset "Amplitudes" begin
+        include("test_amplitudes.jl")
+    end
+
     print("\n* Discretization (test_discretization.jl):")
     @time @safetestset "Discretization" begin
         include("test_discretization.jl")
@@ -69,6 +74,11 @@ using SafeTestsets
     print("\n* Time-dependent observables (test_timedependent_observables.jl):")
     @time @safetestset "Time-dependent observables" begin
         include("test_timedependent_observables.jl")
+    end
+
+    print("\n* Invalid interfaces (test_invalid_interfaces.jl):")
+    @time @safetestset "Invalid interfaces" begin
+        include("test_invalid_interfaces.jl")
     end
 
     print("\n")

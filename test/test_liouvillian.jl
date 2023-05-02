@@ -44,7 +44,6 @@ using SparseArrays
     ]
     #! format: on
 
-
     @test abs(1 - tr(ρ_out)) < 1e-15 # total population
     @test abs(tr(ρ_out^2)) < 1.0  # purity
     @test norm(ρ_out - ρ_expected) < 1e-15
