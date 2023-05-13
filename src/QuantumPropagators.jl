@@ -29,11 +29,6 @@ include("./cheby_propagator.jl")
 include("./newton_propagator.jl")
 include("./exp_propagator.jl")
 
-# high-level interface
-include("./propagate.jl")
-export propagate
-
-
 #! format: off
 module Interfaces
     export check_operator, check_state, check_amplitude, check_control
@@ -45,5 +40,11 @@ module Interfaces
     include(joinpath("interfaces", "generator.jl"))
 end
 #! format: on
+
+# high-level interface
+include("./propagate.jl")
+export propagate
+
+
 
 end

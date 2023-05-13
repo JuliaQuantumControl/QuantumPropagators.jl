@@ -4,6 +4,8 @@ using ProgressMeter
 using .Storage: init_storage, write_to_storage!
 import .Storage: map_observables
 
+using .Interfaces: check_state, check_generator
+
 
 # Return `true` if `H` has only real eigenvalues, `false` if `H` has
 # eigenvalues with a non-zero imaginary part, and `nothing` if field of the
@@ -40,6 +42,7 @@ state = propagate(
     generator,
     tlist;
     method=:auto,
+    check=true,
     backward=false,
     inplace=true,
     verbose=false,
@@ -69,6 +72,8 @@ or a storage array of data collected during the propagation.
 * `method`: The propagation method to use. The default value of `:auto`
   attempts to choose the best method available, based on the properties of the
   given `state`, `tlist`, and `generator`.
+* `check`: if `true`, check that `state` and `generator` pass
+  [`check_state`](@ref) and [`check_generator`](@ref).
 * `backward`: If `true`, propagate backward in time
 * `inplace`: If `true`, propagate using in-place operations. If `false`, avoid
   in-place operations. Not all propagation methods
@@ -170,15 +175,43 @@ function propagate(
     generator,
     tlist,
     method::Val;
+    check=true,
     storage=nothing,
     showprogress=false,
     observables=_StoreState(),
     callback=nothing,
+    inplace=true, # cf. default of init_prop
+    for_expval=true,  # undocumented
+    for_immutable_state=true,  # undocumented
+    for_mutable_state=inplace,  # undocumented
     kwargs...
 )
     backward = get(kwargs, :backward, false)
 
-    propagator = init_prop(state, generator, tlist, method; kwargs...)
+    if check
+        if !(tlist isa Vector{Float64})
+            error(
+                "The `tlist` in `propagate` must be a Vector{Float64}, not $(typeof(tlist))"
+            )
+        end
+        if !check_state(state; for_immutable_state, for_mutable_state)
+            error("The state $(repr(state)) in `propagate` does not pass `check_state`")
+        end
+        if !check_generator(
+            generator;
+            state=state,
+            tlist=tlist,
+            for_immutable_state,
+            for_mutable_state,
+            for_expval
+        )
+            error(
+                "The generator $(repr(generator)) in `propagate` does not pass `check_generator`"
+            )
+        end
+    end
+
+    propagator = init_prop(state, generator, tlist, method; inplace, kwargs...)
 
     return_storage = false
     if storage === true
