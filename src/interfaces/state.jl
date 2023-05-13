@@ -13,8 +13,6 @@ using LinearAlgebra
 
 verifies the following requirements:
 
-* `similar(state)` must be defined and return an object of the same type as
-  `state`
 * The inner product (`LinearAlgebra.dot`) of two states must return a Complex
   number type.
 * The `LinearAlgebra.norm` of `state` must be defined via the inner product.
@@ -35,6 +33,7 @@ If `for_immutable_state`:
 
 If `for_mutable_state`:
 
+* `similar(state)` must be defined and return a valid state
 * `copyto!(other, state)` must be defined
 * `LinearAlgebra.lmul!(c, state)` for a scalar `c` must be defined
 * `LinearAlgebra.axpy!(c, state, other)` must be defined
@@ -53,23 +52,13 @@ function check_state(
     for_immutable_state=true,
     for_mutable_state=true,
     normalized=false,
-    atol=1e-15
+    atol=1e-15,
+    _check_similar=true  # to avoid infinite recursion
 )
 
     ≈(a, b) = isapprox(a, b; atol)
 
     success = true
-
-    try
-        ϕ = similar(state)
-        if !(ϕ isa typeof(state))
-            @error "`similar(state)` must return an object of the same type as `state`, not $(typeof(ϕ))"
-            success = false
-        end
-    catch exc
-        @error "`similar(state)` must be defined: $exc"
-        success = false
-    end
 
     try
         c = state ⋅ state
@@ -143,6 +132,25 @@ function check_state(
     end
 
     if for_mutable_state
+
+        if _check_similar
+            try
+                ϕ = similar(state)
+                if !check_state(
+                    ϕ;
+                    for_immutable_state,
+                    for_mutable_state,
+                    normalized=false,
+                    atol,
+                    _check_similar=false
+                )
+                    @error("`similar(state)` must return a valid state")
+                end
+            catch exc
+                @error "`similar(state)` must be defined: $exc"
+                success = false
+            end
+        end
 
         try
             ϕ = similar(state)
