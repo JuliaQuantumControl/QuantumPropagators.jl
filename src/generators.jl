@@ -247,7 +247,7 @@ In most cases, each control amplitude will simply be a control function or
 vector of pulse values. In general, `ampl` can be an arbitrary object that
 depends on one or more controls, which must be obtainable via
 [`get_controls(ampl)`](@ref get_controls). See
-[`QuantumPropagators.Interfaces.check_amplitude`](@ref) for the required
+`QuantumPropagators.Interfaces.check_amplitude` for the required
 interface.
 
 The `hamiltonian` function will generally return a [`Generator`](@ref)
@@ -269,9 +269,7 @@ Operator{Matrix{ComplexF64}, Float64}(<2 ops>, <1 coeffs>)
 ```
 
 The `hamiltonian` function may generate warnings if the `terms` are of an
-unexpected type or structure as well was warnings or errors for any `ampl` that
-does not implement the interface required for control amplitudes.  These can be
-suppressed with `check=false`.
+unexpected type or structure.  These can be suppressed with `check=false`.
 """
 hamiltonian(terms...; check=true) = _make_generator(terms...; check)
 

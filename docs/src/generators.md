@@ -12,7 +12,7 @@ i \frac{∂}{∂t} |Ψ⟩ = Ĥ(t) |Ψ⟩\,.
 
 ## Operators
 
-When evaluating the right-hand-side of Eq. [(SE)](#eq-se), the time-dependent `generator` ``Ĥ(t)`` is first evaluated into a static `operator` object ``Ĥ`` for a specific point in time via the [`QuantumPropagators.Controls.evaluate`](@ref) function. The 5-argument [`LinearAlgebra.mul!`](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.mul!) the implements the application of the operator to the state ``|Ψ⟩``.
+When evaluating the right-hand-side of Eq. [(SE)](#eq-se), the time-dependent `generator` ``Ĥ(t)`` is first evaluated into a static `operator` object ``Ĥ`` for a specific point in time via the [`QuantumPropagators.Controls.evaluate`](@ref) function. The 5-argument [`LinearAlgebra.mul!`](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.mul!) then implements the application of the operator to the state ``|Ψ⟩``.
 
 
 
