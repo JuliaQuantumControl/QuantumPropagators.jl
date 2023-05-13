@@ -246,7 +246,9 @@ operators are considered "drift" terms.
 In most cases, each control amplitude will simply be a control function or
 vector of pulse values. In general, `ampl` can be an arbitrary object that
 depends on one or more controls, which must be obtainable via
-[`get_controls(ampl)`](@ref get_controls).
+[`get_controls(ampl)`](@ref get_controls). See
+[`QuantumPropagators.Interfaces.check_amplitude`](@ref) for the required
+interface.
 
 The `hamiltonian` function will generally return a [`Generator`](@ref)
 instance. However, if none of the given terms are time-dependent, it may return
@@ -299,9 +301,9 @@ function _make_generator(terms...; check=false)
             else
                 try
                     ops[i] = ops[i] + op
-                catch
+                catch exc
                     @error(
-                        "Collected operators are of a disparate type: $(typeof(ops[i])), $(typeof(op))"
+                        "Collected operators are of a disparate type: $(typeof(ops[i])), $(typeof(op)): $exc"
                     )
                     rethrow()
                 end
@@ -313,9 +315,9 @@ function _make_generator(terms...; check=false)
             else
                 try
                     drift[1] = drift[1] + op
-                catch
+                catch exc
                     @error(
-                        "Collected drift operators are of a disparate type: $(typeof(drift[1])), $(typeof(op))"
+                        "Collected drift operators are of a disparate type: $(typeof(drift[1])), $(typeof(op)): $exc"
                     )
                     rethrow()
                 end
@@ -599,7 +601,8 @@ end
 
 
 function get_controls(generator::Tuple)
-    return get_controls(_make_generator(generator...))
+    G = _make_generator(generator...)
+    return get_controls(G)
 end
 
 

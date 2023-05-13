@@ -18,11 +18,12 @@ verifies the given `generator`:
 * all controls returned by [`get_controls(generator)`](@ref get_controls) must
   pass [`check_control`](@ref)
 * [`evaluate(generator, tlist, n)`](@ref evaluate) must return a valid
-  operator ([`check_operator`](@ref)).
+  operator ([`check_operator`](@ref)), with forwarded keyword arguments
+  (including `for_expval`)
 * [`evaluate!(op, generator, tlist, n)`](@ref evaluate!) must be defined
 * [`substitute(generator, replacements)`](@ref substitute) must be defined
 * If `generator` is a [`Generator`](@ref) instance, all elements of
-  `generator.amplitudes` must be valid, i.e., pass [`check_amplitude`](@ref).
+  `generator.amplitudes` must pass [`check_amplitude`](@ref).
 
 """
 function check_generator(
