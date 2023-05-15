@@ -73,7 +73,7 @@ function check_state(
 
     try
         if abs(norm(state) - sqrt(state ⋅ state)) > atol
-            @error "`norm(state)` must match √(state⋅state)"
+            @error "`norm(state)=$(norm(state))` must match `√(state⋅state)=$(sqrt(state⋅state))`"
             success = false
         end
     catch exc
