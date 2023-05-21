@@ -22,6 +22,7 @@ function clean(; distclean=false, _exit=true)
     for folder in ["", "src", "test"]
         append!(CLEAN, _glob(joinpath(ROOT, folder), ".cov"))
     end
+    append!(CLEAN, _glob(joinpath(ROOT, "src", "interfaces"), ".cov"))
     append!(
         CLEAN,
         _glob_star(joinpath(ROOT, "docs", "src", "examples"), except=["index.md"])
