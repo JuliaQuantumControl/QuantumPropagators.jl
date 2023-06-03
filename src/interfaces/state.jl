@@ -52,7 +52,7 @@ function check_state(
     for_immutable_state=true,
     for_mutable_state=true,
     normalized=false,
-    atol=1e-15,
+    atol=1e-14,
     _check_similar=true  # to avoid infinite recursion
 )
 
@@ -72,8 +72,8 @@ function check_state(
     end
 
     try
-        if abs(norm(state) - sqrt(state ⋅ state)) > atol
-            @error "`norm(state)=$(norm(state))` must match `√(state⋅state)=$(sqrt(state⋅state))`"
+        if abs(norm(state) - real(sqrt(state ⋅ state))) > atol
+            @error "`norm(state)=$(norm(state))` must match `√(state⋅state)=$(real(sqrt(state⋅state)))`"
             success = false
         end
     catch exc

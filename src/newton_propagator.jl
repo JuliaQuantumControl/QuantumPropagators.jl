@@ -109,13 +109,13 @@ end
 function prop_step!(propagator::NewtonPropagator)
     Ψ = propagator.state
     H = propagator.genop
-    n = propagator.n
+    n = propagator.n  # index of interval we're going to propagate
     tlist = getfield(propagator, :tlist)
+    (0 < n < length(tlist)) || return nothing
     dt = tlist[n+1] - tlist[n]
     if propagator.backward
         dt = -dt
     end
-    (0 < n < length(tlist)) || return nothing
     _pwc_set_genop!(propagator, n)
     if propagator.inplace
         Newton.newton!(

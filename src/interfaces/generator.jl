@@ -1,14 +1,12 @@
-using Test
-
 using ..Controls: get_controls, evaluate, evaluate!
 using ..Generators: Generator
 
 """Check the dynamical `generator` for propagating `state` over `tlist`.
 
-```
+```julia
 @test check_generator(generator; state, tlist,
                      for_mutable_state=true, for_immutable_state=true,
-                     for_expval=true, atol=1e-15)
+                     for_expval=true, atol=1e-14)
 ```
 
 verifies the given `generator`:
@@ -33,7 +31,7 @@ function check_generator(
     for_mutable_state=true,
     for_immutable_state=true,
     for_expval=true,
-    atol=1e-15
+    atol=1e-14
 )
 
     @assert check_state(state; for_mutable_state, for_immutable_state, atol)

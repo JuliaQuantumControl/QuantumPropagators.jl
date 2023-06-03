@@ -106,7 +106,7 @@ using QuantumPropagators: init_prop
 propagator = init_prop(Ψ₀, H, tlist)
 ```
 
-The `propagator` is a propagation-method-dependent object with the interface described by [`AbstractPropagator`](@ref).
+The `propagator` is a propagation-method-dependent object with the interface described by [`AbstractPropagator`](@ref) and [`QuantumPropagators.Interfaces.check_propagator`](@ref).
 
 The  [`prop_step!`](@ref) function can then be used to advance the `propagator`:
 

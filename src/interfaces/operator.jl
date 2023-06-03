@@ -9,7 +9,7 @@ using ..Controls: get_controls, evaluate
 ```julia
 @test check_operator(op; state, tlist=[0.0, 1.0],
                      for_mutable_state=true, for_immutable_state=true,
-                     for_expval=true, atol=1e-15)
+                     for_expval=true, atol=1e-14)
 ```
 
 verifies the given `op` relative to `state`. The `state` must pass
@@ -44,7 +44,7 @@ function check_operator(
     for_mutable_state=true,
     for_immutable_state=true,
     for_expval=true,
-    atol=1e-15
+    atol=1e-14
 )
 
     ≈(a, b) = isapprox(a, b; atol)

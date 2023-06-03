@@ -46,6 +46,11 @@ end
 
 
 function _pwc_set_t!(propagator::PiecewisePropagator, t)
+    #
+    #   | 1 | 2 | 3 |   ← intervals
+    #   1   2   3   4   ← time grid points
+    #
+    # First, find `n` as the index on the time grid (not the intervals)
     tlist = getfield(propagator, :tlist)
     if t <= tlist[1]
         n = 1
@@ -58,6 +63,9 @@ function _pwc_set_t!(propagator::PiecewisePropagator, t)
         end
     end
     (t ≈ tlist[n]) || (@warn ("Snapping t=$t to time grid value $(tlist[n])"))
+    # Set `propagator.n` as the index on the next interval to be propagated.
+    # Note that we allow the invalid `propagator.n == N` if `t == tlist[end]`
+    # (the end of the propagation).
     setfield!(propagator, :n, propagator.backward ? n - 1 : n)
     setfield!(propagator, :t, tlist[n])
 end

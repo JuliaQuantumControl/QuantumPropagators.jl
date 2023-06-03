@@ -66,6 +66,11 @@ using SafeTestsets
         include("test_expprop.jl")
     end
 
+    print("\n* Propagator Interfaces (test_prop_interfaces.jl):")
+    @time @safetestset "Propagator Interfaces" begin
+        include("test_prop_interfaces.jl")
+    end
+
     print("\n* Propagate (test_propagate.jl):")
     @time @safetestset "Propagate" begin
         include("test_propagate.jl")

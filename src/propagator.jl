@@ -8,7 +8,7 @@ implement the following interface.
 # Properties
 
 * `state` (read-only): The current quantum state in the propagation
-* `tlist` (read-only): The time grid for the propatation
+* `tlist` (read-only): The time grid for the propagation
 * `t` (read-only): The time at which `state` is defined. An element of `tlist`.
 * `parameters`: parameters that determine the dynamics. The structure of the
   parameters depends on the concrete `Propagator` type (i.e., the propagation
@@ -16,10 +16,7 @@ implement the following interface.
 * `backward`: Boolean flag to indicate whether the propagation moves forward or
   backward in time
 * `inplace`: Boolean flag to indicate whether `propagator.state` is modified
-  in-place or is recreated by every call of `prop_step!` or `set_state!`. For
-  `inplace=true`, we find `Ψ = propagator.state; prop_step!(propagator);
-  propagator.state === Ψ` to be `true`, while for `inplace=false` it is
-  `false`.
+  in-place or is recreated by every call of `prop_step!` or `set_state!`.
 
 Concrete `Propagator` types may have additional properties or fields, but these
 should be considered private.
@@ -55,11 +52,11 @@ mapping the controls found in the `generator` via [`get_controls`](@ref
 QuantumPropagators.Controls.get_controls) to a vector of values defined on the
 intervals of the time grid, see [`discretize_on_midpoints`](@ref). This does
 not necessarily imply that these values are the piecewise-constant amplitudes
-for the intervals. A general piecwise propagatore might use interpolation to
+for the intervals. A general piecewise propagator might use interpolation to
 obtain actual amplitudes within any given time interval.
 
 When the amplitudes *are* piecewise-constant, the propagator should be a
-concrete intantiation of a [`PWCPropagator`](@ref).
+concrete incantation of a [`PWCPropagator`](@ref).
 """
 abstract type PiecewisePropagator <: AbstractPropagator end
 
@@ -126,10 +123,6 @@ function Base.propertynames(propagator::AbstractPropagator, private::Bool=false)
 end
 
 
-# TODO: check_propagator routine that checks the interface (properties /
-# getters / setters)
-
-
 """Initialize a `Propagator`.
 
 ```julia
@@ -167,12 +160,12 @@ time grid `tlist` under the time-dependent generator (Hamiltonian/Liouvillian)
   [`prop_step!`](@ref) will move backward on `tlist`.
 * `inplace`: If `true`, the `state` property of the resulting propagator will
   be changed in-place by any call to [`prop_step!`](@ref). If `false`, each
-  call to [`prop_step!`](@ref) changes the reference for `propgator.state`, and
-  the progation will not use any in-place operations. Not all propagation
+  call to [`prop_step!`](@ref) changes the reference for `propagator.state`,
+  and the propagation will not use any in-place operations. Not all propagation
   methods may support both in-place and not-in-place propagation. In-place
   propagation is generally more efficient but may not be compatible, e.g., with
   automatic differentiation.
-* `piecewise`: If given a a boolean, `true` enforces that the resulting
+* `piecewise`: If given as a boolean, `true` enforces that the resulting
   propagator is a [`PiecewisePropagator`](@ref), and `false` enforces is not to
   be a [`PiecewisePropagator`](@ref)
 * `pwc`: Like `piecewise`, for for the stronger [`PWCPropagator`](@ref)
@@ -189,6 +182,8 @@ The type of the returned `propagator` is a sub-type of
 
 * [`reinit_prop!`](@ref) — Re-initialize a propagator
 * [`propagate`](@ref) — Higher-level propagation interface
+* `QuantumPropagators.Interfaces.check_propagator` — a function to verify the
+  interface described above.
 """
 function init_prop(
     state,

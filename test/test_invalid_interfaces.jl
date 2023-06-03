@@ -1,8 +1,16 @@
 using Test
 using Logging: with_logger
 using QuantumControlTestUtils: QuantumTestLogger
+using QuantumControlTestUtils.RandomObjects: random_dynamic_generator, random_state_vector
+using StableRNGs: StableRNG
+using QuantumPropagators: init_prop
 using QuantumPropagators.Interfaces:
-    check_amplitude, check_control, check_operator, check_generator, check_state
+    check_amplitude,
+    check_control,
+    check_operator,
+    check_generator,
+    check_state,
+    check_propagator
 
 
 @testset "Invalid amplitude" begin
@@ -121,12 +129,132 @@ end
     @test "`axpy!(c, state, other)` must be defined" ∈ test_logger
     @test "`norm(state)` must be 1" ∈ test_logger
 
-
     state = [1, 0, 0, 0]
     test_logger = QuantumTestLogger()
     with_logger(test_logger) do
         @test check_state(state; normalized=true) ≡ false
     end
     @test "`state ⋅ state` must return a Complex number type" ∈ test_logger
+
+end
+
+
+@testset "Invalid propagator" begin
+
+    struct InvalidPropagatorEmpty end
+
+    include("invalid_propagator.jl")
+
+    propagator = InvalidPropagatorEmpty()
+
+    test_logger = QuantumTestLogger()
+    with_logger(test_logger) do
+        @test check_propagator(propagator) ≡ false
+    end
+
+    @test "does not have the required properties" ∈ test_logger
+
+    N = 10
+    tlist = collect(range(0, 100, length=1001))
+    rng = StableRNG(93655235)
+    Ĥ = random_dynamic_generator(N, tlist; rng)
+    Ψ = random_state_vector(N; rng)
+
+    propagator = init_prop(Ψ, Ĥ, tlist; method=:invalid_propagator_no_methods)
+
+    test_logger = QuantumTestLogger()
+    with_logger(test_logger) do
+        @test check_propagator(propagator) ≡ false
+    end
+
+    @test "`prop_step!(propagator)` must be defined" ∈ test_logger
+    @test "Failed to run `prop_step!(propagator)`" ∈ test_logger
+    @test "`reinit_prop!` must be defined" ∈ test_logger
+
+
+    propagator = init_prop(
+        Ψ,
+        Ĥ,
+        tlist;
+        method=:invalid_propagator_empty_methods,
+        inplace=true,
+        backward=false
+    )
+    test_logger = QuantumTestLogger()
+    with_logger(test_logger) do
+        @test check_propagator(propagator) ≡ false
+    end
+    @test "propagator.t ≠ propagator.tlist[begin]" ∈ test_logger
+    @test "`set_t!(propagator, t)` must set propagator.t" ∈ test_logger
+    @test "`prop_step!(propagator)` at final t=0.1 must return `nothing`" ∈ test_logger
+    @test "`propagator.parameters` must be a dict" ∈ test_logger
+    @test "`reinit_prop!(propagator, state)` must reset `propagator.t`" ∈ test_logger
+
+    propagator = init_prop(
+        Ψ,
+        Ĥ,
+        tlist;
+        method=:invalid_propagator_empty_methods,
+        inplace=false,
+        backward=true
+    )
+    test_logger = QuantumTestLogger()
+    with_logger(test_logger) do
+        @test check_propagator(propagator) ≡ false
+    end
+    @test "propagator.t ≠ propagator.tlist[end]" ∈ test_logger
+    @test "For a not-in-place propagator, the state returned by `prop_step!` must be a new object" ∈
+          test_logger
+    @test "`prop_step!` must advance `propagator.t` forward or backward one step on the time grid" ∈
+          test_logger
+
+    propagator = init_prop(
+        Ψ,
+        Ĥ,
+        tlist;
+        method=:invalid_random_propagator,
+        inplace=true,
+        backward=false
+    )
+    test_logger = QuantumTestLogger()
+    with_logger(test_logger) do
+        @test check_propagator(propagator) ≡ false
+    end
+    @test "For an in-place propagator, the state returned by `prop_step!` must be the `propagator.state` object" ∈
+          test_logger
+    @test "`set_state!(propagator, state)` for an in-place propagator must overwrite `propagator.state` in-place." ∈
+          test_logger
+    @test "`reinit_prop!(propagator, state)` must be idempotent" ∈ test_logger
+
+    propagator = init_prop(
+        Ψ,
+        Ĥ,
+        tlist;
+        method=:invalid_random_propagator,
+        inplace=false,
+        backward=true
+    )
+    test_logger = QuantumTestLogger()
+    with_logger(test_logger) do
+        @test check_propagator(propagator) ≡ false
+    end
+    @test "For a not-in-place propagator, the state returned by `prop_step!` must be a new object" ∈
+          test_logger
+    @test "`reinit_prop!` must be defined and re-initialize the propagator" ∈ test_logger
+
+    propagator = init_prop(
+        Ψ,
+        Ĥ,
+        tlist;
+        method=:invalid_propagator_no_state,
+        inplace=true,
+        backward=false
+    )
+    test_logger = QuantumTestLogger()
+    with_logger(test_logger) do
+        @test check_propagator(propagator) ≡ false
+    end
+    @test "prop_step! must return a valid state until time grid is exhausted" ∈ test_logger
+
 
 end
