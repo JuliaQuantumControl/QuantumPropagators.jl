@@ -31,6 +31,7 @@ function check_generator(
     for_mutable_state=true,
     for_immutable_state=true,
     for_expval=true,
+    _check_amplitudes=true,  # undocumented (internal use)
     atol=1e-14
 )
 
@@ -104,7 +105,7 @@ function check_generator(
         success = false
     end
 
-    if generator isa Generator
+    if (generator isa Generator) && _check_amplitudes
         try
             for (i, ampl) in enumerate(generator.amplitudes)
                 if !check_amplitude(ampl; tlist)
