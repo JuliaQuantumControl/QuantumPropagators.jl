@@ -9,7 +9,7 @@ import ..set_t!
 """Check that the given `propagator` implements the required interface.
 
 ```julia
-@test check_propagator(propagator; atol=1e-14)
+@test check_propagator(propagator; atol=1e-14, quiet=false)
 ```
 
 verifies that the `propagator` matches the interface described for an
@@ -44,11 +44,21 @@ initialized with [`init_prop`](@ref).
 * [`reinit_prop!(propagator, state)`](@ref reinit_prop!) must be idempotent.
   That is, repeated calls to [`reinit_prop!`](@ref) leave the `propagator`
   unchanged.
+
+The function returns `true` for a valid propagator and `false` for an invalid
+propagator. Unless `quiet=true`, it will log an error to indicate which of the
+conditions failed.
 """
-function check_propagator(propagator; atol=1e-14)
+function check_propagator(
+    propagator;
+    atol=1e-14,
+    quiet=false,
+    _message_prefix=""  # for recursive calling
+)
 
     local state, tlist, t, parameters, backward, inplace
 
+    px = _message_prefix
     success = true
 
     try
@@ -59,36 +69,43 @@ function check_propagator(propagator; atol=1e-14)
         backward = propagator.backward
         inplace = propagator.inplace
     catch exc
-        @error "`propagator` does not have the required properties: $exc"
+        quiet || @error "$(px)`propagator` does not have the required properties: $exc"
         success = false
     end
 
     success || return false  # no point in going on
 
     try
-        if !(check_state(state; for_mutable_state=inplace, for_immutable_state=true, atol))
-            @error "`propagator.state` is not a valid state"
+        valid_state = check_state(
+            state;
+            for_mutable_state=inplace,
+            for_immutable_state=true,
+            atol,
+            _message_prefix="On `propagator.state`: "
+        )
+        if !valid_state
+            quiet || @error "$(px)`propagator.state` is not a valid state"
             success = false
         end
     catch exc
-        @error "Cannot verify `propagator.state`: $exc"
+        quiet || @error "$(px)Cannot verify `propagator.state`: $exc"
         success = false
     end
 
     try
         if backward
             if t ≠ tlist[end]
-                @error "propagator.t ≠ propagator.tlist[end]"
+                quiet || @error "$(px)propagator.t ≠ propagator.tlist[end]"
                 success = false
             end
         else
             if t ≠ tlist[begin]
-                @error "propagator.t ≠ propagator.tlist[begin]"
+                quiet || @error "$(px)propagator.t ≠ propagator.tlist[begin]"
                 success = false
             end
         end
     catch exc
-        @error "Cannot verify `propagator.t`: $exc"
+        quiet || @error "$(px)Cannot verify `propagator.t`: $exc"
         success = false
     end
 
@@ -98,18 +115,28 @@ function check_propagator(propagator; atol=1e-14)
 
     try
         Ψ₁ = prop_step!(propagator)
-        if !(check_state(Ψ₁; for_mutable_state=false, for_immutable_state=false, atol))
-            @error "prop_step! must return a valid state until time grid is exhausted"
+        valid_state = check_state(
+            Ψ₁;
+            for_mutable_state=false,
+            for_immutable_state=false,
+            atol,
+            _message_prefix="On `Ψ₁=propstep!(propagator)`: "
+        )
+        if !valid_state
+            quiet ||
+                @error "$(px)prop_step! must return a valid state until time grid is exhausted"
             success = false
         end
         if inplace
             if Ψ₁ ≢ state
-                @error "For an in-place propagator, the state returned by `prop_step!` must be the `propagator.state` object"
+                quiet ||
+                    @error "$(px)For an in-place propagator, the state returned by `prop_step!` must be the `propagator.state` object"
                 success = false
             end
         else
             if Ψ₁ ≡ state
-                @error "For a not-in-place propagator, the state returned by `prop_step!` must be a new object"
+                quiet ||
+                    @error "$(px)For a not-in-place propagator, the state returned by `prop_step!` must be a new object"
                 success = false
             end
         end
@@ -119,11 +146,12 @@ function check_propagator(propagator; atol=1e-14)
             Δ = propagator.t - tlist[begin+1]
         end
         if abs(Δ) > atol
-            @error "`prop_step!` must advance `propagator.t` forward or backward one step on the time grid (Δ=$Δ)"
+            quiet ||
+                @error "$(px)`prop_step!` must advance `propagator.t` forward or backward one step on the time grid (Δ=$Δ)"
             success = false
         end
     catch exc
-        @error "`prop_step!(propagator)` must be defined : $exc"
+        quiet || @error "$(px)`prop_step!(propagator)` must be defined : $exc"
         success = false
     end
 
@@ -134,11 +162,12 @@ function check_propagator(propagator; atol=1e-14)
         end
         set_t!(propagator, t)
         if propagator.t ≠ t
-            @error "`set_t!(propagator, t)` must set propagator.t=$t, not $(propagator.t)"
+            quiet ||
+                @error "$(px)`set_t!(propagator, t)` must set propagator.t=$t, not $(propagator.t)"
             success = false
         end
     catch exc
-        @error "`set_t!(propagator)` must be defined : $exc"
+        quiet || @error "$(px)`set_t!(propagator)` must be defined : $exc"
         success = false
     end
 
@@ -148,28 +177,37 @@ function check_propagator(propagator; atol=1e-14)
         if !isnothing(res)
             success = false
             if backward
-                @error "`prop_step!(propagator)` at initial t=$t must return `nothing`"
+                quiet ||
+                    @error "$(px)`prop_step!(propagator)` at initial t=$t must return `nothing`"
+                success = false
             else
-                @error "`prop_step!(propagator)` at final t=$t must return `nothing`"
+                quiet ||
+                    @error "$(px)`prop_step!(propagator)` at final t=$t must return `nothing`"
+                success = false
             end
         end
     catch exc
-        @error "Failed to run `prop_step!(propagator)` at t=$(propagator.t): $exc"
+        quiet ||
+            @error "$(px)Failed to run `prop_step!(propagator)` at t=$(propagator.t): $exc"
         success = false
     end
 
     try
         set_state!(propagator, Ψ₀)
         if norm(propagator.state - Ψ₀) > atol
-            @error "`set_state!(propagator, state)` must set `propagator.state`"
+            quiet ||
+                @error "$(px)`set_state!(propagator, state)` must set `propagator.state`"
+            success = false
         end
         if inplace
             if propagator.state ≢ Ψ₀_ref
-                @error "`set_state!(propagator, state)` for an in-place propagator must overwrite `propagator.state` in-place."
+                quiet ||
+                    @error "$(px)`set_state!(propagator, state)` for an in-place propagator must overwrite `propagator.state` in-place."
+                success = false
             end
         end
     catch exc
-        @error "`set_state!(propagator, state)` must be defined : $exc"
+        quiet || @error "$(px)`set_state!(propagator, state)` must be defined : $exc"
         success = false
     end
 
@@ -177,13 +215,15 @@ function check_propagator(propagator; atol=1e-14)
         try
             for (control, ampl) ∈ propagator.parameters
                 if length(ampl) ≠ length(propagator.tlist) - 1
-                    @error "In a PiecewisePropagator, `propagator.parameters` must be a dict mapping controls to a vector of values, one for each interval on `propagator.tlist`"
+                    quiet ||
+                        @error "$(px)In a PiecewisePropagator, `propagator.parameters` must be a dict mapping controls to a vector of values, one for each interval on `propagator.tlist`"
                     success = false
                     break
                 end
             end
         catch exc
-            @error "In a PiecewisePropagator, `propagator.parameters` must be a dict mapping controls to a vector of values, one for each interval on `propagator.tlist`: $exc"
+            quiet ||
+                @error "$(px)In a PiecewisePropagator, `propagator.parameters` must be a dict mapping controls to a vector of values, one for each interval on `propagator.tlist`: $exc"
             success = false
         end
     end
@@ -192,19 +232,23 @@ function check_propagator(propagator; atol=1e-14)
         reinit_prop!(propagator, Ψ₀)
         t = backward ? propagator.tlist[end] : propagator.tlist[begin]
         if abs(propagator.t - t) > atol
-            @error "`reinit_prop!(propagator, state)` must reset `propagator.t`"
+            quiet ||
+                @error "$(px)`reinit_prop!(propagator, state)` must reset `propagator.t`"
             success = false
         end
         if norm(propagator.state - Ψ₀) > atol
-            @error "`reinit_prop!(propagator, state)` must reset `propagator.state`"
+            quiet ||
+                @error "$(px)`reinit_prop!(propagator, state)` must reset `propagator.state`"
             success = false
         end
         if propagator.backward ≠ backward
-            @error "`reinit_prop!(propagator, state)` must keep `propagator.backward`"
+            quiet ||
+                @error "$(px)`reinit_prop!(propagator, state)` must keep `propagator.backward`"
             success = false
         end
         if propagator.inplace ≠ inplace
-            @error "`reinit_prop!(propagator, state)` must keep `propagator.inplace`"
+            quiet ||
+                @error "$(px)`reinit_prop!(propagator, state)` must keep `propagator.inplace`"
             success = false
         end
         prop_step!(propagator)
@@ -212,7 +256,7 @@ function check_propagator(propagator; atol=1e-14)
             # Without keyword arguments to reinit_prop!, the propagator should
             # be in the exact original state and thus reproduce the exact same
             # propagation
-            @error "`reinit_prop!(propagator, state)` must be idempotent"
+            quiet || @error "$(px)`reinit_prop!(propagator, state)` must be idempotent"
             success = false
         end
         if inplace
@@ -221,12 +265,14 @@ function check_propagator(propagator; atol=1e-14)
             @assert norm(Ψ₀_ref - Ψ₀) < atol
             reinit_prop!(propagator, Ψ₀_ref)
             if propagator.state ≢ Ψ₀_ref
-                @error "`reinit_prop!(propagator, state)` for in-place propagator must be in-place"
+                quiet ||
+                    @error "$(px)`reinit_prop!(propagator, state)` for in-place propagator must be in-place"
                 success = false
             end
         end
     catch exc
-        @error "`reinit_prop!` must be defined and re-initialize the propagator: $exc"
+        quiet ||
+            @error "$(px)`reinit_prop!` must be defined and re-initialize the propagator: $exc"
         success = false
     end
 

@@ -8,7 +8,7 @@ using LinearAlgebra
 ```julia
 @test check_state(state;
                   for_immutable_state=true, for_mutable_state=true,
-                  normalized=false, atol=1e-15)
+                  normalized=false, atol=1e-15, quiet=false)
 ```
 
 verifies the following requirements:
@@ -46,86 +46,101 @@ If `normalized` (not required by default):
 
 It is strongly recommended to always support immutable operations (also for
 mutable states)
+
+The function returns `true` for a valid state and `false` for an invalid state.
+Unless `quiet=true`, it will log an error to indicate which of the conditions
+failed.
 """
 function check_state(
     state;
     for_immutable_state=true,
     for_mutable_state=true,
     normalized=false,
-    atol=1e-14,
-    _check_similar=true  # to avoid infinite recursion
+    atol=1e-15,
+    quiet=false,
+    _check_similar=true,  # to avoid infinite recursion
+    _message_prefix=""  # for recursive calling
 )
 
     ≈(a, b) = isapprox(a, b; atol)
+    px = _message_prefix
 
     success = true
 
     try
         c = state ⋅ state
         if !(c isa Complex)
-            @error "`state ⋅ state` must return a Complex number type, not $(typeof(c))"
+            quiet ||
+                @error "$(px)`state ⋅ state` must return a Complex number type, not $(typeof(c))"
             success = false
         end
     catch exc
-        @error "the inner product of two states must be a complex number: $exc"
+        quiet ||
+            @error "$(px)the inner product of two states must be a complex number: $exc"
         success = false
     end
 
     try
-        if abs(norm(state) - real(sqrt(state ⋅ state))) > atol
-            @error "`norm(state)=$(norm(state))` must match `√(state⋅state)=$(real(sqrt(state⋅state)))`"
+        if abs(norm(state) - sqrt(state ⋅ state)) > atol
+            quiet ||
+                @error "$(px)`norm(state)=$(norm(state))` must match `√(state⋅state)=$(sqrt(state⋅state))`"
             success = false
         end
     catch exc
-        @error "the norm of a state must be defined via the inner product: $exc"
+        quiet ||
+            @error "$(px)the norm of a state must be defined via the inner product: $exc"
         success = false
     end
 
     if for_immutable_state
 
         try
-            if norm(state - state) > atol
-                @error "`state - state` must have norm 0"
+            Δ = norm(state - state)
+            if Δ > atol
+                quiet || @error "`$(px)state - state` must have norm 0"
                 success = false
             end
-            if norm(state + state) > (2 * norm(state) + atol)
-                @error "`norm(state + state)` must fulfill the triangle inequality"
+            η = norm(state + state)
+            if η > (2 * norm(state) + atol)
+                quiet ||
+                    @error "`$(px)norm(state + state)` must fulfill the triangle inequality"
                 success = false
             end
         catch exc
-            @error "`state + state` and `state - state` must be defined: $exc"
+            quiet || @error "$(px)`state + state` and `state - state` must be defined: $exc"
             success = false
         end
 
         try
             ϕ = copy(state)
             if norm(ϕ - state) > atol
-                @error "`copy(state) - state` must have norm 0"
+                quiet || @error "$(px)`copy(state) - state` must have norm 0"
                 success = false
             end
         catch exc
-            @error "copy(state) must be defined: $exc"
+            quiet || @error "$(px)copy(state) must be defined: $exc"
             success = false
         end
 
         try
             ϕ = 0.5 * state
             if abs(norm(ϕ) - 0.5 * norm(state)) > atol
-                @error "`norm(state)` must have absolute homogeneity: `norm(s * state) = s * norm(state)`"
+                quiet ||
+                    @error "$(px)`norm(state)` must have absolute homogeneity: `norm(s * state) = s * norm(state)`"
                 success = false
             end
         catch exc
-            @error "`c * state` for a scalar `c` must be defined: $exc"
+            quiet || @error "$(px)`c * state` for a scalar `c` must be defined: $exc"
             success = false
         end
 
         try
             if norm(0.0 * state) > atol
-                @error "`0.0 * state` must produce a state with norm 0"
+                quiet || @error "$(px)`0.0 * state` must produce a state with norm 0"
                 success = false
             end
         catch exc
-            @error "`0.0 * state` must produce a state with norm 0: $exc"
+            quiet || @error "$(px)`0.0 * state` must produce a state with norm 0: $exc"
             success = false
         end
 
@@ -133,77 +148,102 @@ function check_state(
 
     if for_mutable_state
 
-        if _check_similar
-            try
-                ϕ = similar(state)
-                if !check_state(
-                    ϕ;
-                    for_immutable_state,
-                    for_mutable_state,
-                    normalized=false,
-                    atol,
-                    _check_similar=false
-                )
-                    @error("`similar(state)` must return a valid state")
-                end
-            catch exc
-                @error "`similar(state)` must be defined: $exc"
-                success = false
-            end
-        end
-
+        has_similar = true
+        similar_is_valid = true
         try
             ϕ = similar(state)
-            copyto!(ϕ, state)
-            if for_immutable_state
-                if norm(ϕ - state) > atol
-                    @error "`copy(state) - state` must have norm 0"
-                    success = false
-                end
-            end
         catch exc
-            @error("`copyto!(other, state)` must be defined: $exc")
-        end
-
-        try
-            ϕ = similar(state)
-            copyto!(ϕ, state)
-            ϕ = lmul!(1im, ϕ)
-            if for_immutable_state
-                if norm(ϕ - 1im * state) > atol
-                    @error "`norm(state)` must have absolute homogeneity: `norm(s * state) = s * norm(state)`"
-                    success = false
-                end
-            end
-        catch exc
-            @error("`lmul!(c, state)` for a scalar `c` must be defined: $exc")
-        end
-
-        try
-            ϕ = similar(state)
-            copyto!(ϕ, state)
-            ϕ = lmul!(0.0, ϕ)
-            if norm(ϕ) > atol
-                @error "`lmul!(0.0, state)` must produce a state with norm 0"
-                success = false
-            end
-        catch exc
-            @error "`lmul!(0.0, state)` must produce a state with norm 0: $exc"
+            quiet || @error "$(px)`similar(state)` must be defined: $exc"
+            has_similar = false
             success = false
         end
 
         try
-            ϕ = similar(state)
-            copyto!(ϕ, state)
-            ϕ = axpy!(1im, state, ϕ)
-            if for_immutable_state
-                if norm(ϕ - (state + 1im * state)) > atol
-                    @error "`axpy!(a, state, ϕ)` must match `ϕ += a * state`"
+            if has_similar
+                ϕ = similar(state)
+                copyto!(ϕ, state)
+                if _check_similar
+                    # we only check ϕ after `copyto!`, because just `similar`
+                    # might have NaNs in the amplitude, which screws up lots of
+                    # the checks
+                    if !check_state(
+                        ϕ;
+                        for_immutable_state,
+                        for_mutable_state,
+                        normalized=false,
+                        atol,
+                        _check_similar=false,
+                        _message_prefix="On `similar(state)`: ",
+                        quiet
+                    )
+                        quiet || @error("$(px)`similar(state)` must return a valid state")
+                        similar_is_valid = false
+                        success = false
+                    end
+                end
+                if for_immutable_state
+                    if norm(ϕ - state) > atol
+                        quiet ||
+                            @error "$(px)`ϕ - state` must have norm 0, where `ϕ = similar(state); copyto!(ϕ, state)`"
+                        success = false
+                    end
+                end
+            end
+        catch exc
+            quiet || @error("$(px)`copyto!(other, state)` must be defined: $exc")
+            success = false
+        end
+
+        try
+            if has_similar && similar_is_valid
+                ϕ = similar(state)
+                copyto!(ϕ, state)
+                ϕ = lmul!(1im, ϕ)
+                if for_immutable_state
+                    if norm(ϕ - 1im * state) > atol
+                        quiet ||
+                            @error "$(px)`norm(state)` must have absolute homogeneity: `norm(s * state) = s * norm(state)`"
+                        success = false
+                    end
+                end
+            end
+        catch exc
+            quiet || @error("$(px)`lmul!(c, state)` for a scalar `c` must be defined: $exc")
+            success = false
+        end
+
+        try
+            if has_similar && similar_is_valid
+                ϕ = similar(state)
+                copyto!(ϕ, state)
+                ϕ = lmul!(0.0, ϕ)
+                if norm(ϕ) > atol
+                    quiet ||
+                        @error "$(px)`lmul!(0.0, state)` must produce a state with norm 0"
                     success = false
                 end
             end
         catch exc
-            @error "`axpy!(c, state, other)` must be defined: $exc"
+            quiet ||
+                @error "$(px)`lmul!(0.0, state)` must produce a state with norm 0: $exc"
+            success = false
+        end
+
+        try
+            if has_similar && similar_is_valid
+                ϕ = similar(state)
+                copyto!(ϕ, state)
+                ϕ = axpy!(1im, state, ϕ)
+                if for_immutable_state
+                    if norm(ϕ - (state + 1im * state)) > atol
+                        quiet ||
+                            @error "$(px)`axpy!(a, state, ϕ)` must match `ϕ += a * state`"
+                        success = false
+                    end
+                end
+            end
+        catch exc
+            quiet || @error "$(px)`axpy!(c, state, other)` must be defined: $exc"
             success = false
         end
 
@@ -213,11 +253,11 @@ function check_state(
         try
             η = norm(state)
             if abs(η - 1) > atol
-                @error "`norm(state)` must be 1, not $η"
+                quiet || @error "$(px)`norm(state)` must be 1, not $η"
                 success = false
             end
         catch exc
-            @error "`norm(state)` must be 1: $exc"
+            quiet || @error "$(px)`norm(state)` must be 1: $exc"
             success = false
         end
     end

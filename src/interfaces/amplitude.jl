@@ -6,7 +6,7 @@ using ..Controls: get_controls, evaluate, substitute
 """Check amplitude appearing in [`Generator`](@ref).
 
 ```julia
-@test check_amplitude(ampl; tlist)
+@test check_amplitude(ampl; tlist, quiet=false)
 ```
 
 verifies that the given `ampl` is a valid element in the list of `amplitudes`
@@ -19,32 +19,50 @@ of a [`Generator`](@ref) object. Specifically:
   Number
 * [`evaluate(ampl, tlist, n; vals_dict)`](@ref evaluate) must be defined and
   return a Number
-"""
-function check_amplitude(ampl; tlist)
 
+The function returns `true` for a valid amplitude and `false` for an invalid
+amplitude. Unless `quiet=true`, it will log an error to indicate which of the
+conditions failed.
+"""
+function check_amplitude(
+    ampl;
+    tlist,
+    quiet=false,
+    _message_prefix=""  # for recursive calling
+)
+
+    px = _message_prefix
     success = true
 
     try
         controls = get_controls(ampl)
         if !(controls isa Tuple)
-            @error "get_controls(ampl) must return a tuple, not $(typeof(controls))"
+            quiet ||
+                @error "$(px)get_controls(ampl) must return a tuple, not $(typeof(controls))"
             success = false
         end
     catch exc
-        @error "`get_controls(ampl)` must be defined: $exc"
+        quiet || @error "$(px)`get_controls(ampl)` must be defined: $exc"
         success = false
     end
 
     try
         controls = get_controls(ampl)
         for (i, control) ∈ enumerate(controls)
-            if !check_control(control; tlist)
-                @error "control $i in `ampl` must pass `check_control`"
+            valid_control = check_control(
+                control;
+                tlist,
+                quiet,
+                _message_prefix="On control $i ($(typeof(control))) in `ampl`: "
+            )
+            if !valid_control
+                quiet ||
+                    @error "$(px)control $i ($(typeof(control)) in `ampl` must pass `check_control`"
                 success = false
             end
         end
     catch exc
-        @error "all controls in `ampl` must pass `check_control`: $exc"
+        quiet || @error "$(px)all controls in `ampl` must pass `check_control`: $exc"
         success = false
     end
 
@@ -53,22 +71,23 @@ function check_amplitude(ampl; tlist)
         replacements = IdDict(ϵ => ϵ for ϵ ∈ controls)
         ampl_copy = substitute(ampl, replacements)
         if !(get_controls(ampl_copy) == get_controls(ampl))
-            @error "`substitute(ampl, replacments)` must replace controls"
+            quiet || @error "$(px)`substitute(ampl, replacments)` must replace controls"
             success = false
         end
     catch exc
-        @error "`substitute(ampl, replacments)` must be defined: $exc"
+        quiet || @error "$(px)`substitute(ampl, replacments)` must be defined: $exc"
         success = false
     end
 
     try
         val = evaluate(ampl, tlist, 1)
         if !(val isa Number)
-            @error "`evaluate(ampl, tlist, 1)` must return a Number, not $(typeof(val))"
+            quiet ||
+                @error "$(px)`evaluate(ampl, tlist, 1)` must return a Number, not $(typeof(val))"
             success = false
         end
     catch exc
-        @error "`evaluate(ampl, tlist, n)` must be defined: $exc"
+        quiet || @error "$(px)`evaluate(ampl, tlist, n)` must be defined: $exc"
         success = false
     end
 
@@ -77,11 +96,12 @@ function check_amplitude(ampl; tlist)
         vals_dict = IdDict(ϵ => 1.0 for ϵ ∈ controls)
         val = evaluate(ampl, tlist, 1; vals_dict)
         if !(val isa Number)
-            @error "evaluate(ampl, tlist, 1; vals_dict) must return a Number, not $(typeof(val))"
+            quiet ||
+                @error "$(px)evaluate(ampl, tlist, 1; vals_dict) must return a Number, not $(typeof(val))"
             success = false
         end
     catch exc
-        @error "`evaluate(ampl, tlist, n; vals_dict)` must be defined: $exc"
+        quiet || @error "$(px)`evaluate(ampl, tlist, n; vals_dict)` must be defined: $exc"
         success = false
     end
 

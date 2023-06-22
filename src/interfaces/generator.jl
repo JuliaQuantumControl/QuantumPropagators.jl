@@ -6,7 +6,7 @@ using ..Generators: Generator
 ```julia
 @test check_generator(generator; state, tlist,
                      for_mutable_state=true, for_immutable_state=true,
-                     for_expval=true, atol=1e-14)
+                     for_expval=true, atol=1e-14, quiet=false)
 ```
 
 verifies the given `generator`:
@@ -23,6 +23,9 @@ verifies the given `generator`:
 * If `generator` is a [`Generator`](@ref) instance, all elements of
   `generator.amplitudes` must pass [`check_amplitude`](@ref).
 
+The function returns `true` for a valid generator and `false` for an invalid
+generator. Unless `quiet=true`, it will log an error to indicate which of the
+conditions failed.
 """
 function check_generator(
     generator;
@@ -31,24 +34,28 @@ function check_generator(
     for_mutable_state=true,
     for_immutable_state=true,
     for_expval=true,
-    _check_amplitudes=true,  # undocumented (internal use)
-    atol=1e-14
+    atol=1e-14,
+    quiet=false,
+    _message_prefix="",  # for recursive calling
+    _check_amplitudes=true  # undocumented (internal use)
 )
 
-    @assert check_state(state; for_mutable_state, for_immutable_state, atol)
+    @assert check_state(state; for_mutable_state, for_immutable_state, atol, quiet=true)
     @assert tlist isa Vector{Float64}
     @assert length(tlist) >= 2
 
+    px = _message_prefix
     success = true
 
     try
         controls = get_controls(generator)
         if !(controls isa Tuple)
-            @error "`get_controls(generator)` must return a tuple, not $(typeof(controls))"
+            quiet ||
+                @error "$(px)`get_controls(generator)` must return a tuple, not $(typeof(controls))"
             success = false
         end
     catch exc
-        @error "`get_controls(generator)` must be defined: $exc"
+        quiet || @error "$(px)`get_controls(generator)` must be defined: $exc"
         success = false
     end
 
@@ -61,13 +68,17 @@ function check_generator(
             for_mutable_state,
             for_immutable_state,
             for_expval,
-            atol
+            atol,
+            quiet,
+            _message_prefix="On `op = evaluate(generator, tlist, 1)`: "
         )
-            @error "`evaluate(generator, tlist, n)` must return an operator that passes `check_operator`"
+            quiet ||
+                @error "$(px)`evaluate(generator, tlist, n)` must return an operator that passes `check_operator`"
             success = false
         end
     catch exc
-        @error "`evaluate(generator, tlist, n)` must return a valid operator: $exc"
+        quiet ||
+            @error "$(px)`evaluate(generator, tlist, n)` must return a valid operator: $exc"
         success = false
     end
 
@@ -75,20 +86,27 @@ function check_generator(
         op = evaluate(generator, tlist, 1)
         evaluate!(op, generator, tlist, length(tlist) - 1)
     catch exc
-        @error "`evaluate!(op, generator, tlist, n)` must be defined: $exc"
+        queit || @error "$(px)`evaluate!(op, generator, tlist, n)` must be defined: $exc"
         success = false
     end
 
     try
         controls = get_controls(generator)
         for (i, control) ∈ enumerate(controls)
-            if !check_control(control; tlist)
-                @error "control $i in `generator` must pass check_control"
+            valid_control = check_control(
+                control;
+                tlist,
+                quiet,
+                _message_prefix="On control $i ($(typeof(control))) in `generator`: "
+            )
+            if !valid_control
+                quiet ||
+                    @error "$(px)control $i ($(typeof(control))) in `generator` must pass check_control"
                 success = false
             end
         end
     catch exc
-        @error "all controls in `generator` must pass `check_control`: $exc"
+        quiet || @error "$(px)all controls in `generator` must pass `check_control`: $exc"
         success = false
     end
 
@@ -97,24 +115,33 @@ function check_generator(
         replacements = IdDict(ϵ => ϵ for ϵ ∈ controls)
         generator2 = substitute(generator, replacements)
         if get_controls(generator) ≠ get_controls(generator2)
-            @error "`substitute(generator, replacements)` must replace the controls in `generator`"
+            quiet ||
+                @error "$(px)`substitute(generator, replacements)` must replace the controls in `generator`"
             success = false
         end
     catch exc
-        @error "`substitute(generator, replacements)` must be defined: $exc"
+        quiet || @error "$(px)`substitute(generator, replacements)` must be defined: $exc"
         success = false
     end
 
     if (generator isa Generator) && _check_amplitudes
         try
             for (i, ampl) in enumerate(generator.amplitudes)
-                if !check_amplitude(ampl; tlist)
-                    @error "amplitude $i in `generator` does not pass `check_amplitude`"
+                valid_ampl = check_amplitude(
+                    ampl;
+                    tlist,
+                    quiet,
+                    _message_prefix="On ampl $i ($(typeof(ampl))) in `generator`: "
+                )
+                if !valid_ampl
+                    quiet ||
+                        @error "$(px)amplitude $i in `generator` does not pass `check_amplitude`"
                     success = false
                 end
             end
         catch exc
-            @error "all elements of `generator.amplitudes` must be valid: $exc"
+            quiet ||
+                @error "$(px)all elements of `generator.amplitudes` must be valid: $exc"
             success = false
         end
     end

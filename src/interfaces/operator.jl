@@ -9,7 +9,7 @@ using ..Controls: get_controls, evaluate
 ```julia
 @test check_operator(op; state, tlist=[0.0, 1.0],
                      for_mutable_state=true, for_immutable_state=true,
-                     for_expval=true, atol=1e-14)
+                     for_expval=true, atol=1e-14, quiet=false)
 ```
 
 verifies the given `op` relative to `state`. The `state` must pass
@@ -36,6 +36,10 @@ If `for_expval` (typically required for optimal control):
 
 * `LinearAlgebra.dot(state, op, state)` must return return a number
 * `dot(state, op, state)` must match `dot(state, op * state)`, if applicable
+
+The function returns `true` for a valid operator and `false` for an invalid
+operator. Unless `quiet=true`, it will log an error to indicate which of the
+conditions failed.
 """
 function check_operator(
     op;
@@ -44,37 +48,41 @@ function check_operator(
     for_mutable_state=true,
     for_immutable_state=true,
     for_expval=true,
-    atol=1e-14
+    atol=1e-14,
+    quiet=false,
+    _message_prefix=""  # for recursive calling
 )
 
     ≈(a, b) = isapprox(a, b; atol)
 
+    px = _message_prefix
     success = true
 
     Ψ = state
 
-    @assert check_state(state; for_mutable_state, for_immutable_state, atol)
+    @assert check_state(state; for_mutable_state, for_immutable_state, atol, quiet=true)
     @assert tlist isa Vector{Float64}
 
     try
         H = evaluate(op, tlist, 1)
         if H ≢ op
-            @error "`evaluate(op, tlist, 1) must return operator ≡ op"
+            quiet || @error "$(px)`evaluate(op, tlist, 1) must return operator ≡ op"
             success = false
         end
     catch exc
-        @error "op must not be time-dependent: $exc"
+        quiet || @error "$(px)op must not be time-dependent: $exc"
         success = false
     end
 
     try
         controls = get_controls(op)
         if length(controls) ≠ 0
-            @error "get_controls(op) must return an empty tuple, not $controls"
+            quiet ||
+                @error "$(px)get_controls(op) must return an empty tuple, not $controls"
             success = false
         end
     catch exc
-        @error "op must not contain any controls: $exc"
+        quiet || @error "$(px)op must not contain any controls: $exc"
         success = false
     end
 
@@ -83,11 +91,12 @@ function check_operator(
         try
             ϕ = op * Ψ
             if !(ϕ isa typeof(Ψ))
-                @error "`op * state` must return an object of the same type as `state`, not $typeof(ϕ)"
+                quiet ||
+                    @error "$(px)`op * state` must return an object of the same type as `state`, not $typeof(ϕ)"
                 success = false
             end
         catch exc
-            @error "`op * state` must be defined: $exc"
+            quiet || @error "$(px)`op * state` must be defined: $exc"
             success = false
         end
 
@@ -98,17 +107,18 @@ function check_operator(
         try
             ϕ = similar(Ψ)
             if mul!(ϕ, op, Ψ) ≢ ϕ
-                @error "`mul!(ϕ, op, state)` must return the resulting ϕ"
+                quiet || @error "$(px)`mul!(ϕ, op, state)` must return the resulting ϕ"
                 success = false
             end
             if for_immutable_state
                 if norm(ϕ - op * Ψ) > atol
-                    @error "`mul!(ϕ, op, state)` must match `op * state`"
+                    quiet || @error "$(px)`mul!(ϕ, op, state)` must match `op * state`"
                     success = false
                 end
             end
         catch exc
-            @error "The 3-argument `mul!` must apply `op` to the given `state`: $exc"
+            quiet ||
+                @error "$(px)The 3-argument `mul!` must apply `op` to the given `state`: $exc"
             success = false
         end
 
@@ -118,17 +128,20 @@ function check_operator(
             copyto!(ϕ, Ψ)
             copyto!(ϕ0, Ψ)
             if mul!(ϕ, op, Ψ, 0.5, 0.5) ≢ ϕ
-                @error "`mul!(ϕ, op, state, α, β)` must return the resulting ϕ"
+                quiet ||
+                    @error "$(px)`mul!(ϕ, op, state, α, β)` must return the resulting ϕ"
                 success = false
             end
             if for_immutable_state
                 if norm(ϕ - (0.5 * ϕ0 + 0.5 * (op * Ψ))) > atol
-                    @error "`mul!(ϕ, op, state, α, β)` must match β*ϕ + α*op*state"
+                    quiet ||
+                        @error "$(px)`mul!(ϕ, op, state, α, β)` must match β*ϕ + α*op*state"
                     success = false
                 end
             end
         catch exc
-            @error "The 5-argument `mul!` must apply `op` to the given `state`: $exc"
+            quiet ||
+                @error "$(px)The 5-argument `mul!` must apply `op` to the given `state`: $exc"
             success = false
         end
 
@@ -139,12 +152,14 @@ function check_operator(
         try
             val = dot(Ψ, op, Ψ)
             if !(val isa Number)
-                @error "`dot(state, op, state)` must return a number, not $typeof(val)"
+                quiet ||
+                    @error "$(px)`dot(state, op, state)` must return a number, not $typeof(val)"
                 success = false
             end
             if for_immutable_state
                 if abs(dot(Ψ, op, Ψ) - dot(Ψ, op * Ψ)) > atol
-                    @error "`dot(state, op, state)` must match `dot(state, op * state)`"
+                    quiet ||
+                        @error "$(px)`dot(state, op, state)` must match `dot(state, op * state)`"
                     success = false
                 end
             end
@@ -152,12 +167,13 @@ function check_operator(
                 ϕ = similar(Ψ)
                 mul!(ϕ, op, Ψ)
                 if abs(dot(Ψ, op, Ψ) - dot(Ψ, ϕ)) > atol
-                    @error "`dot(state, op, state)` must match `dot(state, op * state)`"
+                    quiet ||
+                        @error "$(px)`dot(state, op, state)` must match `dot(state, op * state)`"
                     success = false
                 end
             end
         catch exc
-            @error "`dot(state, op, state)` must return return a number: $exc"
+            quiet || @error "$(px)`dot(state, op, state)` must return return a number: $exc"
             success = false
         end
 

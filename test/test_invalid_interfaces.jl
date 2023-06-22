@@ -4,6 +4,7 @@ using QuantumControlTestUtils: QuantumTestLogger
 using QuantumControlTestUtils.RandomObjects: random_dynamic_generator, random_state_vector
 using StableRNGs: StableRNG
 using QuantumPropagators: init_prop
+using LinearAlgebra
 using QuantumPropagators.Interfaces:
     check_amplitude,
     check_control,
@@ -108,14 +109,11 @@ end
 @testset "Invalid state" begin
 
     struct InvalidState end
-
     state = InvalidState()
-
     test_logger = QuantumTestLogger()
     with_logger(test_logger) do
         @test check_state(state; normalized=true) ≡ false
     end
-
     @test "`similar(state)` must be defined" ∈ test_logger
     @test "the inner product of two states must be a complex number" ∈ test_logger
     @test "the norm of a state must be defined via the inner product" ∈ test_logger
@@ -123,11 +121,49 @@ end
     @test "copy(state) must be defined" ∈ test_logger
     @test "`c * state` for a scalar `c` must be defined" ∈ test_logger
     @test "`0.0 * state` must produce a state with norm 0" ∈ test_logger
+    @test "`norm(state)` must be 1" ∈ test_logger
+
+
+    struct InvalidState2 end
+    state = InvalidState2()
+    Base.similar(::InvalidState2) = InvalidState2()
+    test_logger = QuantumTestLogger()
+    with_logger(test_logger) do
+        @test check_state(state; normalized=true) ≡ false
+    end
     @test "`copyto!(other, state)` must be defined" ∈ test_logger
+
+    struct InvalidState3 end
+    state = InvalidState3()
+    Base.similar(::InvalidState3) = InvalidState3()
+    Base.copyto!(a::InvalidState3, b::InvalidState3) = a
+    test_logger = QuantumTestLogger()
+    with_logger(test_logger) do
+        @test check_state(state; normalized=true) ≡ false
+    end
+    @test "`similar(state)` must return a valid state" ∈ test_logger
+    @test "On `similar(state)`: " ∈ test_logger
+
+
+    struct InvalidState4
+        Ψ
+    end
+    Base.similar(state::InvalidState4) = InvalidState4(similar(state.Ψ))
+    Base.copy(state::InvalidState4) = InvalidState4(copy(state.Ψ))
+    Base.copyto!(a::InvalidState4, b::InvalidState4) = copyto!(a.Ψ, b.Ψ)
+    LinearAlgebra.dot(a::InvalidState4, b::InvalidState4) = a.Ψ ⋅ b.Ψ
+    LinearAlgebra.norm(a::InvalidState4) = norm(a.Ψ)
+    Base.:+(a::InvalidState4, b::InvalidState4) = InvalidState4(a.Ψ + b.Ψ)
+    Base.:-(a::InvalidState4, b::InvalidState4) = InvalidState4(a.Ψ - b.Ψ)
+    Base.:*(α::Number, state::InvalidState4) = InvalidState4(α * state.Ψ)
+    state = InvalidState4([1im, 0])
+    test_logger = QuantumTestLogger()
+    with_logger(test_logger) do
+        @test check_state(state; normalized=true) ≡ false
+    end
     @test "`lmul!(c, state)` for a scalar `c` must be defined" ∈ test_logger
     @test "`lmul!(0.0, state)` must produce a state with norm 0" ∈ test_logger
     @test "`axpy!(c, state, other)` must be defined" ∈ test_logger
-    @test "`norm(state)` must be 1" ∈ test_logger
 
     state = [1, 0, 0, 0]
     test_logger = QuantumTestLogger()
