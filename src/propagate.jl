@@ -121,7 +121,7 @@ the propagated state:
 data = propagate(
     state, generator, tlist; method=:auto
     backward=false; storage=true, observables=observables,
-    callback=nothing, showprogress=false, kwargs...)
+    callback=nothing, showprogress=false, init_prop_kwargs...)
 ```
 
 If `backward` is `true`, the input state is assumed to be at time
@@ -187,6 +187,8 @@ function propagate(
     kwargs...
 )
     backward = get(kwargs, :backward, false)
+    atol = get(kwargs, :atol, 1e-14)  # for checks
+    quiet = get(kwargs, :quiet, false)  # for checks
 
     if check
         if !(tlist isa Vector{Float64})
@@ -194,17 +196,29 @@ function propagate(
                 "The `tlist` in `propagate` must be a Vector{Float64}, not $(typeof(tlist))"
             )
         end
-        if !check_state(state; for_immutable_state, for_mutable_state)
-            error("The state $(repr(state)) in `propagate` does not pass `check_state`")
+        valid_state = check_state(
+            state;
+            for_immutable_state,
+            for_mutable_state,
+            atol,
+            quiet,
+            _message_prefix="On initial `state` in `propagate`: "
+        )
+        if !valid_state
+            error("The initial state in `propagate` does not pass `check_state`")
         end
-        if !check_generator(
+        valid_generator = check_generator(
             generator;
             state=state,
             tlist=tlist,
             for_immutable_state,
             for_mutable_state,
-            for_expval
+            for_expval,
+            atol,
+            quiet,
+            _message_prefix="On `generator` in `propagate`: "
         )
+        if !valid_generator
             error(
                 "The generator $(repr(generator)) in `propagate` does not pass `check_generator`"
             )

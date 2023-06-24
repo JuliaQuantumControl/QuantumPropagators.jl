@@ -56,7 +56,7 @@ function check_state(
     for_immutable_state=true,
     for_mutable_state=true,
     normalized=false,
-    atol=1e-15,
+    atol=1e-14,
     quiet=false,
     _check_similar=true,  # to avoid infinite recursion
     _message_prefix=""  # for recursive calling
@@ -81,9 +81,11 @@ function check_state(
     end
 
     try
-        if abs(norm(state) - sqrt(state ⋅ state)) > atol
-            quiet ||
-                @error "$(px)`norm(state)=$(norm(state))` must match `√(state⋅state)=$(sqrt(state⋅state))`"
+        r1 = norm(state)
+        r2 = sqrt(real(state ⋅ state))
+        Δ = abs(r1 - r2)
+        if Δ > atol
+            quiet || @error "$(px)`norm(state)=$r1)` must match `√(state⋅state)=$r2` (Δ=$Δ)"
             success = false
         end
     catch exc
