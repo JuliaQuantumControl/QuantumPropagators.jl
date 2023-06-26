@@ -2,6 +2,11 @@ module Arnoldi
 
 using LinearAlgebra
 
+using TimerOutputs: @timeit_debug, TimerOutput
+
+const _DEFAULT_TIMING_DATA = TimerOutput()
+# Fallback if no _timing_data is passed to arnoldi!
+
 
 """
 ```julia
@@ -60,7 +65,8 @@ function arnoldi!(
     H,
     dt::Float64=1.0;
     extended=true,
-    norm_min=1e-15
+    norm_min=1e-15,
+    _timing_data=_DEFAULT_TIMING_DATA  # undocumented (internal use)
 ) where {T}
     if extended
         dim_hess = m + 1
@@ -72,7 +78,9 @@ function arnoldi!(
     fill!(Hess, 0)
     copyto!(q[1], Ψ)
     for j = 1:m
-        mul!(q[j+1], H, q[j])
+        @timeit_debug _timing_data "matrix-vector product" begin
+            mul!(q[j+1], H, q[j])
+        end
         for i = 1:j  # Orthogonalization with Gram-Schmidt
             Hess[i, j] = dt * (q[i] ⋅ q[j+1]) # = dt ⟨qᵢ|qⱼ₊₁⟩
             axpy!(-Hess[i, j] / dt, q[i], q[j+1])  # qⱼ₊₁ += -(Hessᵢⱼ/dt) qᵢ

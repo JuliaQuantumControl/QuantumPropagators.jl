@@ -39,12 +39,12 @@ makedocs(
         "Dynamical Generators" => "generators.md",
         "Propagation Methods" => "methods.md",
         "Expectation Values" => "storage.md",
-        hide("Examples" => "examples/index.md", [
+        hide("Examples" => joinpath("examples", "index.md"), [
         # "Example 1" => joinpath("examples", "1.md"),
         # "Example 2" => joinpath("examples", "2.md"),
         ]),
         "Howtos" => "howto.md",
-        "Benchmarks" => "benchmarks.md",
+        hide("Benchmarks" => "benchmarks.md", [joinpath("benchmarks", "profiling.md")]),
         "API" => "api/quantumpropagators.md",
         "References" => "references.md",
     ]

@@ -1,4 +1,5 @@
 using .Controls: get_controls
+using TimerOutputs: reset_timer!, @timeit_debug
 
 """Propagator for Newton propagation (`method=:newton`).
 
@@ -106,31 +107,44 @@ function init_prop(
 end
 
 
-function prop_step!(propagator::NewtonPropagator)
-    Ψ = propagator.state
-    H = propagator.genop
-    n = propagator.n  # index of interval we're going to propagate
-    tlist = getfield(propagator, :tlist)
-    (0 < n < length(tlist)) || return nothing
-    dt = tlist[n+1] - tlist[n]
+function reinit_prop!(propagator::NewtonPropagator, state; _...)
+    set_state!(propagator, state)
     if propagator.backward
-        dt = -dt
-    end
-    _pwc_set_genop!(propagator, n)
-    if propagator.inplace
-        Newton.newton!(
-            Ψ,
-            H,
-            dt,
-            propagator.wrk;
-            func=propagator.func,
-            norm_min=propagator.norm_min,
-            relerr=propagator.relerr,
-            max_restarts=propagator.max_restarts
-        )
+        set_t!(propagator, propagator.tlist[end])
     else
-        error("The Newton propagator is only implemented in-place")
+        set_t!(propagator, propagator.tlist[begin])
     end
-    _pwc_advance_time!(propagator)
-    return propagator.state
+    reset_timer!(propagator.wrk.timing_data)
+end
+
+
+function prop_step!(propagator::NewtonPropagator)
+    @timeit_debug propagator.wrk.timing_data "prop_step!" begin
+        Ψ = propagator.state
+        H = propagator.genop
+        n = propagator.n  # index of interval we're going to propagate
+        tlist = getfield(propagator, :tlist)
+        (0 < n < length(tlist)) || return nothing
+        dt = tlist[n+1] - tlist[n]
+        if propagator.backward
+            dt = -dt
+        end
+        _pwc_set_genop!(propagator, n)
+        if propagator.inplace
+            Newton.newton!(
+                Ψ,
+                H,
+                dt,
+                propagator.wrk;
+                func=propagator.func,
+                norm_min=propagator.norm_min,
+                relerr=propagator.relerr,
+                max_restarts=propagator.max_restarts
+            )
+        else
+            error("The Newton propagator is only implemented in-place")
+        end
+        _pwc_advance_time!(propagator)
+        return propagator.state
+    end
 end

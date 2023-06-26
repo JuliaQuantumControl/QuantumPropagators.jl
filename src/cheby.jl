@@ -4,6 +4,7 @@ export cheby_coeffs, cheby_coeffs!, ChebyWrk, cheby!, cheby
 
 using SpecialFunctions
 using LinearAlgebra
+using TimerOutputs: @timeit_debug, TimerOutput
 
 
 """Calculate Chebychev coefficients.
@@ -93,13 +94,26 @@ mutable struct ChebyWrk{ST,CFS,FT<:AbstractFloat}
     E_min::FT
     dt::FT
     limit::FT
+    timing_data::TimerOutput
     function ChebyWrk(Ψ::ST, Δ::FT, E_min::FT, dt::FT; limit::FT=1e-12) where {ST,FT}
         v0::ST = similar(Ψ)
         v1::ST = similar(Ψ)
         v2::ST = similar(Ψ)
         coeffs = cheby_coeffs(Δ, dt; limit=limit)
         n_coeffs = length(coeffs)
-        new{ST,typeof(coeffs),FT}(v0, v1, v2, coeffs, n_coeffs, Δ, E_min, dt, limit)
+        timing_data = TimerOutput()
+        new{ST,typeof(coeffs),FT}(
+            v0,
+            v1,
+            v2,
+            coeffs,
+            n_coeffs,
+            Δ,
+            E_min,
+            dt,
+            limit,
+            timing_data
+        )
     end
 end
 
@@ -152,7 +166,9 @@ function cheby!(Ψ, H, dt, wrk; kwargs...)
     lmul!(a[1], Ψ)
 
     # v1 = -i * H_norm * v0 = c * (H * v0 - β * v0)
-    mul!(v1, H, v0)
+    @timeit_debug wrk.timing_data "matrix-vector product" begin
+        mul!(v1, H, v0)
+    end
     axpy!(-β, v0, v1)
     lmul!(c, v1)
 
@@ -164,7 +180,9 @@ function cheby!(Ψ, H, dt, wrk; kwargs...)
     for i = 3:wrk.n_coeffs
 
         # v2 = -2i * H_norm * v1 + v0 = c * (H * v1 - β * v1) + v0
-        mul!(v2, H, v1)
+        @timeit_debug wrk.timing_data "matrix-vector product" begin
+            mul!(v2, H, v1)
+        end
         axpy!(-β, v1, v2)
         lmul!(c, v2)
         if check_normalization
@@ -220,14 +238,18 @@ function cheby(Ψ, H, dt, wrk; kwargs...)
     v0 = Ψ
     Ψ = a[1] * v0
 
-    v1 = c * (H * v0 - β * v0)
+    @timeit_debug wrk.timing_data "matrix-vector product" begin
+        v1 = c * (H * v0 - β * v0)
+    end
     Ψ += a[2] * v1
 
     c *= 2
 
     for i = 3:wrk.n_coeffs
 
-        v2 = H * v1
+        @timeit_debug wrk.timing_data "matrix-vector product" begin
+            v2 = H * v1
+        end
         v2 += -v1 * β
         v2 = c * v2
         if check_normalization

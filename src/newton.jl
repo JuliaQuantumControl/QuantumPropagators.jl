@@ -6,6 +6,7 @@ export NewtonWrk, newton!
 using ..Arnoldi: arnoldi!, diagonalize_hessenberg_matrix
 using LinearAlgebra
 using OffsetArrays
+using TimerOutputs: @timeit_debug, TimerOutput
 
 
 """
@@ -31,6 +32,8 @@ mutable struct NewtonWrk{T}
     n_a::Int64
     n_leja::Int64
     restarts::Int64
+    m_max::Int64
+    timing_data::TimerOutput
     function NewtonWrk(v0::T; m_max::Int64=10) where {T}
         if m_max <= 2
             error("Newton propagation requires m_max > 2")
@@ -41,6 +44,7 @@ mutable struct NewtonWrk{T}
                 error("Newton propagation requires state dimension > 2")
             end
         end
+        timing_data = TimerOutput()
         new{T}(
             T[similar(v0) for _ = 1:m_max+1], # arnoldi_vecs
             similar(v0),                       # v
@@ -50,6 +54,8 @@ mutable struct NewtonWrk{T}
             0,                                 # n_a
             0,                                 # n_leja
             0,                                 # restarts
+            m_max,
+            timing_data,
         )
     end
 end
@@ -268,16 +274,19 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
 
     while true  # restart loop (s → s+1)
 
-        m = arnoldi!(
-            Hess,
-            wrk.arnoldi_vecs,
-            m,
-            wrk.v,
-            H,
-            _dt;
-            extended=true,
-            norm_min=norm_min
-        )
+        @timeit_debug wrk.timing_data "arnoldi!" begin
+            m = arnoldi!(
+                Hess,
+                wrk.arnoldi_vecs,
+                m,
+                wrk.v,
+                H,
+                _dt;
+                extended=true,
+                norm_min=norm_min,
+                _timing_data=wrk.timing_data
+            )
+        end
         if m == 1 && s == 0
             λ = β * Hess[1, 1]
             # wrk.v is an eigenvec of H with eigenval Hess[1, 1],
@@ -285,7 +294,9 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
             lmul!(func(λ), Ψ)
             break
         end
-        ritz = diagonalize_hessenberg_matrix(Hess, m, accumulate=true)
+        @timeit_debug wrk.timing_data "diagonalize_hessenberg_matrix" begin
+            ritz = diagonalize_hessenberg_matrix(Hess, m, accumulate=true)
+        end
 
         # In the first iteration, the radius will be determined
         if s == 0
@@ -293,12 +304,16 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
         end
 
         # Get the Leja points (i.e. Ritz values in the proper order
-        n_s = n_leja  # we need to keep the old n_leja
-        n_leja = extend_leja!(wrk.leja, n_leja, OffsetVector(ritz, 0:length(ritz)-1), m)
+        @timeit_debug wrk.timing_data "get Leja points" begin
+            n_s = n_leja  # we need to keep the old n_leja
+            n_leja = extend_leja!(wrk.leja, n_leja, OffsetVector(ritz, 0:length(ritz)-1), m)
+        end
 
         # Extend the Newton coefficients
-        n_a = extend_newton_coeffs!(wrk.a, n_a, wrk.leja, func, n_leja, wrk.radius)
-        @assert n_a == n_leja
+        @timeit_debug wrk.timing_data "get Newton coeffs" begin
+            n_a = extend_newton_coeffs!(wrk.a, n_a, wrk.leja, func, n_leja, wrk.radius)
+            @assert n_a == n_leja
+        end
 
         # allocate array R for Newton basis polynomicals in the extended
         # Hessenberg matrix and P for the full Newton series
@@ -310,16 +325,19 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
         end
 
         # Evaluate Newton Polynomial in the extended Hessenberg matrix
-        P .= 0.0
-        R .= 0.0
-        R[1] = β
-        P[1] = wrk.a[n_s] * β
-        for k = 1:m-1
-            R[1:m+1] = (
-                (Hess[1:m+1, 1:m+1] * R[1:m+1] - wrk.leja[n_s+k-1] * R[1:m+1]) / wrk.radius
-            )
-            # P += a_{n_s+k} R
-            axpy!(wrk.a[n_s+k], view(R, 1:m+1), view(P, 1:m+1))
+        @timeit_debug wrk.timing_data "evaluate polynomial" begin
+            P .= 0.0
+            R .= 0.0
+            R[1] = β
+            P[1] = wrk.a[n_s] * β
+            for k = 1:m-1
+                R[1:m+1] = (
+                    (Hess[1:m+1, 1:m+1] * R[1:m+1] - wrk.leja[n_s+k-1] * R[1:m+1]) /
+                    wrk.radius
+                )
+                # P += a_{n_s+k} R
+                axpy!(wrk.a[n_s+k], view(R, 1:m+1), view(P, 1:m+1))
+            end
         end
 
         # Calculate the new solution
@@ -354,7 +372,7 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
 
     end
 
-    wrk.restarts = max(0, s - 1)
+    wrk.restarts = s
     wrk.n_leja = n_leja
     wrk.n_a = n_a
     return Ψ

@@ -1,6 +1,7 @@
 #! format: off
 import QuantumPropagators
 import Documenter
+import TimerOutputs
 
 
 """Return a list of symbols for the names directly defined in `pkg`.
@@ -24,6 +25,7 @@ function get_local_members(pkg; all=true)
 end
 
 _parentmodule(m, pkg) = parentmodule(m)
+_parentmodule(m::TimerOutputs.TimerOutput, pkg) = pkg
 _parentmodule(m::Number, pkg) = pkg
 
 

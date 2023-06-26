@@ -1,4 +1,5 @@
 using .Controls: get_controls, evaluate, discretize
+using TimerOutputs: reset_timer!, @timeit_debug
 
 """Propagator for Chebychev propagation (`method=:cheby`).
 
@@ -269,6 +270,8 @@ function reinit_prop!(
         dt = float(tlist[2] - tlist[1])
         propagator.control_ranges = control_ranges
         wrk = Cheby.ChebyWrk(state, Δ, E_min, dt; limit=wrk.limit)
+    else
+        reset_timer!(propagator.wrk.timing_data)
     end
     t = float(propagator.backward ? tlist[end] : tlist[1])
     _pwc_set_t!(propagator, t)
@@ -323,34 +326,36 @@ end
 
 
 function prop_step!(propagator::ChebyPropagator)
-    Ψ = propagator.state
-    H = propagator.genop
-    n = propagator.n
-    dt = propagator.wrk.dt
-    if propagator.backward
-        dt = -dt
+    @timeit_debug propagator.wrk.timing_data "prop_step!" begin
+        Ψ = propagator.state
+        H = propagator.genop
+        n = propagator.n
+        dt = propagator.wrk.dt
+        if propagator.backward
+            dt = -dt
+        end
+        tlist = getfield(propagator, :tlist)
+        (0 < n < length(tlist)) || return nothing
+        _pwc_set_genop!(propagator, n)
+        if propagator.inplace
+            Cheby.cheby!(
+                Ψ,
+                H,
+                dt,
+                propagator.wrk;
+                check_normalization=propagator.check_normalization
+            )
+        else
+            Ψ = Cheby.cheby(
+                Ψ,
+                H,
+                dt,
+                propagator.wrk;
+                check_normalization=propagator.check_normalization
+            )
+            setfield!(propagator, :state, Ψ)
+        end
+        _pwc_advance_time!(propagator)
+        return propagator.state
     end
-    tlist = getfield(propagator, :tlist)
-    (0 < n < length(tlist)) || return nothing
-    _pwc_set_genop!(propagator, n)
-    if propagator.inplace
-        Cheby.cheby!(
-            Ψ,
-            H,
-            dt,
-            propagator.wrk;
-            check_normalization=propagator.check_normalization
-        )
-    else
-        Ψ = Cheby.cheby(
-            Ψ,
-            H,
-            dt,
-            propagator.wrk;
-            check_normalization=propagator.check_normalization
-        )
-        setfield!(propagator, :state, Ψ)
-    end
-    _pwc_advance_time!(propagator)
-    return propagator.state
 end

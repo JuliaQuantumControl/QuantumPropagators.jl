@@ -150,7 +150,7 @@ function discretize_on_midpoints(control::Vector, tlist)
     if length(control) == length(tlist) - 1
         return copy(control)
     elseif length(control) == length(tlist)
-        vals = Vector{eltype(control)}(undef, length(tlist)-1)
+        vals = Vector{eltype(control)}(undef, length(tlist) - 1)
         vals[1] = control[1]
         vals[end] = control[end]
         for i = 2:length(vals)-1
