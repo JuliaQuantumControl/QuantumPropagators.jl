@@ -61,6 +61,8 @@ QuantumPropagators.enable_timings()
 nothing # hide
 ```
 
+The status of the data collection can be verified with [`QuantumPropagators.timings_enabled`](@ref).
+
 
 ### Chebychev propagation
 

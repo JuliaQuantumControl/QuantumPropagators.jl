@@ -81,6 +81,11 @@ using SafeTestsets
         include("test_timedependent_observables.jl")
     end
 
+    print("\n* Timings (test_timings.jl):")
+    @time @safetestset "Timings" begin
+        include("test_timings.jl")
+    end
+
     print("\n* Invalid interfaces (test_invalid_interfaces.jl):")
     @time @safetestset "Invalid interfaces" begin
         include("test_invalid_interfaces.jl")
