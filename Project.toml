@@ -1,7 +1,7 @@
 name = "QuantumPropagators"
 uuid = "7bf12567-5742-4b91-a078-644e72a65fc1"
 authors = ["Michael Goerz <mail@michaelgoerz.net>"]
-version = "0.6.0+dev"
+version = "0.6.1-dev"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -23,4 +23,4 @@ ProgressMeter = "1"
 SpecialFunctions = "1, 2"
 StaticArrays = "1"
 TimerOutputs = "0.5.23"
-julia = "1.6"
+julia = "1.9"

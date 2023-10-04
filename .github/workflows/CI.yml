@@ -1,23 +1,28 @@
 name: CI
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+  pull_request:
+    branches:
+    - master
 env:
   GKSwstype: 100
   JULIA_PKG_PRECOMPILE_AUTO: false
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    name: Test ${{ matrix.title }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        version:
-          - '1.6'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
+        include:
+          - title: 'Linux - latest'
+            os: ubuntu-latest
+            version: '1'
+            arch: x64
     steps:
       - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v1
