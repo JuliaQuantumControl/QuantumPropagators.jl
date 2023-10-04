@@ -86,7 +86,7 @@ function check_generator(
         op = evaluate(generator, tlist, 1)
         evaluate!(op, generator, tlist, length(tlist) - 1)
     catch exc
-        queit || @error "$(px)`evaluate!(op, generator, tlist, n)` must be defined: $exc"
+        quiet || @error "$(px)`evaluate!(op, generator, tlist, n)` must be defined: $exc"
         success = false
     end
 
