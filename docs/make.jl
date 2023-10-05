@@ -1,7 +1,7 @@
 using QuantumPropagators
 using Documenter
 using Pkg
-using QuantumCitations
+using DocumenterCitations
 
 DocMeta.setdocmeta!(
     QuantumPropagators,
@@ -22,9 +22,8 @@ include("generate_api.jl")
 
 bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:numeric)
 
-makedocs(
-    bib;
-    strict=("CI" in keys(ENV)),
+makedocs(;
+    plugins=[bib],
     authors=AUTHORS,
     sitename="QuantumPropagators.jl",
     format=Documenter.HTML(;
