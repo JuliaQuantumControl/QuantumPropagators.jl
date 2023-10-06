@@ -5,7 +5,6 @@ using LinearAlgebra
 using QuantumPropagators
 using QuantumPropagators: Generator, Operator
 using QuantumPropagators.Interfaces: check_generator, check_state
-using QuantumControlBase
 using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
 using QuantumControlTestUtils: QuantumTestLogger
 _OT(::Generator{OT,AT}) where {OT,AT} = OT
