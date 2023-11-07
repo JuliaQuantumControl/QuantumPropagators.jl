@@ -30,7 +30,8 @@ function clean(; distclean=false, _exit=true)
     _push!(CLEAN, joinpath(ROOT, "docs", "src", "api", "quantumpropagators.md"))
     _push!(CLEAN, joinpath(ROOT, "coverage"))
     _push!(CLEAN, joinpath(ROOT, "docs", "build"))
-    _push!(CLEAN, joinpath(ROOT, "lcov.info"))
+    append!(CLEAN, _glob(ROOT, ".info"))
+    append!(CLEAN, _glob(joinpath(ROOT, ".coverage"), ".info"))
     ###########################################################################
 
     ###########################################################################

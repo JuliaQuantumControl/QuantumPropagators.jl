@@ -8,4 +8,4 @@
 /gh-pages/
 /.JuliaFormatter.toml
 /lcov.info
-/coverage
+/.coverage
