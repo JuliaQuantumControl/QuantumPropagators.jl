@@ -70,7 +70,10 @@ function check_operator(
             success = false
         end
     catch exc
-        quiet || @error "$(px)op must not be time-dependent: $exc"
+        quiet || @error(
+            "$(px)op must not be time-dependent.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -82,7 +85,10 @@ function check_operator(
             success = false
         end
     catch exc
-        quiet || @error "$(px)op must not contain any controls: $exc"
+        quiet || @error(
+            "$(px)op must not contain any controls.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -96,7 +102,10 @@ function check_operator(
                 success = false
             end
         catch exc
-            quiet || @error "$(px)`op * state` must be defined: $exc"
+            quiet || @error(
+                "$(px)`op * state` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 
@@ -117,8 +126,10 @@ function check_operator(
                 end
             end
         catch exc
-            quiet ||
-                @error "$(px)The 3-argument `mul!` must apply `op` to the given `state`: $exc"
+            quiet || @error(
+                "$(px)The 3-argument `mul!` must apply `op` to the given `state`.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 
@@ -140,8 +151,10 @@ function check_operator(
                 end
             end
         catch exc
-            quiet ||
-                @error "$(px)The 5-argument `mul!` must apply `op` to the given `state`: $exc"
+            quiet || @error(
+                "$(px)The 5-argument `mul!` must apply `op` to the given `state`.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 
@@ -173,7 +186,10 @@ function check_operator(
                 end
             end
         catch exc
-            quiet || @error "$(px)`dot(state, op, state)` must return return a number: $exc"
+            quiet || @error(
+                "$(px)`dot(state, op, state)` must return return a number.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 

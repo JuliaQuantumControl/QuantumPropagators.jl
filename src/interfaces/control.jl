@@ -57,7 +57,10 @@ function check_control(
             success = false
         end
     catch exc
-        quiet || @error "$(px)`discretize(control, tlist)` must be defined: $exc"
+        quiet || @error(
+            "$(px)`discretize(control, tlist)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -79,8 +82,10 @@ function check_control(
             success = false
         end
     catch exc
-        quiet ||
-            @error "$(px)`discretize_on_midpoints(control, tlist)` must be defined: $exc"
+        quiet || @error(
+            "$(px)`discretize_on_midpoints(control, tlist)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 

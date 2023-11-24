@@ -33,6 +33,7 @@ include("exp_propagator.jl")
 module Interfaces
     export check_operator, check_state, check_amplitude, check_control
     export check_generator, check_propagator
+    include(joinpath("interfaces", "utils.jl"))
     include(joinpath("interfaces", "state.jl"))
     include(joinpath("interfaces", "operator.jl"))
     include(joinpath("interfaces", "amplitude.jl"))

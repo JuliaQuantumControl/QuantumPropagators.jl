@@ -42,7 +42,10 @@ function check_amplitude(
             success = false
         end
     catch exc
-        quiet || @error "$(px)`get_controls(ampl)` must be defined: $exc"
+        quiet || @error(
+            "$(px)`get_controls(ampl)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -62,7 +65,10 @@ function check_amplitude(
             end
         end
     catch exc
-        quiet || @error "$(px)all controls in `ampl` must pass `check_control`: $exc"
+        quiet || @error(
+            "$(px)all controls in `ampl` must pass `check_control`.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -75,7 +81,10 @@ function check_amplitude(
             success = false
         end
     catch exc
-        quiet || @error "$(px)`substitute(ampl, replacments)` must be defined: $exc"
+        quiet || @error(
+            "$(px)`substitute(ampl, replacments)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -87,7 +96,10 @@ function check_amplitude(
             success = false
         end
     catch exc
-        quiet || @error "$(px)`evaluate(ampl, tlist, n)` must be defined: $exc"
+        quiet || @error(
+            "$(px)`evaluate(ampl, tlist, n)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -101,7 +113,10 @@ function check_amplitude(
             success = false
         end
     catch exc
-        quiet || @error "$(px)`evaluate(ampl, tlist, n; vals_dict)` must be defined: $exc"
+        quiet || @error(
+            "$(px)`evaluate(ampl, tlist, n; vals_dict)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 

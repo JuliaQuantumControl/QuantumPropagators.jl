@@ -55,7 +55,10 @@ function check_generator(
             success = false
         end
     catch exc
-        quiet || @error "$(px)`get_controls(generator)` must be defined: $exc"
+        quiet || @error(
+            "$(px)`get_controls(generator)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -77,8 +80,10 @@ function check_generator(
             success = false
         end
     catch exc
-        quiet ||
-            @error "$(px)`evaluate(generator, tlist, n)` must return a valid operator: $exc"
+        quiet || @error(
+            "$(px)`evaluate(generator, tlist, n)` must return a valid operator.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -86,7 +91,10 @@ function check_generator(
         op = evaluate(generator, tlist, 1)
         evaluate!(op, generator, tlist, length(tlist) - 1)
     catch exc
-        quiet || @error "$(px)`evaluate!(op, generator, tlist, n)` must be defined: $exc"
+        quiet || @error(
+            "$(px)`evaluate!(op, generator, tlist, n)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -106,7 +114,10 @@ function check_generator(
             end
         end
     catch exc
-        quiet || @error "$(px)all controls in `generator` must pass `check_control`: $exc"
+        quiet || @error(
+            "$(px)all controls in `generator` must pass `check_control`.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -120,7 +131,10 @@ function check_generator(
             success = false
         end
     catch exc
-        quiet || @error "$(px)`substitute(generator, replacements)` must be defined: $exc"
+        quiet || @error(
+            "$(px)`substitute(generator, replacements)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -140,8 +154,10 @@ function check_generator(
                 end
             end
         catch exc
-            quiet ||
-                @error "$(px)all elements of `generator.amplitudes` must be valid: $exc"
+            quiet || @error(
+                "$(px)all elements of `generator.amplitudes` must be valid.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
     end

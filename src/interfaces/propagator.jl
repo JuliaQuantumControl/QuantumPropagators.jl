@@ -6,6 +6,7 @@ import ..prop_step!
 import ..set_state!
 import ..set_t!
 
+
 """Check that the given `propagator` implements the required interface.
 
 ```julia
@@ -21,6 +22,7 @@ initialized with [`init_prop`](@ref).
 * `propagator.state` must be a valid state (see [`check_state`](@ref)), with
   support for in-place operations (`for_mutable_state=true`) if
   `propagator.inplace` is true.
+* `propagator.tlist` must be monotonically increasing.
 * `propagator.t` must be the first or last element of `propagator.tlist`,
   depending on `propagator.backward`
 * [`prop_step!(propagator)`](@ref prop_step!) must be defined and return a
@@ -69,7 +71,10 @@ function check_propagator(
         backward = propagator.backward
         inplace = propagator.inplace
     catch exc
-        quiet || @error "$(px)`propagator` does not have the required properties: $exc"
+        quiet || @error(
+            "$(px)`propagator` does not have the required properties.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -88,7 +93,27 @@ function check_propagator(
             success = false
         end
     catch exc
-        quiet || @error "$(px)Cannot verify `propagator.state`: $exc"
+        quiet || @error(
+            "$(px)Cannot verify `propagator.state`.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
+        success = false
+    end
+
+    try
+        _t = tlist[begin]
+        for t in tlist[begin+1:end]
+            if t <= _t
+                quiet || @error "$(px)`propagator.tlist` must be monotonically increasing"
+                success = false
+            end
+            _t = t
+        end
+    catch exc
+        quiet || @error(
+            "$(px)Cannot verify `propagator.tlist`.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -105,7 +130,10 @@ function check_propagator(
             end
         end
     catch exc
-        quiet || @error "$(px)Cannot verify `propagator.t`: $exc"
+        quiet || @error(
+            "$(px)Cannot verify `propagator.t`.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -120,7 +148,7 @@ function check_propagator(
             for_mutable_state=false,
             for_immutable_state=false,
             atol,
-            _message_prefix="On `Ψ₁=propstep!(propagator)`: "
+            _message_prefix="On `Ψ₁=prop_step!(propagator)`: "
         )
         if !valid_state
             quiet ||
@@ -151,7 +179,10 @@ function check_propagator(
             success = false
         end
     catch exc
-        quiet || @error "$(px)`prop_step!(propagator)` must be defined : $exc"
+        quiet || @error(
+            "$(px)`prop_step!(propagator)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -167,7 +198,10 @@ function check_propagator(
             success = false
         end
     catch exc
-        quiet || @error "$(px)`set_t!(propagator)` must be defined : $exc"
+        quiet || @error(
+            "$(px)`set_t!(propagator)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -187,8 +221,10 @@ function check_propagator(
             end
         end
     catch exc
-        quiet ||
-            @error "$(px)Failed to run `prop_step!(propagator)` at t=$(propagator.t): $exc"
+        quiet || @error(
+            "$(px)Failed to run `prop_step!(propagator)` at t=$(propagator.t).",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -207,7 +243,10 @@ function check_propagator(
             end
         end
     catch exc
-        quiet || @error "$(px)`set_state!(propagator, state)` must be defined : $exc"
+        quiet || @error(
+            "$(px)`set_state!(propagator, state)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -222,8 +261,10 @@ function check_propagator(
                 end
             end
         catch exc
-            quiet ||
-                @error "$(px)In a PiecewisePropagator, `propagator.parameters` must be a dict mapping controls to a vector of values, one for each interval on `propagator.tlist`: $exc"
+            quiet || @error(
+                "$(px)In a PiecewisePropagator, `propagator.parameters` must be a dict mapping controls to a vector of values, one for each interval on `propagator.tlist`.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
     end
@@ -271,8 +312,10 @@ function check_propagator(
             end
         end
     catch exc
-        quiet ||
-            @error "$(px)`reinit_prop!` must be defined and re-initialize the propagator: $exc"
+        quiet || @error(
+            "$(px)`reinit_prop!` must be defined and re-initialize the propagator.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 

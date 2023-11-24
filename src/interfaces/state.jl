@@ -75,8 +75,10 @@ function check_state(
             success = false
         end
     catch exc
-        quiet ||
-            @error "$(px)the inner product of two states must be a complex number: $exc"
+        quiet || @error(
+            "$(px)the inner product of two states must be a complex number.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -89,8 +91,10 @@ function check_state(
             success = false
         end
     catch exc
-        quiet ||
-            @error "$(px)the norm of a state must be defined via the inner product: $exc"
+        quiet || @error(
+            "$(px)the norm of a state must be defined via the inner product.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
         success = false
     end
 
@@ -109,7 +113,10 @@ function check_state(
                 success = false
             end
         catch exc
-            quiet || @error "$(px)`state + state` and `state - state` must be defined: $exc"
+            quiet || @error(
+                "$(px)`state + state` and `state - state` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 
@@ -120,7 +127,10 @@ function check_state(
                 success = false
             end
         catch exc
-            quiet || @error "$(px)copy(state) must be defined: $exc"
+            quiet || @error(
+                "$(px)copy(state) must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 
@@ -132,7 +142,10 @@ function check_state(
                 success = false
             end
         catch exc
-            quiet || @error "$(px)`c * state` for a scalar `c` must be defined: $exc"
+            quiet || @error(
+                "$(px)`c * state` for a scalar `c` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 
@@ -142,7 +155,10 @@ function check_state(
                 success = false
             end
         catch exc
-            quiet || @error "$(px)`0.0 * state` must produce a state with norm 0: $exc"
+            quiet || @error(
+                "$(px)`0.0 * state` must produce a state with norm 0.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 
@@ -155,7 +171,10 @@ function check_state(
         try
             ϕ = similar(state)
         catch exc
-            quiet || @error "$(px)`similar(state)` must be defined: $exc"
+            quiet || @error(
+                "$(px)`similar(state)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             has_similar = false
             success = false
         end
@@ -192,7 +211,10 @@ function check_state(
                 end
             end
         catch exc
-            quiet || @error("$(px)`copyto!(other, state)` must be defined: $exc")
+            quiet || @error(
+                "$(px)`copyto!(other, state)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 
@@ -210,7 +232,10 @@ function check_state(
                 end
             end
         catch exc
-            quiet || @error("$(px)`lmul!(c, state)` for a scalar `c` must be defined: $exc")
+            quiet || @error(
+                "$(px)`lmul!(c, state)` for a scalar `c` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 
@@ -226,8 +251,10 @@ function check_state(
                 end
             end
         catch exc
-            quiet ||
-                @error "$(px)`lmul!(0.0, state)` must produce a state with norm 0: $exc"
+            quiet || @error(
+                "$(px)`lmul!(0.0, state)` must produce a state with norm 0.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 
@@ -245,7 +272,10 @@ function check_state(
                 end
             end
         catch exc
-            quiet || @error "$(px)`axpy!(c, state, other)` must be defined: $exc"
+            quiet || @error(
+                "$(px)`axpy!(c, state, other)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
 
@@ -259,7 +289,10 @@ function check_state(
                 success = false
             end
         catch exc
-            quiet || @error "$(px)`norm(state)` must be 1: $exc"
+            quiet || @error(
+                "$(px)`norm(state)` must be 1.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
             success = false
         end
     end
