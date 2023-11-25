@@ -301,7 +301,7 @@ QuantumPropagators.SpectralRange.specrange) for those operators.
 * `generator`: dynamical generator, e.g. a time-dependent
 * `tlist`: The time grid for the propagation
 * `control_ranges`: a dict that maps controls that occur in `generator` (cf.
-  [`get_controls`](@ref) to a tuple of mimimum and maximum amplitude for that
+  [`get_controls`](@ref) to a tuple of minimum and maximum amplitude for that
   control
 * `method`: method name to pass to  [`specrange`](@ref
   QuantumPropagators.SpectralRange.specrange)

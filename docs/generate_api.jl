@@ -202,7 +202,7 @@ open(outfile, "w") do out
     write_module_api(
         out,
         QuantumPropagators.Shapes,
-        """The following routines define useful functin ``S(t)`` that can be
+        """The following routines define useful function ``S(t)`` that can be
         used for control functions or amplitudes.
         """
     )

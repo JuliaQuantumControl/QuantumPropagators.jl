@@ -20,7 +20,7 @@ discretizes the given `control` to a Vector of values defined on the points of
 If `control` is a function, it will will first be evaluated at the midpoint of
 `tlist`, see [`discretize_on_midpoints`](@ref), and then the values on the
 midpoints are converted to values on `tlist`. This discretization is more
-stable than directly evaluationg the control function at the values of `tlist`,
+stable than directly evaluating the control function at the values of `tlist`,
 and ensures that repeated round-trips between [`discretize`](@ref) and
 [`discretize_on_midpoints`](@ref) can be done safely, see the note in the
 documentation of [`discretize_on_midpoints`](@ref).
@@ -102,7 +102,7 @@ discretizes the given `control` to a Vector of values on the midpoints of
 If `control` is a vector of values defined on `tlist` (i.e., of the same length
 as `tlist`), it will be converted to a vector of values on the intervals of
 `tlist`. The value for the first and last "midpoint" will remain the original
-values at the beginning and end of `tlist`, in order to ensure exact bounary
+values at the beginning and end of `tlist`, in order to ensure exact boundary
 conditions. For all other midpoints, the value for that midpoint will be
 calculated by "un-averaging".
 

@@ -77,12 +77,12 @@ function check_amplitude(
         replacements = IdDict(ϵ => ϵ for ϵ ∈ controls)
         ampl_copy = substitute(ampl, replacements)
         if !(get_controls(ampl_copy) == get_controls(ampl))
-            quiet || @error "$(px)`substitute(ampl, replacments)` must replace controls"
+            quiet || @error "$(px)`substitute(ampl, replacements)` must replace controls"
             success = false
         end
     catch exc
         quiet || @error(
-            "$(px)`substitute(ampl, replacments)` must be defined.",
+            "$(px)`substitute(ampl, replacements)` must be defined.",
             exception = (exc, catch_abbreviated_backtrace())
         )
         success = false

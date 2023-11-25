@@ -169,7 +169,7 @@ the `func` from `n_a` coefficients to `n_leja` coefficients. Return a new value
    beyond the first `n_a` elements will be overwritten.
 - `leja`: Array of normalized Leja points, containing at least `n_leja`
   elements.
-- `func`: Function for which to calcluate Newton coeffiecients
+- `func`: Function for which to calculate Newton coefficients
 - `n_leja`: The number of elements in `leja` to use for calculating new
   coefficients, and the total number of Newton coefficients on output
 - `radius`: Normalization radius for divided differences
@@ -233,8 +233,8 @@ Evaluate `Ψ = func(H*dt) Ψ` using a Newton-with-restarted-Arnoldi scheme.
 - `wkr`: Work array, initialized with [`NewtonWrk`](@ref)
 - `func`: The function to apply to `H dt`, taking a single (scalar)
   complex-valued argument `z` in place of `H dt`. The default `func`
-  is to evaluate the time evoluation operator for the Schrödinger equation
-- `norm_min`: the minium norm at which to consider a state similar to `Ψ` as
+  is to evaluate the time evaluations operator for the Schrödinger equation
+- `norm_min`: the minimum norm at which to consider a state similar to `Ψ` as
   zero
 - `relerr`: The relative error defining the convergence condition for the
   restart iteration. Propagation stops when the norm of the accumulated `Ψ`

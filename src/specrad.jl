@@ -60,7 +60,7 @@ E_min, E_max = specrange(H, :arnoldi; state=random_state(H), m_min=20,
 uses [Arnoldi iteration](https://en.wikipedia.org/wiki/Arnoldi_iteration) with
 `state` as the starting vector. It approximates the eigenvalues of `H` with
 between `m_min` and `m_max` Ritz values, until the lowest and highest
-eigenvalue are stable to a releative precision of `prec`. The `norm_min`
+eigenvalue are stable to a relative precision of `prec`. The `norm_min`
 parameter is passed to the underlying [`arnoldi!`](@ref).
 
 If `enlarge=true` (default) the returned `E_min` and `E_max` will be enlarged

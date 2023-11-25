@@ -33,7 +33,7 @@ using UnicodePlots
     @test norm(Ψ_out - Ψ_expected) < 1e-12
     @test pop0[end] ≈ 0.5
 
-    # Propagating backward in time should exactly reverse the dyanmics (since
+    # Propagating backward in time should exactly reverse the dynamics (since
     # they are unitary). Thus, we should end up back at the initial state, and
     # the stored states (being filled back-to-front) should exactly match the
     # stored states from the forward propagation.

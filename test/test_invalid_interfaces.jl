@@ -28,7 +28,7 @@ using QuantumPropagators.Interfaces:
 
     @test "get_controls(ampl)` must be defined" ∈ test_logger
     @test "all controls in `ampl` must pass `check_control`" ∈ test_logger
-    @test "`substitute(ampl, replacments)` must be defined" ∈ test_logger
+    @test "`substitute(ampl, replacements)` must be defined" ∈ test_logger
     @test "`evaluate(ampl, tlist, 1)` must return a Number" ∈ test_logger
     @test "`evaluate(ampl, tlist, n; vals_dict)` must be defined" ∈ test_logger
 

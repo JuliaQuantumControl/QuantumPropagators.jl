@@ -100,7 +100,7 @@ end
 end
 
 
-@testset "pathologial Hamiltonians" begin
+@testset "pathological Hamiltonians" begin
 
     H₀ = random_matrix(5; hermitian=true)
 

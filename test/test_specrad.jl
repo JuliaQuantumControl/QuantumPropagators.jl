@@ -1,4 +1,4 @@
-# Test routines releated the the spectral radius
+# Test routines related the the spectral radius
 
 using Test
 using LinearAlgebra

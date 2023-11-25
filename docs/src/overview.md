@@ -67,7 +67,7 @@ When [`propagate`](@ref) is called without keyword arguments (or with `method=:a
 
 A specific propagation method can be forced by passing the `method` keyword argument to [`propagate`](@ref). The following methods are built-in:
 
-* `method=:expprop`: Solve the piecewise-constant Schrödinger or Liouville equation by explicity matrix exponentiation
+* `method=:expprop`: Solve the piecewise-constant Schrödinger or Liouville equation by explicitly matrix exponentiation
 * `method=:cheby`: Solve the piecewise-constant Schrödinger equation (Hermitian operators)
 * `method=:newton`: Solve the piecewise constant Liouville equation or non-Hermitian Schrödinger equation
 
