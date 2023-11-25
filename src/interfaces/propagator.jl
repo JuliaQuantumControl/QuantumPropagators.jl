@@ -80,6 +80,13 @@ function check_propagator(
 
     success || return false  # no point in going on
 
+    valid_tlist =
+        check_tlist(propagator.tlist; quiet, _message_prefix="On `propagator.tlist`: ")
+    if !valid_tlist
+        quiet || @error "$(px)`propagator.tlist` is not a valid time grid"
+        success = false
+    end
+
     try
         valid_state = check_state(
             state;

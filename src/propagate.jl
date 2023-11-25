@@ -4,7 +4,7 @@ using ProgressMeter
 using .Storage: init_storage, write_to_storage!
 import .Storage: map_observables
 
-using .Interfaces: check_state, check_generator
+using .Interfaces: check_state, check_generator, check_tlist
 
 
 # Return `true` if `H` has only real eigenvalues, `false` if `H` has
@@ -51,12 +51,28 @@ state = propagate(
     storage=nothing,
     observables=<store state>,
     callback=nothing,
-    showprogress=false,
+    show_progress=false,
     init_prop_kwargs...)
 ```
 
-propagates `state` of the entire time grid and returns the propagates states,
-or a storage array of data collected during the propagation.
+propagates `state` of the entire time grid and returns the propagated states,
+or a storage array of data collected during the propagation. This high-level
+routine performs the following three steps:
+
+1.  If `check=true` (default), check that `state`, `generator`, and `tlist` are
+    consistent with the required interface.
+
+2.  Initialize a `propagator` via [`init_prop`](@ref):
+
+    ```
+    init_prop(state, generator, tlist; method, inplace, init_prop_kwargs...)
+    ```
+
+3.  Call and return the result of
+
+    ```
+    propagate(propagator; storage, observables, show_progress, callback)
+    ```
 
 # Arguments
 
@@ -72,8 +88,9 @@ or a storage array of data collected during the propagation.
 * `method`: The propagation method to use. The default value of `:auto`
   attempts to choose the best method available, based on the properties of the
   given `state`, `tlist`, and `generator`.
-* `check`: if `true`, check that `state` and `generator` pass
-  [`check_state`](@ref) and [`check_generator`](@ref).
+* `check`: if `true`, check that `state`, `generator`, and `tlist` pass
+  [`check_state`](@ref), [`check_generator`](@ref) and [`check_tlist`](@ref),
+  respectively.
 * `backward`: If `true`, propagate backward in time
 * `inplace`: If `true`, propagate using in-place operations. If `false`, avoid
   in-place operations. Not all propagation methods
@@ -87,7 +104,7 @@ or a storage array of data collected during the propagation.
 * `observables`: Converters for data to be stored in `storage`. See Notes
   below.
 * `callback`: Function to call after each propagation step. See Notes below.
-* `showprogess`: Whether to show a progress bar. See Notes below.
+* `show_progress`: Whether to show a progress bar. See Notes below.
 
 All remaining keyword arguments are passed to [`init_prop`](@ref) to initialize
 the [`Propagator`](@ref AbstractPropagator) that is used internally to drive
@@ -121,7 +138,7 @@ the propagated state:
 data = propagate(
     state, generator, tlist; method=:auto
     backward=false; storage=true, observables=observables,
-    callback=nothing, showprogress=false, init_prop_kwargs...)
+    callback=nothing, show_progress=false, init_prop_kwargs...)
 ```
 
 If `backward` is `true`, the input state is assumed to be at time
@@ -137,9 +154,9 @@ Example usage includes writing data to file, or modifying `state` via
 [`set_state!`](@ref), e.g., removing amplitude from the lowest and highest
 level to mitigate "truncation error".
 
-If `showprogress` is given as `true`, a progress bar will be shown for
+If `show_progress` is given as `true`, a progress bar will be shown for
 long-running propagationn. In order to customize the progress bar,
-`showprogress` may also be a function that receives `length(tlist)` and returns
+`show_progress` may also be a function that receives `length(tlist)` and returns
 a `ProgressMeter.Progress` instance.
 
 If `in_place=false` is given, the propagation avoids in-place operations. This
@@ -148,16 +165,11 @@ automatic differentiation (AD), e.g., with
 [Zygote](https://fluxml.ai/Zygote.jl/). That is, use `in_place=false` if
 `propagate` is called inside a function to be passed to `Zygote.gradient`,
 `Zygote.pullback`, or a similar function. In an AD context, `storage` and
-`showprogress` should not be used.
+`show_progress` should not be used.
 
 The `propagate` routine returns the propagated state at `tlist[end]`,
 respectively `tlist[1]` if `backward=true`, or a storage array with the
 stored states / observable data if `storage=true`.
-
-# See also
-
-* [`init_prop`](@ref) — Propagate via a [`Propagator`](@ref AbstractPropagator)
-  object
 """
 function propagate(state, generator, tlist; method=Val(:auto), kwargs...)
     return propagate(state, generator, tlist, method; kwargs...)
@@ -177,7 +189,7 @@ function propagate(
     method::Val;
     check=true,
     storage=nothing,
-    showprogress=false,
+    show_progress=false,
     observables=_StoreState(),
     callback=nothing,
     inplace=true, # cf. default of init_prop
@@ -186,7 +198,6 @@ function propagate(
     for_mutable_state=inplace,  # undocumented
     kwargs...
 )
-    backward = get(kwargs, :backward, false)
     atol = get(kwargs, :atol, 1e-14)  # for checks
     quiet = get(kwargs, :quiet, false)  # for checks
 
@@ -195,6 +206,11 @@ function propagate(
             error(
                 "The `tlist` in `propagate` must be a Vector{Float64}, not $(typeof(tlist))"
             )
+        end
+        valid_tlist =
+            check_tlist(tlist; quiet, _message_prefix="On `tlist` in `propagate`: ")
+        if !valid_tlist
+            error("The `tlist` in `propagate` does not pass `check_tlist`")
         end
         valid_state = check_state(
             state;
@@ -225,14 +241,76 @@ function propagate(
         end
     end
 
-    propagator = init_prop(state, generator, tlist, method; inplace, kwargs...)
+    propagator = init_prop(state, generator, tlist; method, inplace, kwargs...)
+    # Calling `init_prop` with `method` as a keyword argument instead of a
+    # positional arguments allows for overriding `init_prop` for some type of
+    # `state` and/or `generator`, independent of the `method`.
 
+    return propagate(propagator; storage, observables, show_progress, callback)
+
+end
+
+
+"""
+```julia
+state = propagate(
+    state,
+    propagator;
+    storage=nothing,
+    observables=<store state>,
+    show_progress=false,
+    callback=nothing,
+    reinit_prop_kwargs...
+)
+```
+
+re-initializes the given `propagator` with `state` (see [`reinit_prop!`](@ref))
+and then calls the lower-level `propagate(propagator; ...)`.
+"""
+function propagate(
+    state,
+    propagator;
+    storage=nothing,
+    observables=_StoreState(),
+    show_progress=false,
+    callback=nothing,
+    kwargs...
+)
+    reinit_prop!(propagator, state; kwargs...)
+    return propagate(propagator; storage, observables, show_progress, callback)
+end
+
+
+"""
+```julia
+state = propagate(
+    propagator;
+    storage=nothing,
+    observables=<store state>,
+    show_progress=false,
+    callback=nothing,
+)
+```
+
+propagates a freshkly initialized `propagator` (see [`init_prop`](@ref)). Used
+in the higher-level [`propagate(state, generator, tlist; kwargs...)`](@ref).
+"""
+function propagate(
+    propagator;
+    storage=nothing,
+    observables=_StoreState(),
+    show_progress=false,
+    callback=nothing,
+)
+
+    state = propagator.state
+    tlist = propagator.tlist
+    backward = propagator.backward
     return_storage = false
     if storage === true
         storage = init_storage(state, tlist, observables)
         return_storage = true
     end
-    state = copy(state)
     intervals = enumerate(tlist[2:end])
     if backward
         intervals = Iterators.reverse(intervals)
@@ -246,11 +324,11 @@ function propagate(
     end
 
     N = length(intervals)
-    if isa(showprogress, Function)
-        progressmeter = showprogress(N)
+    if isa(show_progress, Function)
+        progressmeter = show_progress(N)
     else
-        progressmeter = Progress(N, enabled=showprogress)
-        if !showprogress
+        progressmeter = Progress(N, enabled=show_progress)
+        if !show_progress
             # XXX: https://github.com/timholy/ProgressMeter.jl/issues/214
             progressmeter = NoProgress()
         end
@@ -277,8 +355,8 @@ function propagate(
     else
         return propagator.state
     end
-end
 
+end
 
 @inline function _write_to_storage!(storage, i::Integer, state, observables, tlist)
     # This specific implementation is referenced in the documentation of

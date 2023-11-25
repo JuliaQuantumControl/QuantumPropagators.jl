@@ -31,10 +31,11 @@ include("exp_propagator.jl")
 
 #! format: off
 module Interfaces
-    export check_operator, check_state, check_amplitude, check_control
-    export check_generator, check_propagator
+    export check_operator, check_state, check_tlist, check_amplitude
+    export check_control, check_generator, check_propagator
     include(joinpath("interfaces", "utils.jl"))
     include(joinpath("interfaces", "state.jl"))
+    include(joinpath("interfaces", "tlist.jl"))
     include(joinpath("interfaces", "operator.jl"))
     include(joinpath("interfaces", "amplitude.jl"))
     include(joinpath("interfaces", "control.jl"))

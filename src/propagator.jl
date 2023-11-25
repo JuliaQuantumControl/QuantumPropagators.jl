@@ -204,13 +204,13 @@ function init_prop(
     propagator = init_prop(state, generator, tlist, method; backward=backward, kwargs...)
     if piecewise ≡ true
         if !(propagator isa PiecewisePropagator)
-            error("Cannot initalize propagator as piecewise with method=$(repr(method))")
+            error("Cannot initialize propagator as piecewise with method=$(repr(method))")
         end
     end
     if pwc ≡ true
         if !(propagator isa PWCPropagator)
             error(
-                "Cannot initalize propagator as piecewise-constant with method=$(repr(method))"
+                "Cannot initialize propagator as piecewise-constant with method=$(repr(method))"
             )
         end
     end
