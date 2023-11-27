@@ -1,6 +1,7 @@
 using .Controls: get_controls
 
-"""Propagator for propagation via direct exponentiation (`method=:expprop`)
+"""Propagator for propagation via direct exponentiation
+(`method=QuantumPropagators.ExpProp`)
 
 This is a [`PWCPropagator`](@ref).
 """
@@ -36,11 +37,13 @@ _exp_prop_convert_operator(::ScaledOperator) = Matrix{ComplexF64}
 
 """
 ```julia
+using QuantumPropagators: ExpProp
+
 exp_propagator = init_prop(
     state,
     generator,
-    tlist,
-    method::Val{:expprop};
+    tlist;
+    method=ExpProp,
     inplace=true,
     backward=false,
     verbose=false,
@@ -76,7 +79,7 @@ function init_prop(
     state,
     generator,
     tlist,
-    method::Val{:expprop};
+    method::Val{:ExpProp};
     inplace=true,
     backward=false,
     verbose=false,
@@ -126,6 +129,11 @@ function init_prop(
         func,
     )
 end
+
+
+# Aliases (for backwards compatibility)
+init_prop(state, generator, tlist, method::Val{:expprop}; kwargs...) =
+    init_prop(state, generator, tlist, Val(:ExpProp); kwargs...)
 
 
 function prop_step!(propagator::ExpPropagator)

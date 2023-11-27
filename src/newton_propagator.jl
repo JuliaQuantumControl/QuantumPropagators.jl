@@ -1,7 +1,7 @@
 using .Controls: get_controls
 using TimerOutputs: reset_timer!, @timeit_debug
 
-"""Propagator for Newton propagation (`method=:newton`).
+"""Propagator for Newton propagation (`method=QuantumPropagators.Newton`).
 
 This is a [`PWCPropagator`](@ref).
 """
@@ -28,11 +28,13 @@ set_t!(propagator::NewtonPropagator, t) = _pwc_set_t!(propagator, t)
 
 """
 ```julia
+using QuantumPropagators: Newton
+
 newton_propagator = init_prop(
     state,
     generator,
-    tlist,
-    method::Val{:newton};
+    tlist;
+    method=Newton,
     inplace=true,
     backward=false,
     verbose=false,
@@ -59,7 +61,7 @@ function init_prop(
     state,
     generator,
     tlist,
-    method::Val{:newton};
+    method::Val{:Newton};
     inplace=true,
     backward=false,
     verbose=false,
@@ -105,6 +107,10 @@ function init_prop(
         max_restarts
     )
 end
+
+# Aliases (for backwards compatibility)
+init_prop(state, generator, tlist, method::Val{:newton}; kwargs...) =
+    init_prop(state, generator, tlist, Val(:Newton); kwargs...)
 
 
 function reinit_prop!(propagator::NewtonPropagator, state; _...)

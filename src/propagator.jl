@@ -75,8 +75,8 @@ function Base.getproperty(propagator::AbstractPropagator, name::Symbol)
     # Propagators where :state, :parameters, and :t are not direct fields will
     # have to override `getproperty`
     if name == :generator
-        # We do not want people to mutate an existing generator or tlist, so we
-        # actively present access to these fields
+        # We do not want people to mutate an existing generator, so we
+        # actively prevent access
         error("type $(nameof(typeof(propagator))) has no property $(name)")
     end
     return getfield(propagator, name)
@@ -92,7 +92,7 @@ function Base.setproperty!(propagator::AbstractPropagator, name::Symbol, value)
         # At least for in-place propagators, this expectation will not hold,
         # since we'll want to use `copyto!` to overwrite the internal state of
         # the `propagator` instead of changing the reference. To make the
-        # behaviour explicit, we for the user to use `set_state!`
+        # behaviour explicit, we force the user to use `set_state!`
         error("The state of a propagator can only be set via `set_state!`")
     elseif name ≡ :parameters
         # Optimal control is most straightforward to implement if
@@ -104,7 +104,7 @@ function Base.setproperty!(propagator::AbstractPropagator, name::Symbol, value)
     elseif name ≡ :t
         # The time must always be an element of `tlist`, so setting it to an
         # arbitrary value is not possible
-        error("The curerent time of a propagator can only be set via `set_t!`")
+        error("The current time of a propagator can only be set via `set_t!`")
     elseif name ≡ :generator
         # See `getproperty`
         error("type $(nameof(typeof(propagator))) has no property $(name)")
@@ -128,7 +128,7 @@ end
 ```julia
 propagator = init_prop(
     state, generator, tlist;
-    method=:auto,
+    method,  # mandatory keyword argument
     backward=false,
     inplace=true,
     piecewise=nothing,
@@ -150,11 +150,16 @@ time grid `tlist` under the time-dependent generator (Hamiltonian/Liouvillian)
 * `tlist`: The time grid over which which the propagation is defined. This may
   or may not be equidistant.
 
-# Keyword arguments
+# Mandatory keyword arguments
 
-* `method`: The propagation method to use. The default value of `:auto`
-  attempts to choose the best method available, based on the properties of the
-  given `state`, `tlist`, and `generator`, cf. [`choose_propmethod`](@ref)
+* `method`: The propagation method to use. May be given as a name
+  (`Symbol`), but the recommended usage is to pass a module implementing the
+  propagation method, e.g., `using QuantumPropagators: Cheby; method = Cheby`.
+  Passing a module ensures that the code implementing the method is correctly
+  loaded.
+
+# Optional keyword arguments
+
 * `backward`: If `true`, initialize the propagator for a backward propagation.
   The resulting `propagator.t` will be `tlist[end]`, and subsequent calls to
   [`prop_step!`](@ref) will move backward on `tlist`.
@@ -166,8 +171,8 @@ time grid `tlist` under the time-dependent generator (Hamiltonian/Liouvillian)
   propagation is generally more efficient but may not be compatible, e.g., with
   automatic differentiation.
 * `piecewise`: If given as a boolean, `true` enforces that the resulting
-  propagator is a [`PiecewisePropagator`](@ref), and `false` enforces is not to
-  be a [`PiecewisePropagator`](@ref)
+  propagator is a [`PiecewisePropagator`](@ref), and `false` enforces that it
+  not a [`PiecewisePropagator`](@ref)
 * `pwc`: Like `piecewise`, for for the stronger [`PWCPropagator`](@ref)
 
 All other `kwargs` are method-dependent and are ignored for methods that do not
@@ -177,6 +182,14 @@ The type of the returned `propagator` is a sub-type of
 [`AbstractPropagator`](@ref), respectively a sub-type of
 [`PiecewisePropagator`](@ref) if `piecewise=true` or a sub-type of
 [`PWCPropagator`](@ref) if `pwc=true`.
+
+# Internals
+
+Internally, the (mandatory) keyword `method` is converted into a fourth
+positional argument. This allows propagation methods to define their own
+implementation of `init_prop` via multiple dispatch. However, when *calling*
+`init_prop` in high-level code, `method` must always be given as a keyword
+argument.
 
 # See also
 
@@ -188,8 +201,8 @@ The type of the returned `propagator` is a sub-type of
 function init_prop(
     state,
     generator,
-    tlist,
-    method::Val{:auto};
+    tlist;
+    method,  # mandatory keyword argument
     backward=false,
     inplace=true,
     verbose=false,
@@ -197,11 +210,19 @@ function init_prop(
     pwc=nothing,
     kwargs...
 )
-    method = choose_propmethod(generator, state, tlist; piecewise, pwc, inplace)
-    if verbose
-        @info "Auto-choosing propagation method $(repr(typeof(method).parameters[1]))"
-    end
-    propagator = init_prop(state, generator, tlist, method; backward=backward, kwargs...)
+    # convert `method` from keyword argument to positional argument:
+    propagator = init_prop(
+        state,
+        generator,
+        tlist,
+        method;
+        backward,
+        inplace,
+        verbose,
+        piecewise,
+        pwc,
+        kwargs...
+    )
     if piecewise ≡ true
         if !(propagator isa PiecewisePropagator)
             error("Cannot initialize propagator as piecewise with method=$(repr(method))")
@@ -217,27 +238,22 @@ function init_prop(
     return propagator
 end
 
-function init_prop(state, generator, tlist, method; kwargs...)
-    throw(
-        TypeError(
-            :init_prop,
-            "`method` must be a known symbol, not $(repr(method))",
-            Symbol,
-            typeof(method)
-        )
-    )
-end
-
-
-# `method` as a keyword argument
-function init_prop(state, generator, tlist; method=Val(:auto), kwargs...)
-    return init_prop(state, generator, tlist, method; kwargs...)
-end
-
 
 # `method` as a symbol
 function init_prop(state, generator, tlist, method::Symbol; kwargs...)
     return init_prop(state, generator, tlist, Val(method); kwargs...)
+end
+
+
+# `method` as a Module (recommended usage)
+function init_prop(state, generator, tlist, method::Module; kwargs...)
+    return init_prop(state, generator, tlist, Val(nameof(method)); kwargs...)
+end
+
+
+# Fallback
+function init_prop(state, generator, tlist, method; kwargs...)
+    throw(ArgumentError("Unknown propagation `method`: $(method)"))
 end
 
 
@@ -254,65 +270,6 @@ function _get_uniform_dt(tlist::Vector; tol=1e-12, warn=false)
         end
     end
     return dt
-end
-
-
-"""Choose a suitable propagation method.
-
-```julia
-method = choose_propmethod(generator, state, tlist;
-                           pwc=nothing, piecewise=nothing, inplace=true)
-```
-
-identifies a suitable propagation method for the given `generator`, `state` and
-`tlist`. If `piecewise` or `pwc` are given as `true`, only consider methods
-that result in in a [`PiecewisePropagator`](@ref) or [`PWCPropagator`](@ref),
-respectively. If `piecewise` or `pwc` are given as `false`, disregard any
-methods that result in these propagators. Only propagators that support the
-given `inplace` are taken into account.
-"""
-function choose_propmethod(
-    generator,
-    state,
-    tlist;
-    pwc=nothing,
-    piecewise=nothing,
-    inplace=true
-)
-    (pwc ≡ false) && error("No non-pwc propagator available")
-    (piecewise ≡ false) && error("No non-piecewise propagator available")
-    method = nothing
-    is_small = false
-    try
-        is_small = length(state) <= 8
-    catch exception
-        if isa(exception, MethodError)
-            @warn "Cannot determine problem dimension"
-        else
-            rethrow()
-        end
-    end
-    if ((pwc ≢ false) || (piecewise ≢ false))
-        if is_small
-            method = Val(:expprop)
-        else
-            if inplace
-                method = Val(:newton)
-            end
-            controls = get_controls(generator)
-            genop = _pwc_get_max_genop(generator, controls, tlist)
-            if has_real_eigvals(genop) ≡ true
-                dt = _get_uniform_dt(tlist)
-                if !isnothing(dt)
-                    method = Val(:cheby)
-                end
-            end
-        end
-    end
-    if isnothing(method)
-        error("Cannot find a suitable propagation method.")
-    end
-    return method
 end
 
 

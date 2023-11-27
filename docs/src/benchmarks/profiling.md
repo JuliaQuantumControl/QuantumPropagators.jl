@@ -31,8 +31,9 @@ For example, we can time the propagation with the Chebychev method:
 ```@example profiling
 using BenchmarkTools
 using QuantumPropagators
+using QuantumPropagators: Cheby
 
-@benchmark propagate($Ψ₀, $H, $tlist; method=:cheby) samples=10
+@benchmark propagate($Ψ₀, $H, $tlist; method=Cheby) samples=10
 ```
 
 ### Newton propagation
@@ -40,7 +41,9 @@ using QuantumPropagators
 Or, the same propagation with the Newton method:
 
 ```@example profiling
-@benchmark propagate($Ψ₀, $H, $tlist; method=:newton) samples=10
+using QuantumPropagators: Newton
+
+@benchmark propagate($Ψ₀, $H, $tlist; method=Newton) samples=10
 ```
 
 The result in this case illustrates the significant advantage of the Chebychev method for systems of moderate to small size and unitary dynamics.
@@ -69,7 +72,7 @@ The status of the data collection can be verified with [`QuantumPropagators.timi
 Since the call to [`QuantumPropagators.enable_timings`](@ref) invalidates existing compiled code, and to avoid the compilation overhead showing up in the timing data, we call [`propagate`](@ref) once to ensure compilation:
 
 ```@example profiling
-propagate(Ψ₀, H, tlist; method=:cheby);
+propagate(Ψ₀, H, tlist; method=Cheby);
 nothing  # hide
 ```
 
@@ -91,7 +94,7 @@ See the [`TimerOutputs` documentation](https://github.com/KristofferC/TimerOutpu
 Alternatively, without a `callback`:
 
 ```@example profiling
-propagator = init_prop(Ψ₀, H, tlist; method=:cheby)
+propagator = init_prop(Ψ₀, H, tlist; method=Cheby)
 for step ∈ 1:(length(tlist)-1)
     prop_step!(propagator)
 end
@@ -105,8 +108,8 @@ The reported runtimes here are less important than the number of function calls 
 For the Newton method:
 
 ```@example profiling
-propagate(Ψ₀, H, tlist; method=:newton);   # recompilation
-propagate(Ψ₀, H, tlist; method=:newton, callback=show_timing_data);
+propagate(Ψ₀, H, tlist; method=Newton);   # recompilation
+propagate(Ψ₀, H, tlist; method=Newton, callback=show_timing_data);
 nothing  # hide
 ```
 

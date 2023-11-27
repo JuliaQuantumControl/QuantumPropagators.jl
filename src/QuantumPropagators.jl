@@ -22,7 +22,7 @@ export liouvillian, hamiltonian
 
 include("propagator.jl")
 export init_prop, reinit_prop!, prop_step!
-# not exported: set_t!, set_state!, choose_propmethod
+# not exported: set_t!, set_state!
 
 include("pwc_utils.jl")
 include("cheby_propagator.jl")

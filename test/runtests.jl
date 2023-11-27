@@ -5,88 +5,93 @@ using SafeTestsets
 # Note: comment outer @testset to stop after first @safetestset failure
 @time @testset verbose = true "QuantumPropagators" begin
 
-    print("\n* Doctests:")
+    println("\n* Doctests:")
     @time @safetestset "Doctests" begin
         using QuantumPropagators, Test, Documenter
         doctest(QuantumPropagators)
     end
 
-    print("\n* Hamiltonian (test_hamiltonian.jl):")
+    println("\n* Hamiltonian (test_hamiltonian.jl):")
     @time @safetestset "Hamiltonian" begin
         include("test_hamiltonian.jl")
     end
 
-    print("\n* Liouvillian (test_liouvillian.jl):")
+    println("\n* Liouvillian (test_liouvillian.jl):")
     @time @safetestset "Liouvillian" begin
         include("test_liouvillian.jl")
     end
 
-    print("\n* Operator Linalg (test_operator_linalg.jl):")
+    println("\n* Operator Linalg (test_operator_linalg.jl):")
     @time @safetestset "Operator Linalg" begin
         include("test_operator_linalg.jl")
     end
 
-    print("\n* Shapes (test_shapes.jl):")
+    println("\n* Shapes (test_shapes.jl):")
     @time @safetestset "Shapes" begin
         include("test_shapes.jl")
     end
 
-    print("\n* Controls (test_controls.jl):")
+    println("\n* Controls (test_controls.jl):")
     @time @safetestset "Controls" begin
         include("test_controls.jl")
     end
 
-    print("\n* Amplitudes (test_amplitudes.jl):")
+    println("\n* Amplitudes (test_amplitudes.jl):")
     @time @safetestset "Amplitudes" begin
         include("test_amplitudes.jl")
     end
 
-    print("\n* Discretization (test_discretization.jl):")
+    println("\n* Discretization (test_discretization.jl):")
     @time @safetestset "Discretization" begin
         include("test_discretization.jl")
     end
 
-    print("\n* Spec.Rad. (test_specrad.jl):")
+    println("\n* Spec.Rad. (test_specrad.jl):")
     @time @safetestset "Spec.Rad." begin
         include("test_specrad.jl")
     end
 
-    print("\n* Cheby (test_cheby.jl):")
+    println("\n* Cheby (test_cheby.jl):")
     @time @safetestset "Cheby" begin
         include("test_cheby.jl")
     end
 
-    print("\n* Newton (test_newton.jl):")
+    println("\n* Newton (test_newton.jl):")
     @time @safetestset "Newton" begin
         include("test_newton.jl")
     end
 
-    print("\n* Exp (test_expprop.jl):")
+    println("\n* Exp (test_expprop.jl):")
     @time @safetestset "Exp" begin
         include("test_expprop.jl")
     end
 
-    print("\n* Propagator Interfaces (test_prop_interfaces.jl):")
+    println("\n* Propagator Interfaces (test_prop_interfaces.jl):")
     @time @safetestset "Propagator Interfaces" begin
         include("test_prop_interfaces.jl")
     end
 
-    print("\n* Propagate (test_propagate.jl):")
+    println("\n* Propagate (test_propagate.jl):")
     @time @safetestset "Propagate" begin
         include("test_propagate.jl")
     end
 
-    print("\n* Time-dependent observables (test_timedependent_observables.jl):")
+    println("\n* Time-dependent observables (test_timedependent_observables.jl):")
     @time @safetestset "Time-dependent observables" begin
         include("test_timedependent_observables.jl")
     end
 
-    print("\n* Timings (test_timings.jl):")
+    println("\n* Timings (test_timings.jl):")
     @time @safetestset "Timings" begin
         include("test_timings.jl")
     end
 
-    print("\n* Invalid interfaces (test_invalid_interfaces.jl):")
+    println("\n* Test non-standard generators (test_nonstandard_generators.jl):")
+    @time @safetestset "Non-standard generators" begin
+        include("test_nonstandard_generators.jl")
+    end
+
+    println("\n* Invalid interfaces (test_invalid_interfaces.jl):")
     @time @safetestset "Invalid interfaces" begin
         include("test_invalid_interfaces.jl")
     end

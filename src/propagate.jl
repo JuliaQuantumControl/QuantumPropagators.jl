@@ -7,19 +7,6 @@ import .Storage: map_observables
 using .Interfaces: check_state, check_generator, check_tlist
 
 
-# Return `true` if `H` has only real eigenvalues, `false` if `H` has
-# eigenvalues with a non-zero imaginary part, and `nothing` if field of the
-# eigenvalues of `H` cannot be determined
-function has_real_eigvals(H)
-    if hasmethod(ishermitian, (typeof(H),))
-        return ishermitian(H)
-    else
-        @warn "ishermitian is not defined for $(typeof(H))"
-        return nothing
-    end
-end
-
-
 # Default "observables" for just storing the propagated state. We want to keep
 # this private: It doesn't combine with other observables and depends on
 # internals of the default init_storage.
@@ -41,7 +28,7 @@ state = propagate(
     state,
     generator,
     tlist;
-    method=:auto,
+    method,  # mandatory keyword argument
     check=true,
     backward=false,
     inplace=true,
@@ -83,11 +70,14 @@ routine performs the following three steps:
 * `tlist`: The time grid over which which the propagation is defined. This may
   or may not be equidistant.
 
-# Keyword arguments
+# Mandatory keyword arguments
 
-* `method`: The propagation method to use. The default value of `:auto`
-  attempts to choose the best method available, based on the properties of the
-  given `state`, `tlist`, and `generator`.
+* `method`: The propagation method to use. May be given as a name
+  (`Symbol`), but the recommended usage is to pass a module implementing the
+  propagation method, cf. [`init_prop`](@ref).
+
+# Optional keyword arguments
+
 * `check`: if `true`, check that `state`, `generator`, and `tlist` pass
   [`check_state`](@ref), [`check_generator`](@ref) and [`check_tlist`](@ref),
   respectively.
@@ -95,10 +85,11 @@ routine performs the following three steps:
 * `inplace`: If `true`, propagate using in-place operations. If `false`, avoid
   in-place operations. Not all propagation methods
   support both in-place and not-in-place propagation.
-* `piecewise`: If given a a boolean, limit the propagation to "piecewise"
-  methods, respectively disallow piecewise methods
-* `pwc`: If given a a boolean, limit the propagation to piecewise-constant
-  methods, respectively disallow piecewise-constant methods
+* `piecewise`: If given as a boolean, ensure that the internal `propagator` is
+  an instance of [`PiecewisePropagator`](@ref), cf. [`init_prop`](@ref).
+* `pwc`: If given a a boolean, do a piecewise constant propagation where the
+  generator in each interval is constant (the internal `propagator` is a
+  [`PWCPropagator`](@ref), cf. [`init_prop`](@ref))
 * `storage`: Flag whether to store and return the propagated states /
   observables, or pre-allocated storage array. See Notes below.
 * `observables`: Converters for data to be stored in `storage`. See Notes
@@ -113,7 +104,7 @@ the optimization. Unknown keyword arguments will be ignored.
 # Notes
 
 In general, there is no requirement that `tlist` has a constant time step,
-although some propagation methods (most notably [`cheby!`](@ref
+although some propagation methods (most notably [`Cheby`](@ref
 QuantumPropagators.Cheby.cheby!)) only support a uniform time grid.
 
 If `storage` is given as a container pre-allocated via [`init_storage`](@ref),
@@ -136,7 +127,7 @@ the propagated state:
 
 ```julia
 data = propagate(
-    state, generator, tlist; method=:auto
+    state, generator, tlist; method,
     backward=false; storage=true, observables=observables,
     callback=nothing, show_progress=false, init_prop_kwargs...)
 ```
@@ -155,9 +146,9 @@ Example usage includes writing data to file, or modifying `state` via
 level to mitigate "truncation error".
 
 If `show_progress` is given as `true`, a progress bar will be shown for
-long-running propagationn. In order to customize the progress bar,
-`show_progress` may also be a function that receives `length(tlist)` and returns
-a `ProgressMeter.Progress` instance.
+long-running propagation. In order to customize the progress bar,
+`show_progress` may also be a function that receives `length(tlist)` and
+returns a `ProgressMeter.Progress` instance.
 
 If `in_place=false` is given, the propagation avoids in-place operations. This
 is slower than `inplace=true`, but is often required in the context of
@@ -171,22 +162,11 @@ The `propagate` routine returns the propagated state at `tlist[end]`,
 respectively `tlist[1]` if `backward=true`, or a storage array with the
 stored states / observable data if `storage=true`.
 """
-function propagate(state, generator, tlist; method=Val(:auto), kwargs...)
-    return propagate(state, generator, tlist, method; kwargs...)
-end
-
-
-function propagate(state, generator, tlist, method::Symbol; kwargs...)
-    return propagate(state, generator, tlist, Val(method); kwargs...)
-end
-
-
-# default `propagate` implementation
 function propagate(
     state,
     generator,
-    tlist,
-    method::Val;
+    tlist;
+    method,
     check=true,
     storage=nothing,
     show_progress=false,
@@ -245,6 +225,7 @@ function propagate(
     # Calling `init_prop` with `method` as a keyword argument instead of a
     # positional arguments allows for overriding `init_prop` for some type of
     # `state` and/or `generator`, independent of the `method`.
+    # See `test_nonstandard_generators.jl`
 
     return propagate(propagator; storage, observables, show_progress, callback)
 
@@ -292,8 +273,9 @@ state = propagate(
 )
 ```
 
-propagates a freshkly initialized `propagator` (see [`init_prop`](@ref)). Used
-in the higher-level [`propagate(state, generator, tlist; kwargs...)`](@ref).
+propagates a freshly initialized `propagator` (immediately after
+[`init_prop`](@ref)). Used in the higher-level
+[`propagate(state, generator, tlist; kwargs...)`](@ref).
 """
 function propagate(
     propagator;

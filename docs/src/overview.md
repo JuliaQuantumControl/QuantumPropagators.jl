@@ -23,13 +23,13 @@ As a simple "Hello World" example, we use the [`propagate`](@ref) function to si
 In a two-level system with ground state ``\ket{0}`` and excited state ``\ket{1}``, a constant driving field between the two levels with a pulse area of π/2 results in a population inversion, transforming the initial state ``\ket{0}`` into ``-i \ket{1}``,
 
 ```jldoctest overview
-using QuantumPropagators: propagate
+using QuantumPropagators: propagate, ExpProp
 
 Ψ₀ = ComplexF64[1, 0]  #  = |0⟩
 H = ComplexF64[0 1; 1 0]
 tlist = collect(range(0, π/2, length=101))
 
-Ψ = propagate(Ψ₀, H, tlist)
+Ψ = propagate(Ψ₀, H, tlist; method=ExpProp)
 
 print("Ψ = $(round.(Ψ; digits=3))\n")
 
@@ -43,11 +43,11 @@ Instead of just returning the final state, we can use `storage=true` to return a
 ```@example overview
 using Plots
 gr() # hide
-using QuantumPropagators: propagate # hide
+using QuantumPropagators: propagate, ExpProp # hide
 Ψ₀ = ComplexF64[1, 0] # hide
 H = ComplexF64[0 1; 1 0] # hide
 tlist = collect(range(0, π/2, length=101)) # hide
-states = propagate(Ψ₀, H, tlist; storage=true)
+states = propagate(Ψ₀, H, tlist; method=ExpProp, storage=true)
 plot(tlist./π, abs.(states').^2; label=["ground" "excited"],
      xlabel="pulse area / π", ylabel="population", legend=:right)
 ```
@@ -63,13 +63,11 @@ See the discussion of [Expectation Values](@ref) for details.
 
 ## Propagation methods
 
-When [`propagate`](@ref) is called without keyword arguments (or with `method=:auto`), an appropriate propagation method is determined automatically based on the properties of the state and generator. In the above example of a two-level system, this is `method=:expprop` which solves the Schrödinger equation by exponentiating generator to construct the time evolution operator ``\op{U} = \exp[-i \op{H} dt]`` in each time step explicitly, and applying it to the state. This is the most appropriate method for very small systems, especially a two-level system.
+The [`propagate`](@ref) function has a mandatory `method` keyword argument that specifies both the equation of motion (implicitly, in combination with other keyword parameters) and the propagation method. The `method` should be passed a module that implements that method. For the built-in methods, this would be a submodule of `QuantumPropagators`. Assuming `using QuantumPropagators: ExpProp, Cheby, Newton`:
 
-A specific propagation method can be forced by passing the `method` keyword argument to [`propagate`](@ref). The following methods are built-in:
-
-* `method=:expprop`: Solve the piecewise-constant Schrödinger or Liouville equation by explicitly matrix exponentiation
-* `method=:cheby`: Solve the piecewise-constant Schrödinger equation (Hermitian operators)
-* `method=:newton`: Solve the piecewise constant Liouville equation or non-Hermitian Schrödinger equation
+* `method=ExpProp`: Solve the piecewise-constant Schrödinger or Liouville equation by explicitly matrix exponentiation
+* `method=Cheby`: Solve the piecewise-constant Schrödinger equation (Hermitian operators)
+* `method=Newton`: Solve the piecewise constant Liouville equation or non-Hermitian Schrödinger equation
 
 The Schrödinger equation is (ħ = 1)
 
@@ -85,6 +83,7 @@ i \frac{\partial}{\partial t} \hat{\rho}(t) = \Liouvillian(t) \hat{\rho}(t)\,,
 
 which differs from most textbooks by a factor of ``i``, but has the benefit that it is structurally identical to the Schrödinger equation, so that the propagation methods do not actually need to know whether they are propagating a Hilbert space vector or a (vectorized) density matrix. See [`QuantumControl.liouvillian`](https://juliaquantumcontrol.github.io/QuantumControl.jl/stable/api/quantum_control_base/#QuantumControlBase.liouvillian) with `convention=:LvN` for how to construct an appropriate ``\Liouvillian``.
 
+It is also possible to pass a name (`Symbol`) as `method`. For example, `method=ExpProp` is equivalent to `method=nameof(QuantumPropagators.ExpProp)` or `method=:ExpProp`. The built-in methods also have lower-case aliases (`method=:expprop`, `method=:cheby`, `method=:newton`) for backwards compatibility.
 
 
 ## Dynamic generators
@@ -112,8 +111,8 @@ The  [`prop_step!`](@ref) function can then be used to advance the `propagator`:
 
 ```@meta
 DocTestSetup = quote
-    using QuantumPropagators: init_prop
-    propagator = init_prop(Ψ₀, H, tlist)
+    using QuantumPropagators: init_prop, ExpProp
+    propagator = init_prop(Ψ₀, H, tlist; method=ExpProp)
 end
 ```
 

@@ -1,7 +1,7 @@
 using .Controls: get_controls, evaluate, discretize
 using TimerOutputs: reset_timer!, @timeit_debug
 
-"""Propagator for Chebychev propagation (`method=:cheby`).
+"""Propagator for Chebychev propagation (`method=QuantumPropagators.Cheby`).
 
 This is a [`PWCPropagator`](@ref).
 """
@@ -30,11 +30,13 @@ set_t!(propagator::ChebyPropagator, t) = _pwc_set_t!(propagator, t)
 
 """
 ```julia
+using QuantumPropagators: Cheby
+
 cheby_propagator = init_prop(
     state,
     generator,
     tlist;
-    method=:cheby,
+    method=Cheby,
     inplace=true,
     backward=false,
     verbose=false,
@@ -81,7 +83,7 @@ function init_prop(
     state,
     generator,
     tlist,
-    method::Val{:cheby};
+    method::Val{:Cheby};
     inplace=true,
     backward=false,
     verbose=false,
@@ -157,6 +159,10 @@ function init_prop(
         specrange_kwargs,
     )
 end
+
+# Aliases (for backwards compatibility)
+init_prop(state, generator, tlist, method::Val{:cheby}; kwargs...) =
+    init_prop(state, generator, tlist, Val(:Cheby); kwargs...)
 
 
 _transform_control_ranges(c, ϵ_min, ϵ_max, check) = (ϵ_min, ϵ_max)
