@@ -168,7 +168,7 @@ init_prop(state, generator, tlist, method::Val{:DifferentialEquations}; kwargs..
 mutable struct ODEContinuousPropagator{IT} <: AbstractPropagator
     const integrator::IT
     const tlist::Vector{Float64}
-    const parameters::AbstractDict
+    parameters::AbstractDict
     const backward::Bool
     const inplace::Bool
     const timing_data::TimerOutput
@@ -181,7 +181,7 @@ mutable struct ODEPWCPropagator{IT} <: PWCPropagator
     # out because it's in a different place in the type hierarchy
     const integrator::IT
     const tlist::Vector{Float64}
-    const parameters::AbstractDict
+    parameters::AbstractDict
     const backward::Bool
     const inplace::Bool
     const timing_data::TimerOutput

@@ -1,16 +1,16 @@
 using .Controls: get_controls, evaluate, discretize
-using TimerOutputs: reset_timer!, @timeit_debug
+using TimerOutputs: reset_timer!, @timeit_debug, TimerOutput
 
 """Propagator for Chebychev propagation (`method=QuantumPropagators.Cheby`).
 
 This is a [`PWCPropagator`](@ref).
 """
 mutable struct ChebyPropagator{GT,OT,ST} <: PWCPropagator
-    generator::GT
+    const generator::GT
     state::ST
     t::Float64  # time at which current `state` is defined
     n::Int64 # index of next interval to propagate
-    tlist::Vector{Float64}
+    const tlist::Vector{Float64}
     parameters::AbstractDict
     controls
     control_ranges::AbstractDict
@@ -22,6 +22,7 @@ mutable struct ChebyPropagator{GT,OT,ST} <: PWCPropagator
     specrange_buffer::Float64
     check_normalization::Bool
     specrange_options::Dict{Symbol,Any}
+    const timing_data::TimerOutput
 end
 
 
@@ -130,7 +131,15 @@ function init_prop(
     if isnothing(dt)
         error("Chebychev propagation only works on a uniform time grid")
     end
-    wrk = Cheby.ChebyWrk(state, Δ, E_min, dt; limit=cheby_coeffs_limit)
+    timing_data = TimerOutput()
+    wrk = Cheby.ChebyWrk(
+        state,
+        Δ,
+        E_min,
+        dt;
+        limit=cheby_coeffs_limit,
+        _timing_data=timing_data
+    )
     n = 1
     t = tlist[1]
     if backward
@@ -157,6 +166,7 @@ function init_prop(
         specrange_buffer,
         check_normalization,
         specrange_kwargs,
+        timing_data,
     )
 end
 
@@ -277,7 +287,7 @@ function reinit_prop!(
         propagator.control_ranges = control_ranges
         wrk = Cheby.ChebyWrk(state, Δ, E_min, dt; limit=wrk.limit)
     else
-        reset_timer!(propagator.wrk.timing_data)
+        reset_timer!(propagator.timing_data)
     end
     t = float(propagator.backward ? tlist[end] : tlist[1])
     _pwc_set_t!(propagator, t)
@@ -332,7 +342,7 @@ end
 
 
 function prop_step!(propagator::ChebyPropagator)
-    @timeit_debug propagator.wrk.timing_data "prop_step!" begin
+    @timeit_debug propagator.timing_data "prop_step!" begin
         Ψ = propagator.state
         H = propagator.genop
         n = propagator.n

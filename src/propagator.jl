@@ -1,4 +1,5 @@
 using Printf
+using TimerOutputs: reset_timer!
 
 """Abstract base type for all `Propagator` objects.
 
@@ -298,6 +299,13 @@ function reinit_prop!(propagator, state; kwargs...)
         set_t!(propagator, propagator.tlist[end])
     else
         set_t!(propagator, propagator.tlist[begin])
+    end
+    try
+        reset_timer!(propagator.timing_data)
+    catch
+        # All or built-in propagators have `timing_data`, but custom
+        # propagators might not (it's not part of the required interface).
+        # Thus, we fail silently.
     end
 end
 

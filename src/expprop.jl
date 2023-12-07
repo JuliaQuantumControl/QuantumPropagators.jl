@@ -5,6 +5,7 @@ export ExpPropWrk, expprop!
 
 using LinearAlgebra
 import StaticArrays
+using TimerOutputs: @timeit_debug, TimerOutput
 
 
 """
@@ -18,8 +19,9 @@ Initializes the workspace for the propagation of a vector `v0`
 """
 struct ExpPropWrk{T}
     v::T
-    function ExpPropWrk(v0::T) where {T}
-        new{T}(similar(v0))
+    timing_data::TimerOutput
+    function ExpPropWrk(v0::T; _timing_data=TimerOutput()) where {T}
+        new{T}(similar(v0), _timing_data)
     end
 end
 
@@ -39,8 +41,12 @@ Keyword arguments besides `func` are ignored.
 """
 function expprop!(Ψ, H, dt, wrk; func=(H_dt -> exp(-1im * H_dt)), _...)
     copyto!(wrk.v, Ψ)
-    U = func(H * dt)
-    mul!(Ψ, U, wrk.v)
+    @timeit_debug wrk.timing_data "matrix exponentiation" begin
+        U = func(H * dt)
+    end
+    @timeit_debug wrk.timing_data "matrix-vector product" begin
+        mul!(Ψ, U, wrk.v)
+    end
 end
 
 
@@ -53,7 +59,12 @@ evaluates `Ψ_out = func(H*dt) Ψ` as in [`expprop!`](@ref), but not acting
 in-place.
 """
 function expprop(Ψ, H, dt, wrk; func=(H_dt -> exp(-1im * H_dt)), _...)
-    return func(H * dt) * Ψ
+    @timeit_debug wrk.timing_data "matrix exponentiation" begin
+        U = func(H * dt)
+    end
+    @timeit_debug wrk.timing_data "matrix-vector product" begin
+        return U * Ψ
+    end
 end
 
 end

@@ -95,13 +95,19 @@ mutable struct ChebyWrk{ST,CFS,FT<:AbstractFloat}
     dt::FT
     limit::FT
     timing_data::TimerOutput
-    function ChebyWrk(Ψ::ST, Δ::FT, E_min::FT, dt::FT; limit::FT=1e-12) where {ST,FT}
+    function ChebyWrk(
+        Ψ::ST,
+        Δ::FT,
+        E_min::FT,
+        dt::FT;
+        limit::FT=1e-12,
+        _timing_data=TimerOutput()
+    ) where {ST,FT}
         v0::ST = similar(Ψ)
         v1::ST = similar(Ψ)
         v2::ST = similar(Ψ)
         coeffs = cheby_coeffs(Δ, dt; limit=limit)
         n_coeffs = length(coeffs)
-        timing_data = TimerOutput()
         new{ST,typeof(coeffs),FT}(
             v0,
             v1,
@@ -112,7 +118,7 @@ mutable struct ChebyWrk{ST,CFS,FT<:AbstractFloat}
             E_min,
             dt,
             limit,
-            timing_data
+            _timing_data
         )
     end
 end

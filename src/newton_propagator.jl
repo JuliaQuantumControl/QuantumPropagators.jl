@@ -6,21 +6,22 @@ using TimerOutputs: reset_timer!, @timeit_debug
 This is a [`PWCPropagator`](@ref).
 """
 mutable struct NewtonPropagator{GT,OT,ST} <: PWCPropagator
-    generator::GT
+    const generator::GT
     state::ST
     t::Float64  # time at which current `state` is defined
     n::Int64 # index of next interval to propagate
-    tlist::Vector{Float64}
+    const tlist::Vector{Float64}
     parameters::AbstractDict
     controls
     genop::OT
-    wrk::Newton.NewtonWrk{ST}
+    const wrk::Newton.NewtonWrk{ST}
     backward::Bool
     inplace::Bool
     func::Function
     norm_min::Float64
     relerr::Float64
     max_restarts::Int64
+    const timing_data::TimerOutput
 end
 
 set_t!(propagator::NewtonPropagator, t) = _pwc_set_t!(propagator, t)
@@ -78,7 +79,8 @@ function init_prop(
     G = _pwc_get_max_genop(generator, controls, tlist)
 
     parameters = _pwc_process_parameters(parameters, controls, tlist)
-    wrk = Newton.NewtonWrk(state; m_max=m_max)
+    timing_data = TimerOutput()
+    wrk = Newton.NewtonWrk(state; m_max=m_max, _timing_data=timing_data)
     n = 1
     t = tlist[1]
     if backward
@@ -104,7 +106,8 @@ function init_prop(
         func,
         norm_min,
         relerr,
-        max_restarts
+        max_restarts,
+        timing_data,
     )
 end
 
@@ -113,19 +116,8 @@ init_prop(state, generator, tlist, method::Val{:newton}; kwargs...) =
     init_prop(state, generator, tlist, Val(:Newton); kwargs...)
 
 
-function reinit_prop!(propagator::NewtonPropagator, state; _...)
-    set_state!(propagator, state)
-    if propagator.backward
-        set_t!(propagator, propagator.tlist[end])
-    else
-        set_t!(propagator, propagator.tlist[begin])
-    end
-    reset_timer!(propagator.wrk.timing_data)
-end
-
-
 function prop_step!(propagator::NewtonPropagator)
-    @timeit_debug propagator.wrk.timing_data "prop_step!" begin
+    @timeit_debug propagator.timing_data "prop_step!" begin
         Ψ = propagator.state
         H = propagator.genop
         n = propagator.n  # index of interval we're going to propagate

@@ -77,7 +77,7 @@ In any subsequent propagation, we could access the timing data in a `callback` t
 ```@example profiling
 function show_timing_data(propagator, args...)
     if propagator.t == tlist[end]
-        show(propagator.wrk.timing_data, compact=true)
+        show(propagator.timing_data, compact=true)
     end
 end
 
@@ -94,7 +94,7 @@ propagator = init_prop(Ψ₀, H, tlist; method=Cheby)
 for step ∈ 1:(length(tlist)-1)
     prop_step!(propagator)
 end
-show(propagator.wrk.timing_data, compact=true)
+show(propagator.timing_data, compact=true)
 ```
 
 The reported runtimes here are less important than the number of function calls and the runtime percentages. In this case, the timing data shows that the propagation is dominated by the matrix-vector products (applying the Hamiltonian to the state), as it should. The percentage would go to 100% for larger Hilbert spaces.

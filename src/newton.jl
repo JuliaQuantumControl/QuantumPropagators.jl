@@ -34,7 +34,7 @@ mutable struct NewtonWrk{T}
     restarts::Int64
     m_max::Int64
     timing_data::TimerOutput
-    function NewtonWrk(v0::T; m_max::Int64=10) where {T}
+    function NewtonWrk(v0::T; m_max::Int64=10, _timing_data=TimerOutput()) where {T}
         if m_max <= 2
             error("Newton propagation requires m_max > 2")
         end
@@ -44,7 +44,6 @@ mutable struct NewtonWrk{T}
                 error("Newton propagation requires state dimension > 2")
             end
         end
-        timing_data = TimerOutput()
         new{T}(
             T[similar(v0) for _ = 1:m_max+1], # arnoldi_vecs
             similar(v0),                       # v
@@ -55,7 +54,7 @@ mutable struct NewtonWrk{T}
             0,                                 # n_leja
             0,                                 # restarts
             m_max,
-            timing_data,
+            _timing_data,
         )
     end
 end
