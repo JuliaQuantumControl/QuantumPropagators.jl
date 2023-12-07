@@ -79,7 +79,7 @@ function specrange(H, method::Val{:arnoldi}; kwargs...)
     R = ritzvals(H, state, m_min, m_max; prec=prec, norm_min=norm_min)
     E_min = real(R[1])
     E_max = real(R[end])
-    if enlarge
+    if enlarge && (length(R) > 1)
         # We want to overestimate the spec.rad., not underestimate it, so we
         # use the distance to the next eigenvalues as a buffer
         E_min = 2 * E_min - real(R[2])
@@ -129,8 +129,8 @@ end
 R = ritzvals(G, state, m_min, m_max=2*m_min; prec=1e-5, norm_min=1e-15)
 ```
 
-calculates a complex vector `R` of at least `m_min` and at most `m_max` Ritz
-values.
+calculates a complex vector `R` of at least `m_min` (assuming a sufficient
+Krylov dimension) and at most `m_max` Ritz values.
 """
 function ritzvals(G, state, m_min, m_max=2 * m_min; prec=1e-5, norm_min=1e-15)
     if m_max <= m_min
@@ -145,8 +145,7 @@ function ritzvals(G, state, m_min, m_max=2 * m_min; prec=1e-5, norm_min=1e-15)
     # the values for order m are already precise enough
     m₀ = m - 1
     m₀ = arnoldi!(Hess, q, m₀, state, G; extended=false, norm_min=norm_min)
-    @assert m₀ > 1
-    eigenvals = diagonalize_hessenberg_matrix(Hess, m)
+    eigenvals = diagonalize_hessenberg_matrix(Hess, m₀)
     v̲r₀ = minimum(real(eigenvals))
     v̄r₀ = maximum(real(eigenvals))
     v̄i₀ = maximum(abs.(imag(eigenvals)))

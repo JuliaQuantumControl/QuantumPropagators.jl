@@ -90,7 +90,7 @@ B(t; t_0, T) =
 
 for a scalar `t`, with $a$ = 0.16.
 
-See <http://en.wikipedia.org/wiki/Window_function#Blackman_windows>
+See <https://en.wikipedia.org/wiki/Window_function#Blackman_windows>
 
 A Blackman shape looks nearly identical to a Gaussian with a 6-sigma
 interval between `t₀` and `T`.  Unlike the Gaussian, however, it will go

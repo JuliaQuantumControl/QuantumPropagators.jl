@@ -56,7 +56,7 @@ for the intervals. A general piecewise propagator might use interpolation to
 obtain actual amplitudes within any given time interval.
 
 When the amplitudes *are* piecewise-constant, the propagator should be a
-concrete incantation of a [`PWCPropagator`](@ref).
+concrete instantiation of a [`PWCPropagator`](@ref).
 """
 abstract type PiecewisePropagator <: AbstractPropagator end
 
@@ -156,7 +156,8 @@ time grid `tlist` under the time-dependent generator (Hamiltonian/Liouvillian)
   (`Symbol`), but the recommended usage is to pass a module implementing the
   propagation method, e.g., `using QuantumPropagators: Cheby; method = Cheby`.
   Passing a module ensures that the code implementing the method is correctly
-  loaded.
+  loaded. This is particularly important for propagators using third-party
+  backends, like with `method=OrdinaryDiffEq`.
 
 # Optional keyword arguments
 
@@ -172,8 +173,11 @@ time grid `tlist` under the time-dependent generator (Hamiltonian/Liouvillian)
   automatic differentiation.
 * `piecewise`: If given as a boolean, `true` enforces that the resulting
   propagator is a [`PiecewisePropagator`](@ref), and `false` enforces that it
-  not a [`PiecewisePropagator`](@ref)
-* `pwc`: Like `piecewise`, for for the stronger [`PWCPropagator`](@ref)
+  not a [`PiecewisePropagator`](@ref). For the default `piecewise=nothing`,
+  whatever type of propagation is the default for the given `method` will be
+  used. Throw an error if the given `method` does not support the required type
+  of propagation.
+* `pwc`: Like `piecewise`, but for the stronger [`PWCPropagator`](@ref).
 
 All other `kwargs` are method-dependent and are ignored for methods that do not
 support them.
@@ -195,8 +199,8 @@ argument.
 
 * [`reinit_prop!`](@ref) — Re-initialize a propagator
 * [`propagate`](@ref) — Higher-level propagation interface
-* `QuantumPropagators.Interfaces.check_propagator` — a function to verify the
-  interface described above.
+* [`check_propagator](@ref QuantumPropagators.Interfaces.check_propagator)
+  — a function to verify the interface described above.
 """
 function init_prop(
     state,

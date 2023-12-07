@@ -35,6 +35,8 @@ function enable_timings()
     enable_debug_timings(Cheby)
     enable_debug_timings(Newton)
     enable_debug_timings(Arnoldi)
+    extmod = Base.get_extension(@__MODULE__, :QuantumPropagatorsODEExt)
+    isnothing(extmod) || enable_debug_timings(extmod)
     return timings_enabled()
 end
 
@@ -54,6 +56,10 @@ function timings_enabled()
     enabled &= @eval getfield(Cheby, :timeit_debug_enabled)()
     enabled &= @eval getfield(Newton, :timeit_debug_enabled)()
     enabled &= @eval getfield(Arnoldi, :timeit_debug_enabled)()
+    extmod = Base.get_extension(@__MODULE__, :QuantumPropagatorsODEExt)
+    if !isnothing(extmod)
+        enabled &= extmod.eval(:(timeit_debug_enabled()))
+    end
     return enabled
 end
 
@@ -78,5 +84,7 @@ function disable_timings()
     disable_debug_timings(Cheby)
     disable_debug_timings(Newton)
     disable_debug_timings(Arnoldi)
+    extmod = Base.get_extension(@__MODULE__, :QuantumPropagatorsODEExt)
+    isnothing(extmod) || disable_debug_timings(extmod)
     return timings_enabled()
 end

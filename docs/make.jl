@@ -1,6 +1,8 @@
 using QuantumPropagators
+using QuantumPropagators: AbstractPropagator, set_t!, set_state!
 using Documenter
 using Pkg
+using OrdinaryDiffEq  # ensure ODE extension is loaded
 using DocumenterCitations
 
 DocMeta.setdocmeta!(
@@ -22,10 +24,19 @@ include("generate_api.jl")
 
 bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:numeric)
 
+warnonly = [:linkcheck,]
+if get(ENV, "DOCUMENTER_WARN_ONLY", "0") == "1"  # cf. test/init.jl
+    warnonly = true
+end
+
+
 makedocs(;
     plugins=[bib],
     authors=AUTHORS,
     sitename="QuantumPropagators.jl",
+    # Link checking is disabled in REPL, see `devrepl.jl`.
+    linkcheck=(get(ENV, "DOCUMENTER_CHECK_LINKS", "1") != "0"),
+    warnonly,
     format=Documenter.HTML(;
         prettyurls=true,
         canonical="https://juliaquantumcontrol.github.io/QuantumPropagators.jl",
@@ -38,10 +49,6 @@ makedocs(;
         "Dynamical Generators" => "generators.md",
         "Propagation Methods" => "methods.md",
         "Expectation Values" => "storage.md",
-        hide("Examples" => joinpath("examples", "index.md"), [
-        # "Example 1" => joinpath("examples", "1.md"),
-        # "Example 2" => joinpath("examples", "2.md"),
-        ]),
         "Howtos" => "howto.md",
         hide("Benchmarks" => "benchmarks.md", [joinpath("benchmarks", "profiling.md")]),
         "API" => "api/quantumpropagators.md",

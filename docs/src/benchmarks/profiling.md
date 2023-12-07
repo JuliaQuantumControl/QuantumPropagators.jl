@@ -1,7 +1,3 @@
-```@meta
-CurrentModule = QuantumPropagators
-```
-
 # Profiling Howto
 
 To choose an appropriate propagation method and parameters for a given problem, it is essential to benchmark and profile the propagation.

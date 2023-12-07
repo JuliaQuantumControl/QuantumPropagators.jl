@@ -23,10 +23,6 @@ function clean(; distclean=false, _exit=true)
         append!(CLEAN, _glob(joinpath(ROOT, folder), ".cov"))
     end
     append!(CLEAN, _glob(joinpath(ROOT, "src", "interfaces"), ".cov"))
-    append!(
-        CLEAN,
-        _glob_star(joinpath(ROOT, "docs", "src", "examples"), except=["index.md"])
-    )
     _push!(CLEAN, joinpath(ROOT, "coverage"))
     _push!(CLEAN, joinpath(ROOT, "docs", "src", "api", "quantumpropagators.md"))
     _push!(CLEAN, joinpath(ROOT, "docs", "build"))
@@ -40,7 +36,6 @@ function clean(; distclean=false, _exit=true)
         _push!(DISTCLEAN, joinpath(joinpath(ROOT, folder), "Manifest.toml"))
     end
     _push!(DISTCLEAN, joinpath(ROOT, "docs", "Project.toml"))
-    _push!(DISTCLEAN, joinpath(ROOT, "docs", "src", "examples", ".ipynb_checkpoints"))
     _push!(DISTCLEAN, joinpath(ROOT, ".JuliaFormatter.toml"))
     ###########################################################################
 

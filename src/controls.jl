@@ -1,7 +1,8 @@
 module Controls
 
 export discretize, discretize_on_midpoints
-export get_controls
+export get_controls, get_parameters
+export ParameterizedFunction
 export get_tlist_midpoints
 export evaluate, evaluate!, substitute
 
@@ -327,10 +328,14 @@ function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict=IdDict())
 end
 
 
-function evaluate(control::Vector, t::Float64; kwargs...)
-    error(
-        "`evaluate(control::Vector, t::Float64)` is invalid. Use e.g. `evaluate(…, tlist, n)`."
-    )
+function evaluate(control::Vector, t::Float64; vals_dict=IdDict())
+    if haskey(vals_dict, control)
+        return vals_dict[control]
+    else
+        error(
+            "`evaluate(control::Vector, t::Float64)` is invalid. Use e.g. `evaluate(…, tlist, n)`."
+        )
+    end
 end
 
 
@@ -452,5 +457,111 @@ function substitute(generator::Tuple, replacements::AbstractDict)
     return Tuple(new_generator)
 end
 
+
+"""Obtain analytic parameters of the given `control`.
+
+```julia
+parameters = get_parameters(control)
+```
+
+obtains `parameters` as a `Vector{Float64}` containing any tunable analytic
+parameters associated with the `control`.
+
+Mutating the resulting vector must directly affect the control in any
+subsequent call to [`evaluate`](@ref). That is, the values in `parameters`
+should alias values inside the `control`.
+
+Note that the `control` must be an object specifically designed to have
+analytic parameters. Typically, it should be implemented as a subtype of
+[`ParameterizedFunction`](@ref). For a simple function `ϵ(t)` or a vector of
+pulse values, which are the default types of controls discussed in the
+documentation of [`hamiltonian`](#QuantumPropagators.Generators.hamiltonian),
+the `get_parameters` function will return an empty vector.
+
+The `parameters` may be used as part of the `parameters`
+attribute of a propagator for time-continuous dynamics, like a general ODE
+solver, or in an optimization that tunes analytic control parameters, e.g.,
+with a Nelder-Mead method. Examples might include the widths, peak amplitudes,
+and times of a superposition of Gaussians [MachnesPRL2018](@cite), cf. the
+example of a [`ParameterizedFunction`](@ref), or the amplitudes associated with
+spectral components in a random truncated basis [CanevaPRA2011](@cite).
+
+The `parameters` are not intended for optimization methods such as
+[GRAPE](https://juliaquantumcontrol.github.io/GRAPE.jl/stable/) or
+[Krotov](https://juliaquantumcontrol.github.io/Krotov.jl/stable/) that
+fundamentally use a piecewise-constant control ansatz. In the context of such
+methods, the "control parameters" are always the amplitudes of the `control` at
+the mid-points of the time grid, as obtained by
+[`discretize_on_midpoints`](@ref), and `get_parameters` is ignored.
+"""
+function get_parameters(control)
+    return Float64[]
+end
+
+
+"""
+Abstract type for function-like objects with [`parameters`](@ref get_parameters).
+
+A struct that is an implementation of a `ParameterizedFunction`:
+
+* must have an (internal) `parameters` field that is a vector of floats,
+* must be [callable](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects)
+  with a single float argument,
+* may define getters and setters for referencing the values in `parameters`
+  with convenient names.
+
+The `parameters` field of any `ParameterizedFunction` can be accessed via
+[`get_parameters`](@ref).
+
+# Example
+
+```jldoctest
+using QuantumPropagators.Controls: ParameterizedFunction, get_parameters
+
+struct GaussianControl <: ParameterizedFunction
+    parameters::Vector{Float64}
+    GaussianControl(; A=1.0, t0=0.0, t₀=t0, sigma=1.0, σ=sigma) =
+        new(Float64[A, t₀, σ])
+end
+
+function Base.propertynames(g::GaussianControl, private::Bool=false)
+    names = (:A, :t0, :t₀, :sigma, :σ)
+    return private ? Tuple(union(names, fieldnames(GaussianControl))) : names
+end
+
+function Base.getproperty(g::GaussianControl, name::Symbol)
+    index = Dict(:A => 1, :t0 => 2, :t₀ => 2, :sigma => 3, :σ => 3)
+    return  get_parameters(g)[index[name]]
+end
+
+function Base.setproperty!(g::GaussianControl, name::Symbol, value)
+    index = Dict(:A => 1, :t0 => 2, :t₀ => 2, :sigma => 3, :σ => 3)
+    get_parameters(g)[index[name]] = value
+end
+
+function (control::GaussianControl)(t)
+    A, t₀, σ = get_parameters(control)
+    return A * exp(- (t - t₀)^2 / (2 * σ^2))
+end
+
+# usage
+
+gaussian = GaussianControl(A=2.0, σ=0.5)
+gaussian.t0 = 5  # shift center from original 0.0
+
+round(gaussian(4.5); digits=3)
+
+# output
+
+1.213
+```
+
+"""
+abstract type ParameterizedFunction <: Function end
+
+
+function get_parameters(control::ParameterizedFunction)
+    return getfield(control, :parameters)
+end
 
 end

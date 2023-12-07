@@ -17,8 +17,8 @@ verifies that the `propagator` matches the interface described for an
 [`AbstractPropagator`](@ref). The `propagator` must have been freshly
 initialized with [`init_prop`](@ref).
 
-* `propagator` must have the properties `state`, `tlist`, `t`, `backward`, and
-  `inplace`
+* `propagator` must have the properties `state`, `tlist`, `t`, `parameters`,
+  `backward`, and `inplace`
 * `propagator.state` must be a valid state (see [`check_state`](@ref)), with
   support for in-place operations (`for_mutable_state=true`) if
   `propagator.inplace` is true.

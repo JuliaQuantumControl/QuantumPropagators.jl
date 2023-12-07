@@ -29,6 +29,8 @@ include("cheby_propagator.jl")
 include("newton_propagator.jl")
 include("exp_propagator.jl")
 
+include("ode_function.jl")
+
 #! format: off
 module Interfaces
     export check_operator, check_state, check_tlist, check_amplitude

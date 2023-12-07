@@ -31,7 +31,7 @@ the input `m`, except when the Krylov dimension of `H` starting from `Ψ` is
 less then `m`. E.g., if `Ψ` is an eigenstate of `H`, the returned `m` will
 be 1.
 
-See <http://en.wikipedia.org/wiki/Arnoldi_iteration> for a description of
+See <https://en.wikipedia.org/wiki/Arnoldi_iteration> for a description of
 the algorithm.
 
 # Arguments
