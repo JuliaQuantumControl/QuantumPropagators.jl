@@ -4,6 +4,7 @@ export specrange
 
 using ..Arnoldi: arnoldi!, diagonalize_hessenberg_matrix, extend_arnoldi!
 using LinearAlgebra
+using Random: GLOBAL_RNG
 
 
 """Calculate the spectral range of a Hamiltonian `H` on the real axis.
@@ -25,8 +26,12 @@ specrange(H, method; kwargs...)
 for the different methods.
 
 The default `method=:auto` chooses the best method for the given `H`. This is
-`:diag` for small matrices, and `:arnoldi` otherwise. Keyword arguments not
-relevant to the underlying implementation will be ignored.
+`:diag` for small matrices, and `:arnoldi` otherwise. If both `E_min` and
+`E_max` are given in the `kwargs`, those will be returned directly
+(`method=:manual`).
+
+Keyword arguments not relevant to the underlying implementation will be
+ignored.
 """
 function specrange(H; method=Val(:auto), kwargs...)
     return specrange(H, method; kwargs...)
@@ -38,6 +43,9 @@ end
 
 
 function specrange(H, method::Val{:auto}; kwargs...)
+    if haskey(kwargs, :E_min) && haskey(kwargs, :E_max)
+        return specrange(H, Val(:manual); kwargs...)
+    end
     if hasmethod(size, (typeof(H),)) && hasmethod(Array, (typeof(H),))
         if size(H)[1] <= 32
             # TODO: benchmark what a good cross-over point from exact
@@ -53,8 +61,16 @@ end
 
 """
 ```julia
-E_min, E_max = specrange(H, :arnoldi; state=random_state(H), m_min=20,
-                         m_max=60, prec=1e-3, norm_min=1e-15, enlarge=true)
+E_min, E_max = specrange(
+    H, :arnoldi;
+    rng=Random.GLOBAL_RNG,
+    state=random_state(H; rng),
+    m_min=20,
+    m_max=60,
+    prec=1e-3,
+    norm_min=1e-15,
+    enlarge=true
+)
 ```
 
 uses [Arnoldi iteration](https://en.wikipedia.org/wiki/Arnoldi_iteration) with
@@ -67,9 +83,14 @@ If `enlarge=true` (default) the returned `E_min` and `E_max` will be enlarged
 via a heuristic to slightly over-estimate the spectral radius instead of
 under-estimating it.
 """
-function specrange(H, method::Val{:arnoldi}; kwargs...)
+function specrange(
+    H,
+    method::Val{:arnoldi};
+    rng=GLOBAL_RNG,
+    state=random_state(H; rng),
+    kwargs...
+)
 
-    state = get(kwargs, :state, random_state(H))
     m_max = get(kwargs, :m_max, 60)
     m_min = max(5, min(get(kwargs, :m_min, 25), m_max - 1))
     prec = get(kwargs, :prec, 1e-3)
@@ -105,19 +126,31 @@ function specrange(H, method::Val{:diag}; kwargs...)
 end
 
 
+"""
+```julia
+E_min, E_max = specrange(H, :manual; E_min, E_max)
+```
+
+directly returns the given `E_min` and `E_max` without considering `H`.
+"""
+function specrange(H, method::Val{:manual}; E_min, E_max, _...)
+    return float(E_min), float(E_max)
+end
+
+
 """Random normalized quantum state.
 
 ```julia
-    Ψ = random_state(H)
+    Ψ = random_state(H; rng=Random.GLOBAL_RNG)
 ```
 
 returns a random normalized state compatible with the Hamiltonian `H`. This is
 intended to provide a starting vector for estimating the spectral radius of `H`
 via an Arnoldi method.
 """
-function random_state(H)
+function random_state(H; rng=GLOBAL_RNG)
     N = size(H)[2]
-    Ψ = rand(N) .* exp.((2π * im) .* rand(N))
+    Ψ = rand(rng, N) .* exp.((2π * im) .* rand(rng, N))
     Ψ ./= norm(Ψ)
     return Ψ
 end

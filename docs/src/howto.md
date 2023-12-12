@@ -1,5 +1,12 @@
 # Howtos
 
+```math
+\gdef\op#1{\hat{#1}}
+\gdef\Liouvillian{\mathcal{L}}
+\gdef\Re{\operatorname{Re}}
+\gdef\Im{\operatorname{Im}}
+```
+
 ## How to implement a new propagation method
 
 * Define a new sub-type of [`AbstractPropagator`](@ref QuantumPropagators.AbstractPropagator) type that is unique to the propagation method, e.g. `MyNewMethodPropagator`. If appropriate, sub-type [`PiecewisePropagator`](@ref QuantumPropagators.PiecewisePropagator) or [`PWCPropagator`](@ref QuantumPropagators.PWCPropagator).
@@ -30,3 +37,12 @@
 * Implement the remaining methods in [The Propagator interface](@ref).
 
 * Test the implementation by instantiating a `propagator` and calling [`QuantumPropagators.Interfaces.check_propagator`](@ref) on it.
+
+
+## How to specify the spectral range for a Chebychev propagation
+
+A propagation with [`method=Cheby`](@ref method_cheby) requires that the dynamic generator ``\op{H}(t)`` be normalized to a spectral range of [-1, 1]. That is, the method needs a (pessimistic) estimate of the "spectral envelope": the minimum and maximum eigenvalue of ``\op{H}(t)`` for any point `t` on the interval of the propagation time grid `tlist`.
+
+By default, the Chebychev propagator uses heuristics to estimate  this spectral envelope. If the spectral envelope is known (either analytically of via a separate numerical exploration of the eigenvalues over the full range of possible controls), the minimum and maximum eigenvalues of ``\op{H}(t)`` can be passed as keyword arguments `E_min` and `E_max` to [`propagate`](@ref) or [`init_prop`](@ref). Since the Chebychev method is only defined for Hermitian generators, `E_min` and `E_max` must be real values. Both values must be given.
+
+Manually specifying `E_min` and `E_max` works with the default `specrange_method=:auto` as well as with the explicit `specrange_method=:manual`. When calculating the Chebychev coefficients, the given values may still be enlarged by the default `specrange_buffer` keyword argument in [`init_prop`](@ref). If `E_min` and `E_max` should be used *exactly*, pass `specrange_buffer=0`.

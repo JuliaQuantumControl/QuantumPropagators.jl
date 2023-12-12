@@ -78,7 +78,10 @@ initializes a [`ChebyPropagator`](@ref).
 * `uniform_dt_tolerance=1e-12`: How much the intervals of `tlist` are allowed
   to vary while still being considered constant.
 * `specrange_kwargs`: All further keyword arguments are passed to the
-  [`specrange`](@ref QuantumPropagators.SpectralRange.specrange) function
+  [`specrange`](@ref QuantumPropagators.SpectralRange.specrange) function. Most
+  notably, with the default `specrange_method=:auto` (or
+  `specrange_method=:manual`), passing `E_min` and `E_max` allows to manually
+  specify the spectral range of `generator`.
 """
 function init_prop(
     state,
