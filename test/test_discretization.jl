@@ -1,6 +1,36 @@
 using Test
 using QuantumPropagators.Controls
 using QuantumPropagators.Shapes: blackman
+using OffsetArrays: Origin
+using IOCapture: IOCapture
+
+
+@testset "get_tlist_midpoints" begin
+
+    tlist = Origin(0)([1.0, 3.0, 5.0, 6.0, 7.0])
+    @test get_tlist_midpoints(tlist) == [1.0, 4.0, 5.5, 7.0]
+    @test get_tlist_midpoints(tlist; preserve_start=false) == [2.0, 4.0, 5.5, 7.0]
+    @test get_tlist_midpoints(tlist; preserve_end=false) == [1.0, 4.0, 5.5, 6.5]
+    @test get_tlist_midpoints(tlist; preserve_start=false, preserve_end=false) ==
+          [2.0, 4.0, 5.5, 6.5]
+
+    c = IOCapture.capture(rethrow=Union{}) do
+        get_tlist_midpoints([1.0, 2.0])
+    end
+    @test c.value isa ArgumentError
+
+    c = IOCapture.capture(rethrow=Union{}) do
+        get_tlist_midpoints([0.0, 0.0, 0.0], preserve_start=false, preserve_end=false)
+    end
+    @test c.value isa AssertionError
+
+    c = IOCapture.capture(rethrow=Union{}) do
+        get_tlist_midpoints([0.0, 1.0, 1.0, 0.0])
+    end
+    @test c.value isa AssertionError
+
+end
+
 
 @testset "discretize/discretize_on_midpoints" begin
     tlist = collect(range(0, 10, length=20))

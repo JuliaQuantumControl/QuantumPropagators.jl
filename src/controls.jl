@@ -18,11 +18,11 @@ values = discretize(control, tlist; via_midpoints=true)
 discretizes the given `control` to a Vector of values defined on the points of
 `tlist`.
 
-If `control` is a function, it will will first be evaluated at the midpoint of
-`tlist`, see [`discretize_on_midpoints`](@ref), and then the values on the
-midpoints are converted to values on `tlist`. This discretization is more
-stable than directly evaluating the control function at the values of `tlist`,
-and ensures that repeated round-trips between [`discretize`](@ref) and
+If `control` is a function, it is first evaluated at the midpoint of `tlist`,
+see [`discretize_on_midpoints`](@ref), and then the values on the midpoints are
+converted to values on `tlist`. This discretization is more stable than
+directly evaluating the control function at the values of `tlist`, and ensures
+that repeated round-trips between [`discretize`](@ref) and
 [`discretize_on_midpoints`](@ref) can be done safely, see the note in the
 documentation of [`discretize_on_midpoints`](@ref).
 
@@ -34,10 +34,11 @@ a zig-zag on the intervals of `tlist`).
 
 If `control` is a vector, a copy of `control` will be returned if it is of the
 same length as `tlist`. Otherwise, `control` must have one less value than
-`tlist`, and is assumed to be defined on the midpoins of `tlist`. In that case,
-[`discretize`](@ref) acts as the inverse of [`discretize_on_midpoints`](@ref).
-See [`discretize_on_midpoints`](@ref) for how control values on `tlist` and
-control values on the intervals of `tlist` are related.
+`tlist`, and is assumed to be defined on the midpoints of `tlist`. In that
+case, [`discretize`](@ref) acts as the inverse of
+[`discretize_on_midpoints`](@ref). See [`discretize_on_midpoints`](@ref) for
+how control values on `tlist` and control values on the intervals of `tlist`
+are related.
 """
 function discretize(control::Function, tlist; via_midpoints=true)
     if via_midpoints
@@ -67,23 +68,49 @@ function discretize(control::Vector, tlist)
 end
 
 
-"""Shift time grid values the interval midpoints
+"""Shift time grid values to the interval midpoints
 
 ```julia
-tlist_midpoints = get_tlist_midpoints(tlist)
+tlist_midpoints = get_tlist_midpoints(
+    tlist; preserve_start=true, preserve_end=true
+)
 ```
 
-takes a vector `tlist` of length ``n`` and returns a vector of length ``n-1``
-containing the midpoint values of each interval. The intervals in `tlist` are
-not required to be uniform.
+takes a vector `tlist` of length ``n`` and returns a `Vector{Float64}` of
+length ``n-1`` containing the midpoint values of each interval. The intervals
+in `tlist` are not required to be uniform.
+
+By default, the first and last point of `tlist` is preserved, see
+[`discretize_on_midpoints`](@ref). This behavior can be disabled by passing
+`preserve_start` and `preserve_end` as `false` in order to use the midpoints of
+the first and last interval, respectively.
 """
-function get_tlist_midpoints(tlist)
-    tlist_midpoints = zeros(eltype(tlist), length(tlist) - 1)
-    tlist_midpoints[1] = tlist[1]
-    tlist_midpoints[end] = tlist[end]
+function get_tlist_midpoints(tlist::AbstractVector; preserve_start=true, preserve_end=true)
+    N = length(tlist)
+    if N < 3
+        @error "N = length(tlist) < 3" N
+        msg = "In `get_tlist_midpoints`, argument `tlist` must have a length of at least 3"
+        throw(ArgumentError(msg))
+    end
+    tlist_midpoints = zeros(Float64, N - 1)
+    if preserve_start
+        tlist_midpoints[1] = tlist[begin]
+    else
+        dt = float(tlist[begin+1] - tlist[begin])
+        @assert dt > 0.0
+        tlist_midpoints[1] = tlist[begin] + 0.5 * dt
+    end
+    if preserve_end
+        tlist_midpoints[end] = tlist[end]
+    else
+        dt = float(tlist[end] - tlist[end-1])
+        @assert dt > 0.0
+        tlist_midpoints[end] = tlist[end-1] + 0.5 * dt
+    end
     for i = 2:length(tlist_midpoints)-1
-        dt = tlist[i+1] - tlist[i]
-        tlist_midpoints[i] = tlist[i] + 0.5 * dt
+        dt = float(tlist[begin+i] - tlist[begin+i-1])
+        @assert dt > 0.0
+        tlist_midpoints[i] = tlist[begin+i-1] + 0.5 * dt
     end
     return tlist_midpoints
 end
@@ -144,7 +171,8 @@ If `control` is a function, the function will be directly evaluated at the
 midpoints marked as `x` in the above diagram..
 """
 function discretize_on_midpoints(control::T, tlist) where {T<:Function}
-    return discretize(control, get_tlist_midpoints(tlist); via_midpoints=false)
+    tlist_midpoints = get_tlist_midpoints(tlist)
+    return discretize(control, tlist_midpoints; via_midpoints=false)
 end
 
 function discretize_on_midpoints(control::Vector, tlist)
