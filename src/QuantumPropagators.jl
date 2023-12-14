@@ -1,5 +1,15 @@
 module QuantumPropagators
 
+
+const VERSION = let
+    project = joinpath(dirname(dirname(pathof(QuantumPropagators))), "Project.toml")
+    Base.include_dependency(project) # Retrigger precompilation when Project.toml changes
+    toml = read(project, String)
+    m = match(r"(*ANYCRLF)^version\s*=\s\"(.*)\"$"m, toml)
+    VersionNumber(m[1])
+end
+
+
 include("arnoldi.jl")   # submodule Arnoldi
 include("specrad.jl")   # submodule SpectralRange
 include("cheby.jl")     # submodule Cheby

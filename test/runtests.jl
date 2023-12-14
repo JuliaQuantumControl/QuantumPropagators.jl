@@ -5,6 +5,8 @@ using SafeTestsets
 # Note: comment outer @testset to stop after first @safetestset failure
 @time @testset verbose = true "QuantumPropagators" begin
 
+    @test v"0.1.0" < QuantumPropagators.VERSION < v"1.0.0"
+
     println("\n* Doctests:")
     @time @safetestset "Doctests" begin
         using QuantumPropagators, Test, Documenter

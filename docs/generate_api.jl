@@ -27,6 +27,7 @@ end
 _parentmodule(m, pkg) = parentmodule(m)
 _parentmodule(m::TimerOutputs.TimerOutput, pkg) = pkg
 _parentmodule(m::Number, pkg) = pkg
+_parentmodule(m::VersionNumber, pkg) = pkg
 
 
 """Return a list of Module instances for all the sub-modules of `pkg`.
