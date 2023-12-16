@@ -2,6 +2,12 @@ using QuantumPropagators
 using QuantumPropagators: AbstractPropagator, set_t!, set_state!
 using Documenter
 using Pkg
+if isdir("/Users/goerz/Documents/Programming/DocumenterInterLinks")
+    Pkg.develop(path="/Users/goerz/Documents/Programming/DocumenterInterLinks") # XXX
+else
+    Pkg.develop(url="https://github.com/goerz/DocumenterInterLinks.jl") # XXX
+end
+using DocumenterInterLinks
 using OrdinaryDiffEq  # ensure ODE extension is loaded
 using DocumenterCitations
 
@@ -33,6 +39,7 @@ end
 makedocs(;
     plugins=[bib],
     authors=AUTHORS,
+    version=VERSION,
     sitename="QuantumPropagators.jl",
     # Link checking is disabled in REPL, see `devrepl.jl`.
     linkcheck=(get(ENV, "DOCUMENTER_CHECK_LINKS", "1") != "0"),
@@ -58,4 +65,4 @@ makedocs(;
 
 println("Finished makedocs")
 
-deploydocs(; repo="github.com/JuliaQuantumControl/QuantumPropagators.jl")
+deploydocs(; repo="github.com/JuliaQuantumControl/QuantumPropagators.jl", push_preview=true)
