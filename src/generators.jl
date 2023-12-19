@@ -544,11 +544,22 @@ end
 
 Base.:*(O::Operator, α::Number) = α * O
 
-function Base.:*(O::Operator, Ψ)
-    Φ = copy(Ψ)
-    mul!(Φ, O, Ψ)
+
+# Not-in-place |Φ⟩ = c * Ô * |Ψ⟩
+@inline function _op_mul_psi(O::Operator, Ψ, c)
+    drift_offset = length(O.ops) - length(O.coeffs)
+    α = c
+    (drift_offset == 0) && (α *= O.coeffs[1])
+    Φ = α * O.ops[1] * Ψ
+    for i = 2:length(O.ops)
+        α = c
+        (i > drift_offset) && (α *= O.coeffs[i-drift_offset])
+        Φ = Φ + α * O.ops[i] * Ψ
+    end
     return Φ
 end
+
+Base.:*(O::Operator, Ψ) = _op_mul_psi(O, Ψ, 1.0)
 
 
 Base.convert(::Type{MT}, O::Operator) where {MT<:Matrix} = convert(MT, Array(O))
@@ -562,11 +573,7 @@ end
 Base.:*(O::ScaledOperator, α::Number) = α * O
 
 
-function Base.:*(O::ScaledOperator, Ψ)
-    Φ = copy(Ψ)
-    mul!(Φ, O, Ψ)
-    return Φ
-end
+Base.:*(O::ScaledOperator, Ψ) = _op_mul_psi(O.operator, Ψ, O.coeff)
 
 
 function LinearAlgebra.mul!(C, A::ScaledOperator, B, α, β)

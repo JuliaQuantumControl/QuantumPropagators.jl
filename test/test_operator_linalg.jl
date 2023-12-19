@@ -2,6 +2,7 @@ using Test
 using LinearAlgebra
 using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
 using QuantumPropagators.Interfaces: check_operator
+using StaticArrays: SMatrix, SVector
 
 using QuantumPropagators: Generator, Operator, ScaledOperator
 
@@ -40,6 +41,26 @@ using QuantumPropagators: Generator, Operator, ScaledOperator
     ϕ_expected = 2 * ϕ0 + (2 * H) * Ψ
     @test norm(ϕ - ϕ_expected) < 1e-12
 
+end
+
+
+@testset "Operator * Ψ" begin
+
+    N = 5
+    H₀ = SMatrix{N,N}(random_matrix(N; hermitian=true))
+    H₁ = SMatrix{N,N}(random_matrix(N; hermitian=true))
+    H₂ = SMatrix{N,N}(random_matrix(N; hermitian=true))
+
+    Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
+    H = H₀ + 2.1 * H₁ + 1.1 * H₂
+
+    @test norm(convert(Matrix{ComplexF64}, Op) - H) < 1e-12
+
+    Ψ = SVector{N}(random_state_vector(N))
+
+    ϕ = Op * Ψ
+    ϕ_expected = H * Ψ
+    @test norm(ϕ - ϕ_expected) < 1e-12
 
 end
 
@@ -197,6 +218,29 @@ end
     ϕ = copy(ϕ0)
     mul!(ϕ, Op, Ψ, 2.0, 2.0)
     ϕ_expected = 2 * ϕ0 + (2 * H) * Ψ
+    @test norm(ϕ - ϕ_expected) < 1e-12
+
+end
+
+
+@testset "ScaledOperator * Ψ" begin
+
+    N = 5
+    H₀ = SMatrix{N,N}(random_matrix(N; hermitian=true))
+    H₁ = SMatrix{N,N}(random_matrix(N; hermitian=true))
+    H₂ = SMatrix{N,N}(random_matrix(N; hermitian=true))
+
+    Op = 0.5 * Operator([H₀, H₁, H₂], [2.1, 1.1])
+    @test Op isa ScaledOperator
+
+    H = 0.5 * (H₀ + 2.1 * H₁ + 1.1 * H₂)
+
+    @test norm(convert(Matrix{ComplexF64}, Op) - H) < 1e-12
+
+    Ψ = SVector{N}(random_state_vector(N))
+
+    ϕ = Op * Ψ
+    ϕ_expected = H * Ψ
     @test norm(ϕ - ϕ_expected) < 1e-12
 
 end
