@@ -4,6 +4,7 @@ using Documenter
 using Pkg
 using OrdinaryDiffEq  # ensure ODE extension is loaded
 using DocumenterCitations
+using DocumenterInterLinks
 
 DocMeta.setdocmeta!(
     QuantumPropagators,
@@ -40,7 +41,15 @@ makedocs(;
     format=Documenter.HTML(;
         prettyurls=true,
         canonical="https://juliaquantumcontrol.github.io/QuantumPropagators.jl",
-        assets=String["assets/citations.css"],
+        assets=[
+            "assets/citations.css",
+            asset(
+                "https://juliaquantumcontrol.github.io/QuantumControl.jl/dev/assets/topbar/topbar.css"
+            ),
+            asset(
+                "https://juliaquantumcontrol.github.io/QuantumControl.jl/dev/assets/topbar/topbar.js"
+            ),
+        ],
         footer="[$NAME.jl]($GITHUB) v$VERSION docs powered by [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl)."
     ),
     pages=[
