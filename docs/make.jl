@@ -13,6 +13,13 @@ DocMeta.setdocmeta!(
     recursive=true
 )
 
+links = InterLinks(
+    "TimerOutputs" => (
+        "https://github.com/KristofferC/TimerOutputs.jl",
+        joinpath(@__DIR__, "src", "inventories", "TimerOutputs.toml")
+    )
+)
+
 PROJECT_TOML = Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "Project.toml"))
 VERSION = PROJECT_TOML["version"]
 NAME = PROJECT_TOML["name"]
@@ -32,7 +39,7 @@ end
 
 
 makedocs(;
-    plugins=[bib],
+    plugins=[bib, links],
     authors=AUTHORS,
     sitename="QuantumPropagators.jl",
     # Link checking is disabled in REPL, see `devrepl.jl`.

@@ -7,13 +7,12 @@ QuantumPropagators.enable_timings()
 ```
 
 enables certain portions of the package to collect
-[`TimerOutputs`](https://github.com/KristofferC/TimerOutputs.jl) internally.
+[`TimerOutputs`](@extref TimerOutputs readme) internally.
 This aids in profiling and benchmarking propagation methods.
 
 Specifically, after `enable_timings()`, for any [`ChebyPropagator`](@ref)
 or [`NewtonPropagator`](@ref), timing data will become available in
-`propagator.wrk.timing_data` (as a
-[`TimerOutput`](https://github.com/KristofferC/TimerOutputs.jl#usage)
+`propagator.wrk.timing_data` (as a [`TimerOutput`](@extref TimerOutputs usage)
 instance). This data is reset when the propagator is re-instantiated with
 [`init_prop`](@ref) or re-initialized with [`reinit_prop!`](@ref). This makes
 the data local to any call of [`propagate`](@ref).
@@ -21,8 +20,7 @@ the data local to any call of [`propagate`](@ref).
 Note that `enable_timings()` triggers recompilation, so
 [`propagate`](@ref) should be called at least twice to avoid
 compilation overhead in the timing data. There is still a [small
-overhead](https://github.com/KristofferC/TimerOutputs.jl#overhead) for
-collecting the timing data.
+overhead](@extref TimerOutputs overhead) for collecting the timing data.
 
 The collection of timing data can be disabled again
 with [`disable_timings`](@ref).
@@ -72,8 +70,8 @@ QuantumPropagators.disable_timings()
 
 disables the collection of timing data previously enabled with
 [`enable_timings`](@ref). This triggers recompilation to completely remove
-profiling from the code. That is, there is [zero
-cost](https://github.com/KristofferC/TimerOutputs.jl#overhead) when
+profiling from the code. That is, there is
+[zero cost](@extref TimerOutputs overhead) when
 the collection of timing data is disabled.
 
 Returns [`QuantumPropagators.timings_enabled()`](@ref timings_enabled), i.e.,
