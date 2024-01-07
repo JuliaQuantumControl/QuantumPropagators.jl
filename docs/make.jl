@@ -17,7 +17,11 @@ links = InterLinks(
     "TimerOutputs" => (
         "https://github.com/KristofferC/TimerOutputs.jl",
         joinpath(@__DIR__, "src", "inventories", "TimerOutputs.toml")
-    )
+    ),
+    # We'll use `@extref` for links from docstrings to sections so that the
+    # docstrings can also be rendered as part of the QuantumControl
+    # documentation.
+    "QuantumPropagators" => "https://juliaquantumcontrol.github.io/QuantumPropagators.jl/dev/"
 )
 
 PROJECT_TOML = Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "Project.toml"))

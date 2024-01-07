@@ -45,7 +45,7 @@ H = evaluate(f.generator, t; vals_dict=vals_dict)
 where `vals_dict` may be a dictionary mapping controls to values (set as the
 parameters `p` of the underlying ODE solver).
 
-If [`QuantumPropagators.enable_timings()` has been called](@ref TimerOutputs),
+If [`QuantumPropagators.enable_timings()` has been called](@extref QuantumPropagators TimerOutputs),
 profiling data is collected in `f.timing_data`.
 """
 function ode_function(generator::GT, tlist; c=-1im, _timing_data=TimerOutput()) where {GT}
