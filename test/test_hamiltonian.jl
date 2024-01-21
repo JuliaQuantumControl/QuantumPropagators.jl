@@ -53,7 +53,11 @@ _CT(::Operator{OT,CT}) where {OT,CT}  = CT
     @test H.ops[3] ≡ H₂
     @test H.amplitudes[1] ≡ ϵ₁
     @test H.amplitudes[2] ≡ ϵ₂
-    @test repr(H) == "Generator{Matrix{ComplexF64}, Function}(<3 ops>, <2 amplitudes>)"
+    @test startswith(repr(H), "Generator(Matrix{ComplexF64}")
+    repl_repr = repr("text/plain", H; context=(:limit => true))
+    @test startswith(repl_repr, "Generator with 3 ops and 2 amplitudes")
+    @test contains(repl_repr, "ops::Vector{Matrix{ComplexF64}}")
+    @test contains(repl_repr, "amplitudes::Vector{Function}")
 
     H = hamiltonian(H₀, (H₁, ϵ₁), (H₂, ϵ₁))
     @test H isa Generator
@@ -127,8 +131,11 @@ end
     @test H isa Generator
     @test _OT(H) == Matrix{ComplexF64}
     @test _AT(H) == Vector{Float64}
-    @test repr(H) ==
-          "Generator{Matrix{ComplexF64}, Vector{Float64}}(<3 ops>, <2 amplitudes>)"
+    @test startswith(repr(H), "Generator(Matrix{ComplexF64}")
+    repl_repr = repr("text/plain", H; context=(:limit => true))
+    @test startswith(repl_repr, "Generator with 3 ops and 2 amplitudes")
+    @test contains(repl_repr, "ops::Vector{Matrix{ComplexF64}}")
+    @test contains(repl_repr, "amplitudes::Vector{Vector{Float64}}")
 
 end
 
@@ -149,10 +156,14 @@ end
     @test H isa Generator
     @test _OT(H) == Matrix{ComplexF64}
     @test _AT(H) == Any
-    @test repr(H) == "Generator{Matrix{ComplexF64}, Any}(<3 ops>, <2 amplitudes>)"
+    @test startswith(repr(H), "Generator(Matrix{ComplexF64}")
 
     H = hamiltonian(nothing, (nothing, ϵ₁), (nothing, ϵ₂))
-    @test repr(H) == "Generator{Nothing, Function}(<3 ops>, <2 amplitudes>)"
+    @test startswith(repr(H), "Generator([nothing, nothing, nothing], Function[")
+    repl_repr = repr("text/plain", H; context=(:limit => true))
+    @test startswith(repl_repr, "Generator with 3 ops and 2 amplitudes")
+    @test contains(repl_repr, "ops::Vector{Nothing}")
+    @test contains(repl_repr, "amplitudes::Vector{Function}")
 
     logger = QuantumTestLogger()
     with_logger(logger) do
@@ -219,6 +230,10 @@ end
     #@test r"Error: evaluate.* for amplitude does not return a number" ∈ logger
     #@test "Warn: Collected amplitude #1 is invalid" ∈ logger
     #@test "Warn: Collected amplitude #2 is invalid" ∈ logger
-    @test repr(H) == "Generator{Any, Matrix{ComplexF64}}(<3 ops>, <2 amplitudes>)"
+    @test startswith(repr(H), "Generator(Any[ComplexF64[")
+    repl_repr = repr("text/plain", H; context=(:limit => true))
+    @test startswith(repl_repr, "Generator with 3 ops and 2 amplitudes")
+    @test contains(repl_repr, "ops::Vector{Any}")
+    @test contains(repl_repr, "amplitudes::Vector{Matrix{ComplexF64}}")
 
 end

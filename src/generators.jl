@@ -61,10 +61,27 @@ struct Generator{OT,AT}
 end
 
 function Base.show(io::IO, G::Generator{OT,AT}) where {OT,AT}
-    print(
-        io,
-        "Generator{$OT, $AT}(<$(length(G.ops)) ops>, <$(length(G.amplitudes)) amplitudes>)"
-    )
+    print(io, "Generator($(G.ops), $(G.amplitudes)")
+end
+
+function Base.summary(io::IO, G::Generator)
+    print(io, "Generator with $(length(G.ops)) ops and $(length(G.amplitudes)) amplitudes")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", G::Generator{OT,AT}) where {OT,AT}
+    Base.summary(io, G)
+    println(io, "\n ops::Vector{$OT}:")
+    for op in G.ops
+        print(io, "  ")
+        show(io, op)
+        print(io, "\n")
+    end
+    println(io, " amplitudes::Vector{$AT}:")
+    for ampl in G.amplitudes
+        print(io, "  ")
+        show(io, ampl)
+        print(io, "\n")
+    end
 end
 
 
@@ -85,7 +102,7 @@ constant `Number`. If the number of coefficients is less than the
 number of operators, the first `ops` are considered to have ``c_l = 1``.
 
 An `Operator` object would generally not be instantiated directly, but be
-obtained from a [`Generator`](@ref) via [`evaluate`](@ref).
+obtained from a (@ref) via [`evaluate`](@ref).
 """
 struct Operator{OT,CT<:Number}
 
@@ -103,9 +120,21 @@ struct Operator{OT,CT<:Number}
 
 end
 
-
 function Base.show(io::IO, O::Operator{OT,CT}) where {OT,CT}
-    print(io, "Operator{$OT, $CT}(<$(length(O.ops)) ops>, <$(length(O.coeffs)) coeffs>)")
+    print(io, "Operator($(O.ops), $(O.coeffs)")
+end
+
+function Base.summary(io::IO, O::Operator)
+    print(io, "Operator with $(length(O.ops)) ops and $(length(O.coeffs)) coeffs")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", O::Operator{OT,CT}) where {OT,CT}
+    Base.summary(io, O)
+    println(io, "\n ops::Vector{$OT}:")
+    for op in O.ops
+        println(io, "  $op")
+    end
+    println(io, " coeffs: $(O.coeffs)")
 end
 
 
@@ -178,9 +207,21 @@ struct ScaledOperator{CT<:Number,OT}
     end
 end
 
+function Base.summary(io::IO, O::ScaledOperator)
+    print(io, "ScaledOperator with coeff=$(O.coeff)")
+end
 
 function Base.show(io::IO, O::ScaledOperator{CT,OT}) where {CT,OT}
-    print(io, "ScaledOperator{$CT,$(nameof(OT))}($(O.coeff), …)")
+    print(io, "ScaledOperator($(O.coeff), $(O.operator))")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", O::ScaledOperator{CT,OT}) where {CT,OT}
+    Base.summary(io, O)
+    println(io, "\n operator.ops::$(typeof(O.operator.ops)):")
+    for op in O.operator.ops
+        println(io, "  $op")
+    end
+    println(io, " operator.coeffs: $(O.operator.coeffs)")
 end
 
 
@@ -230,7 +271,12 @@ hamiltonian(H₀, (H₀, ϵ₁))
 
 # output
 
-Generator{Matrix{ComplexF64}, typeof(ϵ₁)}(<2 ops>, <1 amplitudes>)
+Generator with 2 ops and 1 amplitudes
+ ops::Vector{Matrix{ComplexF64}}:
+  ComplexF64[0.0 + 0.0im 0.0 + 0.0im; 0.0 + 0.0im 1.0 + 0.0im]
+  ComplexF64[0.0 + 0.0im 0.0 + 0.0im; 0.0 + 0.0im 1.0 + 0.0im]
+ amplitudes::Vector{typeof(ϵ₁)}:
+  ϵ₁
 ```
 
 In general,
@@ -265,7 +311,11 @@ hamiltonian(H₀)
 ```jldoctest hamiltonian
 hamiltonian(H₀, (H₁, 2.0))
 # output
-Operator{Matrix{ComplexF64}, Float64}(<2 ops>, <1 coeffs>)
+Operator with 2 ops and 1 coeffs
+ ops::Vector{Matrix{ComplexF64}}:
+  ComplexF64[0.0 + 0.0im 0.0 + 0.0im; 0.0 + 0.0im 1.0 + 0.0im]
+  ComplexF64[0.0 + 0.0im 1.0 + 0.0im; 1.0 + 0.0im 0.0 + 0.0im]
+ coeffs: [2.0]
 ```
 
 The `hamiltonian` function may generate warnings if the `terms` are of an

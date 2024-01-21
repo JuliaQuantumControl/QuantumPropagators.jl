@@ -132,7 +132,11 @@ end
     @test norm(Array{ComplexF64}(Op) - H) < 1e-12
 
     Op = ScaledOperator(2, Operator([H₀, H₁, H₂], [2.1, 1.1]))
-    @test repr(Op) == "ScaledOperator{Int64,Operator}(2, …)"
+    @test startswith(repr(Op), "ScaledOperator(2, Operator(Matrix{ComplexF64}")
+    @test summary(Op) == "ScaledOperator with coeff=2"
+    repl_repr = repr("text/plain", Op; context=(:limit => true))
+    @test contains(repl_repr, "operator.ops::Vector{Matrix{ComplexF64}}")
+    @test contains(repl_repr, "operator.coeffs: [2.1, 1.1]")
     H = 2 * (H₀ + 2.1 * H₁ + 1.1 * H₂)
     @test eltype(Array(Op)) ≡ ComplexF64
     @test size(Op) == size(H)
