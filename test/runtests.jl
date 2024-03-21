@@ -78,6 +78,11 @@ using SafeTestsets
         include("test_propagate.jl")
     end
 
+    println("\n* Propagate Sequence (test_propagate_sequence.jl):")
+    @time @safetestset "Propagate Sequence" begin
+        include("test_propagate_sequence.jl")
+    end
+
     println("\n* Time-dependent observables (test_timedependent_observables.jl):")
     @time @safetestset "Time-dependent observables" begin
         include("test_timedependent_observables.jl")

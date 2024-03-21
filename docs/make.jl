@@ -2,16 +2,21 @@ using QuantumPropagators
 using QuantumPropagators: AbstractPropagator, set_t!, set_state!
 using Documenter
 using Pkg
-using OrdinaryDiffEq  # ensure ODE extension is loaded
+import OrdinaryDiffEq  # ensure ODE extension is loaded
 using DocumenterCitations
 using DocumenterInterLinks
 
-DocMeta.setdocmeta!(
-    QuantumPropagators,
-    :DocTestSetup,
-    :(using QuantumPropagators);
-    recursive=true
-)
+
+PROJECT_TOML = Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "Project.toml"))
+VERSION = PROJECT_TOML["version"]
+NAME = PROJECT_TOML["name"]
+AUTHORS = join(PROJECT_TOML["authors"], ", ") * " and contributors"
+GITHUB = "https://github.com/JuliaQuantumControl/QuantumPropagators.jl"
+
+DEV_OR_STABLE = "stable/"
+if endswith(VERSION, "dev")
+    DEV_OR_STABLE = "dev/"
+end
 
 links = InterLinks(
     "TimerOutputs" => (
@@ -21,14 +26,11 @@ links = InterLinks(
     # We'll use `@extref` for links from docstrings to sections so that the
     # docstrings can also be rendered as part of the QuantumControl
     # documentation.
-    "QuantumPropagators" => "https://juliaquantumcontrol.github.io/QuantumPropagators.jl/dev/"
+    "QuantumPropagators" => "https://juliaquantumcontrol.github.io/QuantumPropagators.jl/$DEV_OR_STABLE",
+    "QuantumControlBase" => "https://juliaquantumcontrol.github.io/QuantumControlBase.jl/$DEV_OR_STABLE",
 )
 
-PROJECT_TOML = Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "Project.toml"))
-VERSION = PROJECT_TOML["version"]
-NAME = PROJECT_TOML["name"]
-AUTHORS = join(PROJECT_TOML["authors"], ", ") * " and contributors"
-GITHUB = "https://github.com/JuliaQuantumControl/QuantumPropagators.jl"
+externals = ExternalFallbacks("Trajectory" => "@extref QuantumControlBase.Trajectory")
 
 println("Starting makedocs")
 
@@ -43,7 +45,7 @@ end
 
 
 makedocs(;
-    plugins=[bib, links],
+    plugins=[bib, links, externals],
     authors=AUTHORS,
     sitename="QuantumPropagators.jl",
     # Link checking is disabled in REPL, see `devrepl.jl`.

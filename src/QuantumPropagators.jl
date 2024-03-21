@@ -62,4 +62,7 @@ include("timings.jl")
 include("./propagate.jl")
 export propagate
 
+include("./propagate_sequence.jl")
+export Propagation, propagate_sequence
+
 end

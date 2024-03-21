@@ -73,7 +73,7 @@ end
 
 
 PREAMBLE = raw"""
-The highest-level API of the `QuantumPropagators.jl` package consists of a single function:
+The highest-level API of the `QuantumPropagators.jl` package (apart from some [convenience functions](@ref "Convenience functions")) consists of a single function:
 
 * [`propagate`](@ref) — Propagate a quantum state over an entire time grid under a given generator
 
@@ -97,7 +97,15 @@ The `QuantumPropagators` package re-exports the two main initialization routines
 To set up the time-dependent control fields in a Hamiltonian, methods from the submodules [`QuantumPropagators.Controls`](@ref QuantumPropagatorsControlsAPI), [`QuantumPropagators.Shapes`](@ref QuantumPropagatorsShapesAPI), and [`QuantumPropagators.Amplitudes`](@ref QuantumPropagatorsAmplitudesAPI) can be used.
 
 The above constitutes the main interface of `QuantumPropagators`. At the lowest level, further functionality is provided by sub-modules like [`QuantumPropagators.Cheby`](@ref QuantumPropagatorsChebyAPI), which defines a standalone API specifically for the Chebychev propagation method.
-""" * summarize_submodules(QuantumPropagators)
+""" * summarize_submodules(QuantumPropagators) * """
+
+### Convenience functions
+
+There are some "convenience functions" that wrap around [`propagate`](@ref) for common tasks:
+
+* [`propagate_sequence`](@ref)
+
+"""
 
 
 function write_module_api(out, mod, description; reference_title="Reference")
