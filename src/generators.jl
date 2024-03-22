@@ -347,13 +347,17 @@ function _make_generator(terms...; check=false)
                 push!(ops, op)
                 push!(amplitudes, ampl)
             else
-                try
+                if check
+                    try
+                        ops[i] = ops[i] + op
+                    catch exc
+                        @error(
+                            "Collected operators are of a disparate type: $(typeof(ops[i])), $(typeof(op)): $exc"
+                        )
+                        rethrow()
+                    end
+                else
                     ops[i] = ops[i] + op
-                catch exc
-                    @error(
-                        "Collected operators are of a disparate type: $(typeof(ops[i])), $(typeof(op)): $exc"
-                    )
-                    rethrow()
                 end
             end
         else
@@ -361,13 +365,17 @@ function _make_generator(terms...; check=false)
             if length(drift) == 0
                 push!(drift, op)
             else
-                try
+                if check
+                    try
+                        drift[1] = drift[1] + op
+                    catch exc
+                        @error(
+                            "Collected drift operators are of a disparate type: $(typeof(drift[1])), $(typeof(op)): $exc"
+                        )
+                        rethrow()
+                    end
+                else
                     drift[1] = drift[1] + op
-                catch exc
-                    @error(
-                        "Collected drift operators are of a disparate type: $(typeof(drift[1])), $(typeof(op)): $exc"
-                    )
-                    rethrow()
                 end
             end
         end
