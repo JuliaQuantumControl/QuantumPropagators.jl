@@ -100,7 +100,7 @@ end
     Ψ = random_state_vector(5)
     tlist = collect(range(0, 2; length=20))
     @test check_state(Ψ; normalized=true)
-    @test check_generator(H; state=Ψ, tlist)
+    @test check_generator(H; state=Ψ, tlist, for_parameterization=true)
 end
 
 

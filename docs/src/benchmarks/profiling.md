@@ -29,7 +29,7 @@ using BenchmarkTools
 using QuantumPropagators
 using QuantumPropagators: Cheby
 
-@benchmark propagate($Ψ₀, $H, $tlist; method=Cheby) samples=10
+@benchmark propagate($Ψ₀, $H, $tlist; method=Cheby, check=false) samples=10
 ```
 
 ### Newton propagation
@@ -39,7 +39,7 @@ Or, the same propagation with the Newton method:
 ```@example profiling
 using QuantumPropagators: Newton
 
-@benchmark propagate($Ψ₀, $H, $tlist; method=Newton) samples=10
+@benchmark propagate($Ψ₀, $H, $tlist; method=Newton, check=false) samples=10
 ```
 
 The result in this case illustrates the significant advantage of the Chebychev method for systems of moderate to small size and unitary dynamics.

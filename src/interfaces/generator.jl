@@ -6,7 +6,8 @@ using ..Generators: Generator
 ```julia
 @test check_generator(generator; state, tlist,
                      for_mutable_state=true, for_immutable_state=true,
-                     for_expval=true, atol=1e-14, quiet=false)
+                     for_expval=true, for_parameterization=false,
+                     atol=1e-14, quiet=false)
 ```
 
 verifies the given `generator`:
@@ -21,7 +22,15 @@ verifies the given `generator`:
 * [`evaluate!(op, generator, tlist, n)`](@ref evaluate!) must be defined
 * [`substitute(generator, replacements)`](@ref substitute) must be defined
 * If `generator` is a [`Generator`](@ref) instance, all elements of
-  `generator.amplitudes` must pass [`check_amplitude`](@ref).
+  `generator.amplitudes` must pass [`check_amplitude`](@ref) with
+  `for_parameterization`.
+
+If `for_parameterization` (may require the `RecursiveArrayTools` package to be
+loaded):
+
+* [`get_parameters(generator)`](@ref get_parameters) must be defined and return
+  a vector of floats. Mutating that vector must mutate the controls inside the
+  `generator`.
 
 The function returns `true` for a valid generator and `false` for an invalid
 generator. Unless `quiet=true`, it will log an error to indicate which of the
@@ -34,6 +43,7 @@ function check_generator(
     for_mutable_state=true,
     for_immutable_state=true,
     for_expval=true,
+    for_parameterization=false,
     atol=1e-14,
     quiet=false,
     _message_prefix="",  # for recursive calling
@@ -60,6 +70,10 @@ function check_generator(
             exception = (exc, catch_abbreviated_backtrace())
         )
         success = false
+    end
+
+    if for_parameterization
+        success &= check_parameterized(generator; _message_prefix=px)
     end
 
     try
@@ -104,6 +118,10 @@ function check_generator(
             valid_control = check_control(
                 control;
                 tlist,
+                for_parameterization=false,
+                # We already check the parametrization for the entire
+                # generator, so it would be redundant to do it again for
+                # the controls
                 quiet,
                 _message_prefix="On control $i ($(typeof(control))) in `generator`: "
             )
@@ -144,6 +162,10 @@ function check_generator(
                 valid_ampl = check_amplitude(
                     ampl;
                     tlist,
+                    for_parameterization=false,
+                    # We already check the parametrization for the entire
+                    # generator, so it would be redundant to do it again for
+                    # the amplitudes
                     quiet,
                     _message_prefix="On ampl $i ($(typeof(ampl))) in `generator`: "
                 )

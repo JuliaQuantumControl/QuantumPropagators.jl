@@ -45,6 +45,7 @@ include("ode_function.jl")
 module Interfaces
     export check_operator, check_state, check_tlist, check_amplitude
     export check_control, check_generator, check_propagator
+    export check_parameterized_function, check_parameterized
     include(joinpath("interfaces", "utils.jl"))
     include(joinpath("interfaces", "state.jl"))
     include(joinpath("interfaces", "tlist.jl"))
@@ -53,6 +54,7 @@ module Interfaces
     include(joinpath("interfaces", "control.jl"))
     include(joinpath("interfaces", "generator.jl"))
     include(joinpath("interfaces", "propagator.jl"))
+    include(joinpath("interfaces", "parameterization.jl"))
 end
 #! format: on
 

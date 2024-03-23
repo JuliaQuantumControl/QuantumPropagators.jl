@@ -43,6 +43,11 @@ using SafeTestsets
         include("test_amplitudes.jl")
     end
 
+    println("\n* Parameterization (test_parameterization.jl):")
+    @time @safetestset "Parameterization" begin
+        include("test_parameterization.jl")
+    end
+
     println("\n* Discretization (test_discretization.jl):")
     @time @safetestset "Discretization" begin
         include("test_discretization.jl")

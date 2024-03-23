@@ -19,18 +19,36 @@ if endswith(VERSION, "dev")
 end
 
 links = InterLinks(
+    "Julia" => (
+        "https://docs.julialang.org/en/v1/",
+        "https://docs.julialang.org/en/v1/objects.inv",
+        joinpath(@__DIR__, "src", "inventories", "Julia.toml"),
+    ),
     "TimerOutputs" => (
         "https://github.com/KristofferC/TimerOutputs.jl",
-        joinpath(@__DIR__, "src", "inventories", "TimerOutputs.toml")
+        joinpath(@__DIR__, "src", "inventories", "TimerOutputs.toml"),
     ),
     # We'll use `@extref` for links from docstrings to sections so that the
     # docstrings can also be rendered as part of the QuantumControl
     # documentation.
     "QuantumPropagators" => "https://juliaquantumcontrol.github.io/QuantumPropagators.jl/$DEV_OR_STABLE",
     "QuantumControlBase" => "https://juliaquantumcontrol.github.io/QuantumControlBase.jl/$DEV_OR_STABLE",
+    "ComponentArrays" => (
+        "https://jonniedie.github.io/ComponentArrays.jl/stable/",
+        "https://jonniedie.github.io/ComponentArrays.jl/stable/objects.inv",
+        joinpath(@__DIR__, "src", "inventories", "ComponentArrays.toml")
+    ),
+    "RecursiveArrayTools" => (
+        "https://docs.sciml.ai/RecursiveArrayTools/stable/",
+        "https://docs.sciml.ai/RecursiveArrayTools/stable/objects.inv",
+        joinpath(@__DIR__, "src", "inventories", "RecursiveArrayTools.toml")
+    ),
 )
 
-externals = ExternalFallbacks("Trajectory" => "@extref QuantumControlBase.Trajectory")
+externals = ExternalFallbacks(
+    "Trajectory" => "@extref QuantumControlBase.Trajectory",
+    "ParameterizedFunction" => "@extref `QuantumPropagators.Controls.ParameterizedFunction`"
+)
 
 println("Starting makedocs")
 
@@ -51,6 +69,7 @@ makedocs(;
     # Link checking is disabled in REPL, see `devrepl.jl`.
     linkcheck=(get(ENV, "DOCUMENTER_CHECK_LINKS", "1") != "0"),
     warnonly,
+    doctest=false,  # doctests run as part of test suite
     format=Documenter.HTML(;
         prettyurls=true,
         canonical="https://juliaquantumcontrol.github.io/QuantumPropagators.jl",

@@ -492,12 +492,14 @@ end
 parameters = get_parameters(control)
 ```
 
-obtains `parameters` as a `Vector{Float64}` containing any tunable analytic
-parameters associated with the `control`.
+obtains `parameters` as an `AbstractVector{Float64}` containing any tunable
+analytic parameters associated with the `control`. The specific type of
+`parameters` depends on how `control` is defined, but a
+[`ComponentArrays.ComponentVector`](@extref) should be a common array type.
 
 Mutating the resulting vector must directly affect the control in any
 subsequent call to [`evaluate`](@ref). That is, the values in `parameters`
-should alias values inside the `control`.
+must alias values inside the `control`.
 
 Note that the `control` must be an object specifically designed to have
 analytic parameters. Typically, it should be implemented as a subtype of
@@ -506,13 +508,28 @@ pulse values, which are the default types of controls discussed in the
 documentation of [`hamiltonian`](#QuantumPropagators.Generators.hamiltonian),
 the `get_parameters` function will return an empty vector.
 
+More generally,
+
+```julia
+parameters = get_parameters(object)
+```
+
+collects and combines all unique parameter arrays from the controls inside the
+`object`. The `object` may be `Generator`, `Trajectory`, `ControlProblem`, or
+any other object for which [`get_controls(object)`](@ref get_controls) is
+defined. If there are multiple controls with different parameter arrays, these
+are combined in a [`RecursiveArrayTools.ArrayPartition`](@extref).
+This requires the `RecursiveArrayTools` package to be loaded. Again, mutating
+`parameters` directly affects the underlying controls.
+
 The `parameters` may be used as part of the `parameters`
 attribute of a propagator for time-continuous dynamics, like a general ODE
 solver, or in an optimization that tunes analytic control parameters, e.g.,
 with a Nelder-Mead method. Examples might include the widths, peak amplitudes,
 and times of a superposition of Gaussians [MachnesPRL2018](@cite), cf. the
-example of a [`ParameterizedFunction`](@ref), or the amplitudes associated with
-spectral components in a random truncated basis [CanevaPRA2011](@cite).
+[example of a `ParameterizedFunction`](@ref howto_parameterized),
+or the amplitudes associated with spectral components in a random truncated
+basis [CanevaPRA2011](@cite).
 
 The `parameters` are not intended for optimization methods such as
 [GRAPE](https://juliaquantumcontrol.github.io/GRAPE.jl/stable/) or
@@ -522,9 +539,50 @@ methods, the "control parameters" are always the amplitudes of the `control` at
 the mid-points of the time grid, as obtained by
 [`discretize_on_midpoints`](@ref), and `get_parameters` is ignored.
 """
-function get_parameters(control)
-    return Float64[]
+function get_parameters(object)
+    # TODO: in docstring, link `Generator`, `Trajectory`, `hamiltonian`.
+    parameter_arrays = []
+    seen_parameter_array = IdDict{Any,Bool}()
+    seen_control = IdDict{Any,Bool}()
+    for control in get_controls(object)
+        if control !== object
+            if !haskey(seen_control, control)
+                parameter_array = get_parameters(control)
+                if isempty(parameter_array)
+                    continue
+                end
+                if !haskey(seen_parameter_array, parameter_array)
+                    push!(parameter_arrays, parameter_array)
+                    seen_parameter_array[parameter_array] = true
+                end
+            end
+            seen_control[control] = true
+        end
+    end
+    if isempty(parameter_arrays)
+        return Float64[]
+    elseif length(parameter_arrays) == 1
+        return parameter_arrays[1]
+    else
+        try
+            return _combine_parameter_arrays(parameter_arrays)
+        catch exception
+            if exception isa MethodError
+                msg = "In order for parameter arrays to be combined from multiple controls, the `RecursiveArrayTools` package must be loaded"
+                @error msg exception
+            else
+                rethrow()
+            end
+        end
+    end
 end
+
+
+# Defined in extension module as
+#
+#   return ArrayPartition(parameter_arrays...)
+#
+function _combine_parameter_arrays end
 
 
 """
@@ -532,61 +590,21 @@ Abstract type for function-like objects with [`parameters`](@ref get_parameters)
 
 A struct that is an implementation of a `ParameterizedFunction`:
 
-* must have an (internal) `parameters` field that is a vector of floats,
-* must be [callable](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects)
-  with a single float argument,
+* must have a `parameters` field that is an `AbstractVector` of
+  floats (e.g., a [`ComponentArrays.ComponentVector`](@extref))
+* must be [callable](@extref Julia Function-like-objects) with a single float
+  argument `t`,
 * may define getters and setters for referencing the values in `parameters`
   with convenient names.
 
 The `parameters` field of any `ParameterizedFunction` can be accessed via
 [`get_parameters`](@ref).
 
-# Example
-
-```jldoctest
-using QuantumPropagators.Controls: ParameterizedFunction, get_parameters
-
-struct GaussianControl <: ParameterizedFunction
-    parameters::Vector{Float64}
-    GaussianControl(; A=1.0, t0=0.0, t₀=t0, sigma=1.0, σ=sigma) =
-        new(Float64[A, t₀, σ])
-end
-
-function Base.propertynames(g::GaussianControl, private::Bool=false)
-    names = (:A, :t0, :t₀, :sigma, :σ)
-    return private ? Tuple(union(names, fieldnames(GaussianControl))) : names
-end
-
-function Base.getproperty(g::GaussianControl, name::Symbol)
-    index = Dict(:A => 1, :t0 => 2, :t₀ => 2, :sigma => 3, :σ => 3)
-    return  get_parameters(g)[index[name]]
-end
-
-function Base.setproperty!(g::GaussianControl, name::Symbol, value)
-    index = Dict(:A => 1, :t0 => 2, :t₀ => 2, :sigma => 3, :σ => 3)
-    get_parameters(g)[index[name]] = value
-end
-
-function (control::GaussianControl)(t)
-    A, t₀, σ = get_parameters(control)
-    return A * exp(- (t - t₀)^2 / (2 * σ^2))
-end
-
-# usage
-
-gaussian = GaussianControl(A=2.0, σ=0.5)
-gaussian.t0 = 5  # shift center from original 0.0
-
-round(gaussian(4.5); digits=3)
-
-# output
-
-1.213
-```
-
+See [How to define a parameterized control](@ref howto_parameterized)
+for an example.
 """
 abstract type ParameterizedFunction <: Function end
-
+# TODO: document interface test
 
 function get_parameters(control::ParameterizedFunction)
     return getfield(control, :parameters)
