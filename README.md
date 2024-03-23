@@ -13,7 +13,7 @@ Methods for simulating the time dynamics of a quantum system for packages with t
 For standalone use, the `QuantumPropagators` package can be installed with [Pkg][] as
 
 ~~~
-pkg> add QuantumPropagors
+pkg> add QuantumPropagators
 ~~~
 
 Otherwise, the package should be installed as part of [`QuantumControl.jl`][QuantumControl]:
