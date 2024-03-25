@@ -1,7 +1,13 @@
+using Pkg
+
+DOCUMENTER_VERSION = [p for (uuid, p) in Pkg.dependencies() if p.name == "Documenter"][1].version
+if DOCUMENTER_VERSION <= v"1.3.0"
+    Pkg.develop("Documenter")
+end
+
+using Documenter
 using QuantumPropagators
 using QuantumPropagators: AbstractPropagator, set_t!, set_state!
-using Documenter
-using Pkg
 import OrdinaryDiffEq  # ensure ODE extension is loaded
 using DocumenterCitations
 using DocumenterInterLinks
@@ -46,8 +52,8 @@ links = InterLinks(
 )
 
 externals = ExternalFallbacks(
-    "Trajectory" => "@extref QuantumControlBase.Trajectory",
-    "ParameterizedFunction" => "@extref `QuantumPropagators.Controls.ParameterizedFunction`"
+    "QuantumControlBase.Trajectory" => "@extref QuantumControlBase :jl:type:`QuantumControlBase.Trajectory`",
+    "QuantumControlBase.ControlProblem" => "@extref QuantumControlBase :jl:type:`QuantumControlBase.ControlProblem`",
 )
 
 println("Starting makedocs")

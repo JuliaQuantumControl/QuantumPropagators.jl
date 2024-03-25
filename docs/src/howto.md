@@ -142,4 +142,4 @@ get_parameters(gaussian) = (A = 2.0, t0 = 5.0, sigma = 0.5)
 gaussian(4.5) = 1.213
 ```
 
-The [`QuantumPropagators.Interfaces.check_parameterized_function`](@ref) can be used to verify the implementation of a [`ParameterizedFunction`](@ref).
+The [`QuantumPropagators.Interfaces.check_parameterized_function`](@ref) can be used to verify the implementation of a [`ParameterizedFunction`](@ref QuantumPropagators.Controls.ParameterizedFunction).

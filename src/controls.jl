@@ -505,7 +505,8 @@ Note that the `control` must be an object specifically designed to have
 analytic parameters. Typically, it should be implemented as a subtype of
 [`ParameterizedFunction`](@ref). For a simple function `ϵ(t)` or a vector of
 pulse values, which are the default types of controls discussed in the
-documentation of [`hamiltonian`](#QuantumPropagators.Generators.hamiltonian),
+documentation of
+[`hamiltonian`](@ref QuantumPropagators.Generators.hamiltonian),
 the `get_parameters` function will return an empty vector.
 
 More generally,
@@ -515,7 +516,10 @@ parameters = get_parameters(object)
 ```
 
 collects and combines all unique parameter arrays from the controls inside the
-`object`. The `object` may be `Generator`, `Trajectory`, `ControlProblem`, or
+`object`. The `object` may be a
+[`Generator`](@ref QuantumPropagators.Generators.Generator),
+[`Trajectory`](@ref QuantumControlBase.Trajectory),
+[`ControlProblem`](@ref QuantumControlBase.ControlProblem), or
 any other object for which [`get_controls(object)`](@ref get_controls) is
 defined. If there are multiple controls with different parameter arrays, these
 are combined in a [`RecursiveArrayTools.ArrayPartition`](@extref).
@@ -540,7 +544,6 @@ the mid-points of the time grid, as obtained by
 [`discretize_on_midpoints`](@ref), and `get_parameters` is ignored.
 """
 function get_parameters(object)
-    # TODO: in docstring, link `Generator`, `Trajectory`, `hamiltonian`.
     parameter_arrays = []
     seen_parameter_array = IdDict{Any,Bool}()
     seen_control = IdDict{Any,Bool}()
@@ -601,10 +604,12 @@ The `parameters` field of any `ParameterizedFunction` can be accessed via
 [`get_parameters`](@ref).
 
 See [How to define a parameterized control](@ref howto_parameterized)
-for an example.
+for an example. You may use the
+[`QuantumPropagators.Interfaces.check_parameterized_function`](@ref) to check
+the implementation of a `ParameterizedFunction` subtype.
 """
 abstract type ParameterizedFunction <: Function end
-# TODO: document interface test
+
 
 function get_parameters(control::ParameterizedFunction)
     return getfield(control, :parameters)
