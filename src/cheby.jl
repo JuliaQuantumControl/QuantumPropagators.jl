@@ -124,7 +124,7 @@ mutable struct ChebyWrk{ST,CFS,FT<:AbstractFloat}
 end
 
 
-"""Evaluate `Ψ = exp(-i H dt) Ψ` in-place.
+"""Evaluate `Ψ = exp(-𝕚 * H * dt) Ψ` in-place.
 
 ```julia
 cheby!(Ψ, H, dt, wrk; E_min=nothing, check_normalization=false)
@@ -213,7 +213,7 @@ function cheby!(Ψ, H, dt, wrk; kwargs...)
 end
 
 
-"""Evaluate `Ψ = exp(i- H dt) Ψ`.
+"""Evaluate `Ψ = exp(-𝕚 * H * dt) Ψ`.
 
 ```julia
 Ψ_out = cheby(Ψ, H, dt, wrk; E_min=nothing, check_normalization=false)
