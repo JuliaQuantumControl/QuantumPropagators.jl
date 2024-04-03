@@ -1,6 +1,7 @@
 using Pkg
 
-DOCUMENTER_VERSION = [p for (uuid, p) in Pkg.dependencies() if p.name == "Documenter"][1].version
+DOCUMENTER_VERSION =
+    [p for (uuid, p) in Pkg.dependencies() if p.name == "Documenter"][1].version
 if DOCUMENTER_VERSION <= v"1.3.0"
     Pkg.develop("Documenter")
 end

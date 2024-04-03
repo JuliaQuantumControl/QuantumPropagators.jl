@@ -275,7 +275,7 @@ For generators without any explicit time dependence,
 op = evaluate(generator; vals_dict)
 ```
 
-can be used. The `vals_dict` in this case must contina values for all controls
+can be used. The `vals_dict` in this case must contain values for all controls
 in `generator`.
 
 # See also:
@@ -544,13 +544,17 @@ the mid-points of the time grid, as obtained by
 [`discretize_on_midpoints`](@ref), and `get_parameters` is ignored.
 """
 function get_parameters(object)
+    return _get_parameters(object; via=get_controls)
+end
+
+function _get_parameters(object; via=get_controls)
     parameter_arrays = []
     seen_parameter_array = IdDict{Any,Bool}()
-    seen_control = IdDict{Any,Bool}()
-    for control in get_controls(object)
-        if control !== object
-            if !haskey(seen_control, control)
-                parameter_array = get_parameters(control)
+    seen_component = IdDict{Any,Bool}()
+    for component in via(object)
+        if component !== object  # E.g., get_controls(control) -> control
+            if !haskey(seen_component, component)
+                parameter_array = get_parameters(component)
                 if isempty(parameter_array)
                     continue
                 end
@@ -559,7 +563,7 @@ function get_parameters(object)
                     seen_parameter_array[parameter_array] = true
                 end
             end
-            seen_control[control] = true
+            seen_component[component] = true
         end
     end
     if isempty(parameter_arrays)
@@ -571,7 +575,7 @@ function get_parameters(object)
             return _combine_parameter_arrays(parameter_arrays)
         catch exception
             if exception isa MethodError
-                msg = "In order for parameter arrays to be combined from multiple controls, the `RecursiveArrayTools` package must be loaded"
+                msg = "In order for parameter arrays to be combined from multiple components, the `RecursiveArrayTools` package must be loaded"
                 @error msg exception
             else
                 rethrow()

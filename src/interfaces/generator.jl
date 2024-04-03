@@ -6,6 +6,7 @@ using ..Generators: Generator
 ```julia
 @test check_generator(generator; state, tlist,
                      for_mutable_state=true, for_immutable_state=true,
+                     for_pwc=true, for_time_continuous=false,
                      for_expval=true, for_parameterization=false,
                      atol=1e-14, quiet=false)
 ```
@@ -16,14 +17,24 @@ verifies the given `generator`:
   tuple
 * all controls returned by [`get_controls(generator)`](@ref get_controls) must
   pass [`check_control`](@ref)
-* [`evaluate(generator, tlist, n)`](@ref evaluate) must return a valid
-  operator ([`check_operator`](@ref)), with forwarded keyword arguments
-  (including `for_expval`)
-* [`evaluate!(op, generator, tlist, n)`](@ref evaluate!) must be defined
 * [`substitute(generator, replacements)`](@ref substitute) must be defined
 * If `generator` is a [`Generator`](@ref) instance, all elements of
   `generator.amplitudes` must pass [`check_amplitude`](@ref) with
   `for_parameterization`.
+
+If `for_pwc` (default):
+
+* [`evaluate(generator, tlist, n)`](@ref evaluate) must return a valid
+  operator ([`check_operator`](@ref)), with forwarded keyword arguments
+  (including `for_expval`)
+* [`evaluate!(op, generator, tlist, n)`](@ref evaluate!) must be defined
+
+If `for_time_continuous`:
+
+* [`evaluate(generator, t)`](@ref evaluate) must return a valid
+  operator ([`check_operator`](@ref)), with forwarded keyword arguments
+  (including `for_expval`)
+* [`evaluate!(op, generator, t)`](@ref evaluate!) must be defined
 
 If `for_parameterization` (may require the `RecursiveArrayTools` package to be
 loaded):
@@ -43,6 +54,8 @@ function check_generator(
     for_mutable_state=true,
     for_immutable_state=true,
     for_expval=true,
+    for_pwc=true,
+    for_time_continuous=false,
     for_parameterization=false,
     atol=1e-14,
     quiet=false,
@@ -74,42 +87,6 @@ function check_generator(
 
     if for_parameterization
         success &= check_parameterized(generator; _message_prefix=px)
-    end
-
-    try
-        op = evaluate(generator, tlist, 1)
-        if !check_operator(
-            op;
-            state,
-            tlist,
-            for_mutable_state,
-            for_immutable_state,
-            for_expval,
-            atol,
-            quiet,
-            _message_prefix="On `op = evaluate(generator, tlist, 1)`: "
-        )
-            quiet ||
-                @error "$(px)`evaluate(generator, tlist, n)` must return an operator that passes `check_operator`"
-            success = false
-        end
-    catch exc
-        quiet || @error(
-            "$(px)`evaluate(generator, tlist, n)` must return a valid operator.",
-            exception = (exc, catch_abbreviated_backtrace())
-        )
-        success = false
-    end
-
-    try
-        op = evaluate(generator, tlist, 1)
-        evaluate!(op, generator, tlist, length(tlist) - 1)
-    catch exc
-        quiet || @error(
-            "$(px)`evaluate!(op, generator, tlist, n)` must be defined.",
-            exception = (exc, catch_abbreviated_backtrace())
-        )
-        success = false
     end
 
     try
@@ -155,6 +132,182 @@ function check_generator(
         )
         success = false
     end
+
+    vals_dict = IdDict()
+    try
+        if success
+            if for_pwc
+                vals_dict = IdDict(
+                    control => evaluate(control, tlist, 1) for
+                    control in get_controls(generator)
+                )
+            elseif for_time_continuous
+                vals_dict = IdDict(
+                    control => evaluate(control, tlist[1]) for
+                    control in get_controls(generator)
+                )
+            end
+        end
+    catch exc
+        quiet || @error(
+            "$(px)`evaluate(control, …)` must be defined for all controls in generator.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
+        success = false
+    end
+
+    if for_pwc
+
+        try
+            op = evaluate(generator, tlist, 1)
+            if !check_operator(
+                op;
+                state,
+                tlist,
+                for_mutable_state,
+                for_immutable_state,
+                for_expval,
+                atol,
+                quiet,
+                _message_prefix="On `op = evaluate(generator, tlist, 1)`: "
+            )
+                quiet ||
+                    @error "$(px)`evaluate(generator, tlist, n)` must return an operator that passes `check_operator`"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`evaluate(generator, tlist, n)` must return a valid operator.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            op = evaluate(generator, tlist, 1; vals_dict)
+            if !check_operator(
+                op;
+                state,
+                tlist,
+                for_mutable_state,
+                for_immutable_state,
+                for_expval,
+                atol,
+                quiet,
+                _message_prefix="On `op = evaluate(generator, tlist, 1; vals_dict)`: "
+            )
+                quiet ||
+                    @error "$(px)`evaluate(generator, tlist, n; vals_dict)` must return an operator that passes `check_operator`"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`evaluate(generator, tlist, n; vals_dict)` must return a valid operator.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            op = evaluate(generator, tlist, 1)
+            evaluate!(op, generator, tlist, length(tlist) - 1)
+        catch exc
+            quiet || @error(
+                "$(px)`evaluate!(op, generator, tlist, n)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            op = evaluate(generator, tlist, 1)
+            evaluate!(op, generator, tlist, length(tlist) - 1; vals_dict)
+        catch exc
+            quiet || @error(
+                "$(px)`evaluate!(op, generator, tlist, n; vals_dict)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+    end
+
+    if for_time_continuous
+
+        try
+            op = evaluate(generator, tlist[1])
+            if !check_operator(
+                op;
+                state,
+                tlist,
+                for_mutable_state,
+                for_immutable_state,
+                for_expval,
+                atol,
+                quiet,
+                _message_prefix="On `op = evaluate(generator, tlist[1])`: "
+            )
+                quiet ||
+                    @error "$(px)`evaluate(generator, t)` must return an operator that passes `check_operator`"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`evaluate(generator, t)` must return a valid operator.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            op = evaluate(generator, tlist[1]; vals_dict)
+            if !check_operator(
+                op;
+                state,
+                tlist,
+                for_mutable_state,
+                for_immutable_state,
+                for_expval,
+                atol,
+                quiet,
+                _message_prefix="On `op = evaluate(generator, tlist[1]; vals_dict)`: "
+            )
+                quiet ||
+                    @error "$(px)`evaluate(generator, t; vals_dict)` must return an operator that passes `check_operator`"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`evaluate(generator, t; vals_dict)` must return a valid operator.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            op = evaluate(generator, tlist[begin])
+            evaluate!(op, generator, tlist[end])
+        catch exc
+            quiet || @error(
+                "$(px)`evaluate!(op, generator, t)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            op = evaluate(generator, tlist[begin])
+            evaluate!(op, generator, tlist[end]; vals_dict)
+        catch exc
+            quiet || @error(
+                "$(px)`evaluate!(op, generator, t; vals_dict)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+    end
+
 
     if (generator isa Generator) && _check_amplitudes
         try
