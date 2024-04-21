@@ -2,7 +2,7 @@ using Test
 using QuantumPropagators.Interfaces: check_amplitude, check_control
 using QuantumPropagators.Shapes: flattop
 using QuantumPropagators.Amplitudes: LockedAmplitude, ShapedAmplitude
-using QuantumPropagators.Controls: evaluate, get_controls, _t
+using QuantumPropagators.Controls: evaluate, get_controls, t_mid
 using QuantumPropagators.Controls: discretize_on_midpoints # DEBUG
 
 @testset "LockedAmplitude" begin
@@ -16,14 +16,14 @@ using QuantumPropagators.Controls: discretize_on_midpoints # DEBUG
     @test length(get_controls(ampl)) == 0
     t = 3.1342
     @test evaluate(ampl, t) ≈ S(t)
-    t = _t(tlist, 20)
+    t = t_mid(tlist, 20)
     @test evaluate(ampl, tlist, 20) ≈ S(t)
 
     ampl = LockedAmplitude(S, tlist)
     @test startswith("$ampl", "LockedAmplitude(")
     @test check_amplitude(ampl; tlist)
     @test length(get_controls(ampl)) == 0
-    t = _t(tlist, 20)
+    t = t_mid(tlist, 20)
     @test evaluate(ampl, tlist, 20) ≈ S(t)
 
 end
@@ -45,7 +45,7 @@ end
     t = 3.1342
     @test evaluate(ampl, t) ≈ ϵ(t) * S(t)
     @test ampl(t) ≈ ϵ(t) * S(t)
-    t = _t(tlist, 20)
+    t = t_mid(tlist, 20)
     @test evaluate(ampl, tlist, 20) ≈ ϵ(t) * S(t)
 
 
@@ -55,7 +55,7 @@ end
     @test length(controls) == 1
     @test check_control(controls[1]; tlist)
     @test check_amplitude(ampl; tlist)
-    t = _t(tlist, 20)
+    t = t_mid(tlist, 20)
     @test evaluate(ampl, tlist, 20) ≈ ϵ(t) * S(t)
 
 end

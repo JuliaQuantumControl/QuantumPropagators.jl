@@ -3,7 +3,7 @@ module Controls
 export discretize, discretize_on_midpoints
 export get_controls, get_parameters
 export ParameterizedFunction
-export get_tlist_midpoints
+export get_tlist_midpoints, t_mid
 export evaluate, evaluate!, substitute
 
 using LinearAlgebra
@@ -84,6 +84,10 @@ By default, the first and last point of `tlist` is preserved, see
 [`discretize_on_midpoints`](@ref). This behavior can be disabled by passing
 `preserve_start` and `preserve_end` as `false` in order to use the midpoints of
 the first and last interval, respectively.
+
+# See also
+
+* [`t_mid`](@ref) – get a particular midpoint.
 """
 function get_tlist_midpoints(tlist::AbstractVector; preserve_start=true, preserve_end=true)
     N = length(tlist)
@@ -169,6 +173,14 @@ discretized.
 
 If `control` is a function, the function will be directly evaluated at the
 midpoints marked as `x` in the above diagram..
+
+# See also
+
+* [`get_tlist_midpoints`](@ref) – get all the midpoints on which the control
+  will be discretized.
+* [`t_mid`](@ref) – get a particular midpoint.
+* [`discretize`](@ref) – discretize directly on `tlist` instead of on the
+  midpoints
 """
 function discretize_on_midpoints(control::T, tlist) where {T<:Function}
     tlist_midpoints = get_tlist_midpoints(tlist)
@@ -297,10 +309,23 @@ function evaluate(operator::AbstractMatrix, args...; kwargs...)
 end
 
 
-# Midpoint of n'th interval of tlist, but snap to beginning/end (that's
-# because any S(t) is likely exactly zero at the beginning and end, and we
-# want to use that value for the first and last time interval)
-function _t(tlist, n)
+"""
+Midpoint of n'th interval of tlist.
+
+```julia
+t = t_mid(tlist, n)
+```
+
+returns the `t` that is the midpoint between points `tlist[n+1]` and
+`tlist[n]`, but snapping to the beginning/end to follow the convention
+explained in [`discretize_on_midpoints`](@ref) (to preserve exact boundary
+conditions at the edges of the time grid.)
+
+# See also
+
+* [`get_tlist_midpoints`](@ref) – get all the midpoints in one go.
+"""
+function t_mid(tlist, n)
     @assert 1 <= n <= (length(tlist) - 1)  # n is an *interval* of `tlist`
     if n == 1
         t = tlist[begin]
@@ -318,7 +343,7 @@ function evaluate(func::Function, tlist::Vector, n::Int64; vals_dict=IdDict())
     if haskey(vals_dict, func)
         return vals_dict[func]
     else
-        return func(_t(tlist, n))
+        return func(t_mid(tlist, n))
     end
 end
 

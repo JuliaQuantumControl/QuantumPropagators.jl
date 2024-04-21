@@ -3,7 +3,7 @@ module Amplitudes
 export LockedAmplitude, ShapedAmplitude
 
 import ..Controls: get_controls, evaluate, substitute, discretize_on_midpoints
-using ..Controls: _t
+using ..Controls: t_mid
 
 
 #### LockedAmplitude ##########################################################
@@ -88,7 +88,7 @@ function evaluate(ampl::LockedPulseAmplitude, t; _...)
 end
 
 function evaluate(ampl::LockedContinuousAmplitude, tlist, n; _...)
-    return ampl(_t(tlist, n))
+    return ampl(t_mid(tlist, n))
 end
 
 function evaluate(ampl::LockedContinuousAmplitude, t; _...)
