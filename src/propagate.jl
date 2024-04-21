@@ -175,6 +175,7 @@ function propagate(
     inplace=true, # cf. default of init_prop
     for_expval=true,  # undocumented
     for_immutable_state=true,  # undocumented
+    for_mutable_operator=inplace,  # undocumented
     for_mutable_state=inplace,  # undocumented
     kwargs...
 )
@@ -208,6 +209,7 @@ function propagate(
             state=state,
             tlist=tlist,
             for_immutable_state,
+            for_mutable_operator,
             for_mutable_state,
             for_expval,
             atol,

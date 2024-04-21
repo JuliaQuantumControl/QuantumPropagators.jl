@@ -154,7 +154,7 @@ function cheby!(Ψ, H, dt, wrk; kwargs...)
 
     Δ = wrk.Δ
     β::Float64 = (Δ / 2) + E_min  # "normfactor"
-    @assert abs(dt) ≈ abs(wrk.dt) "wrk was initialized for dt=$(wrk.dt), not dt=$dt"
+    @assert abs(dt) ≈ abs(wrk.dt) "wrk was initialized for dt=$(wrk.dt), not dt=abs($dt)"
     if dt > 0
         c = -2im / Δ
     else
@@ -228,7 +228,7 @@ function cheby(Ψ, H, dt, wrk; kwargs...)
 
     Δ = wrk.Δ
     β::Float64 = (Δ / 2) + E_min  # "normfactor"
-    @assert dt ≈ wrk.dt "wrk was initialized for dt=$(wrk.dt), not dt=$dt"
+    @assert abs(dt) ≈ wrk.dt "wrk was initialized for dt=$(wrk.dt), not dt=abs($dt)"
     if dt > 0
         c = -2im / Δ
     else
@@ -237,9 +237,6 @@ function cheby(Ψ, H, dt, wrk; kwargs...)
     a = wrk.coeffs
     ϵ = wrk.limit
     @assert length(a) > 1 "Need at least 2 Chebychev coefficients"
-    v0 = wrk.v0
-    v1 = wrk.v1
-    v2 = wrk.v2
 
     v0 = Ψ
     Ψ = a[1] * v0
@@ -256,16 +253,17 @@ function cheby(Ψ, H, dt, wrk; kwargs...)
         @timeit_debug wrk.timing_data "matrix-vector product" begin
             v2 = H * v1
         end
-        v2 += -v1 * β
-        v2 = c * v2
         if check_normalization
+            v2 = c * (v2 - v1 * β)
             map_norm = abs(dot(v1, v2)) / (2 * norm(v1)^2)
             @assert(
                 map_norm <= (1.0 + ϵ),
                 "Incorrect normalization (E_min=$(E_min), Δ=$(Δ))"
             )
+            v2 += v0
+        else
+            v2 = c * (v2 - β * v1) + v0
         end
-        v2 += v0
 
         Ψ += a[i] * v2
 

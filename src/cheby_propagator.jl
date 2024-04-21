@@ -245,7 +245,7 @@ function reinit_prop!(
     transform_control_ranges=_transform_control_ranges,
     _...
 )
-    set_state!(propagator, state)
+    state = set_state!(propagator, state)
 
     wrk = propagator.wrk
     need_to_recalculate_cheby_coeffs = false
@@ -355,8 +355,8 @@ function prop_step!(propagator::ChebyPropagator)
         end
         tlist = getfield(propagator, :tlist)
         (0 < n < length(tlist)) || return nothing
-        _pwc_set_genop!(propagator, n)
         if propagator.inplace
+            H = _pwc_set_genop!(propagator, n)
             Cheby.cheby!(
                 Ψ,
                 H,
@@ -365,6 +365,7 @@ function prop_step!(propagator::ChebyPropagator)
                 check_normalization=propagator.check_normalization
             )
         else
+            H = _pwc_get_genop(propagator, n)
             Ψ = Cheby.cheby(
                 Ψ,
                 H,

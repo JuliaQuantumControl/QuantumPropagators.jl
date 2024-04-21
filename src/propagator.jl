@@ -17,7 +17,9 @@ implement the following interface.
 * `backward`: Boolean flag to indicate whether the propagation moves forward or
   backward in time
 * `inplace`: Boolean flag to indicate whether `propagator.state` is modified
-  in-place or is recreated by every call of `prop_step!` or `set_state!`.
+  in-place or is recreated by every call of `prop_step!` or `set_state!`. With
+  `inplace=false`, the propagator should generally avoid in-place operations,
+  such as calls to [`QuantumPropagators.Controls.evaluate!`](@ref).
 
 Concrete `Propagator` types may have additional properties or fields, but these
 should be considered private.
@@ -332,8 +334,9 @@ function prop_step! end
 set_state!(propagator, state)
 ```
 
-sets the `propagator.state` property. In order to mutate the current state
-after a call to [`prop_step!`](@ref), the following pattern is recommended:
+sets the `propagator.state` property and returns `propagator.state`. In order
+to mutate the current state after a call to [`prop_step!`](@ref), the following
+pattern is recommended:
 
 ```
 Ψ = propagator.state
@@ -366,9 +369,11 @@ function set_state!(propagator::AbstractPropagator, state)
         if propagator.inplace
             copyto!(propagator.state, state)
         else
-            setfield!(propagator, :state, state)
+            T = typeof(propagator.state)
+            setfield!(propagator, :state, convert(T, state))
         end
     end
+    return propagator.state
 end
 
 

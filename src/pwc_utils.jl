@@ -88,13 +88,14 @@ function _pwc_set_genop!(propagator::PiecewisePropagator, n)
     generator = getfield(propagator, :generator)
     tlist = propagator.tlist
     evaluate!(propagator.genop, generator, tlist, n; vals_dict=vals_dict)
+    return propagator.genop
 end
 
 function _pwc_get_genop(propagator::PiecewisePropagator, n)
     vals_dict = IdDict(c => propagator.parameters[c][n] for c in propagator.controls)
     generator = getfield(propagator, :generator)
     tlist = propagator.tlist
-    evaluate(generator, tlist, n; vals_dict=vals_dict)
+    return evaluate(generator, tlist, n; vals_dict=vals_dict)
 end
 
 

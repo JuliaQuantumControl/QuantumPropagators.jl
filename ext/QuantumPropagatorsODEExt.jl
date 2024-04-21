@@ -249,6 +249,7 @@ function set_state!(propagator::ODEPropagator, state)
             ODE.set_u!(propagator.integrator, state)
         end
     end
+    return propagator.state
 end
 
 

@@ -119,7 +119,6 @@ init_prop(state, generator, tlist, method::Val{:newton}; kwargs...) =
 function prop_step!(propagator::NewtonPropagator)
     @timeit_debug propagator.timing_data "prop_step!" begin
         Ψ = propagator.state
-        H = propagator.genop
         n = propagator.n  # index of interval we're going to propagate
         tlist = getfield(propagator, :tlist)
         (0 < n < length(tlist)) || return nothing
@@ -127,8 +126,8 @@ function prop_step!(propagator::NewtonPropagator)
         if propagator.backward
             dt = -dt
         end
-        _pwc_set_genop!(propagator, n)
         if propagator.inplace
+            H = _pwc_set_genop!(propagator, n)
             Newton.newton!(
                 Ψ,
                 H,

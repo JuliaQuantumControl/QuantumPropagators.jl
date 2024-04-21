@@ -39,6 +39,7 @@ initialized with [`init_prop`](@ref).
   `propagator.state`.
 * [`set_state!(propagator, state)`](@ref set_state!) for an in-place propagator
     must overwrite `propagator.state` in-place.
+* [`set_state!`](@ref) must return the set `propagator.state`
 * In a [`PiecewisePropagator`](@ref), `propagator.parameters` must be a dict
   mapping controls to a vector of values, one for each interval on
   `propagator.tlist`
@@ -236,7 +237,7 @@ function check_propagator(
     end
 
     try
-        set_state!(propagator, Ψ₀)
+        Ψ = set_state!(propagator, Ψ₀)
         if norm(propagator.state - Ψ₀) > atol
             quiet ||
                 @error "$(px)`set_state!(propagator, state)` must set `propagator.state`"
@@ -248,6 +249,11 @@ function check_propagator(
                     @error "$(px)`set_state!(propagator, state)` for an in-place propagator must overwrite `propagator.state` in-place."
                 success = false
             end
+        end
+        if propagator.state ≢ Ψ
+            quiet ||
+                @error "$(px)`set_state!(propagator, state)` must return `propagator.state`."
+            success = false
         end
     catch exc
         quiet || @error(

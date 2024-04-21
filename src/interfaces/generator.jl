@@ -4,11 +4,13 @@ using ..Generators: Generator
 """Check the dynamical `generator` for propagating `state` over `tlist`.
 
 ```julia
-@test check_generator(generator; state, tlist,
-                     for_mutable_state=true, for_immutable_state=true,
-                     for_pwc=true, for_time_continuous=false,
-                     for_expval=true, for_parameterization=false,
-                     atol=1e-14, quiet=false)
+@test check_generator(
+    generator; state, tlist,
+    for_mutable_operator=true, for_immutable_operator=true,
+    for_mutable_state=true, for_immutable_state=true,
+    for_pwc=true, for_time_continuous=false,
+    for_expval=true, for_parameterization=false,
+    atol=1e-14, quiet=false)
 ```
 
 verifies the given `generator`:
@@ -27,14 +29,16 @@ If `for_pwc` (default):
 * [`evaluate(generator, tlist, n)`](@ref evaluate) must return a valid
   operator ([`check_operator`](@ref)), with forwarded keyword arguments
   (including `for_expval`)
-* [`evaluate!(op, generator, tlist, n)`](@ref evaluate!) must be defined
+* If `for_mutable_operator`,
+  [`evaluate!(op, generator, tlist, n)`](@ref evaluate!) must be defined
 
 If `for_time_continuous`:
 
 * [`evaluate(generator, t)`](@ref evaluate) must return a valid
   operator ([`check_operator`](@ref)), with forwarded keyword arguments
   (including `for_expval`)
-* [`evaluate!(op, generator, t)`](@ref evaluate!) must be defined
+* If `for_mutable_operator`, [`evaluate!(op, generator, t)`](@ref evaluate!)
+  must be defined
 
 If `for_parameterization` (may require the `RecursiveArrayTools` package to be
 loaded):
@@ -51,6 +55,8 @@ function check_generator(
     generator;
     state,
     tlist,
+    for_mutable_operator=true,
+    for_immutable_operator=true,
     for_mutable_state=true,
     for_immutable_state=true,
     for_expval=true,
@@ -208,26 +214,27 @@ function check_generator(
             success = false
         end
 
-        try
-            op = evaluate(generator, tlist, 1)
-            evaluate!(op, generator, tlist, length(tlist) - 1)
-        catch exc
-            quiet || @error(
-                "$(px)`evaluate!(op, generator, tlist, n)` must be defined.",
-                exception = (exc, catch_abbreviated_backtrace())
-            )
-            success = false
-        end
-
-        try
-            op = evaluate(generator, tlist, 1)
-            evaluate!(op, generator, tlist, length(tlist) - 1; vals_dict)
-        catch exc
-            quiet || @error(
-                "$(px)`evaluate!(op, generator, tlist, n; vals_dict)` must be defined.",
-                exception = (exc, catch_abbreviated_backtrace())
-            )
-            success = false
+        if for_mutable_operator
+            try
+                op = evaluate(generator, tlist, 1)
+                evaluate!(op, generator, tlist, length(tlist) - 1)
+            catch exc
+                quiet || @error(
+                    "$(px)`evaluate!(op, generator, tlist, n)` must be defined.",
+                    exception = (exc, catch_abbreviated_backtrace())
+                )
+                success = false
+            end
+            try
+                op = evaluate(generator, tlist, 1)
+                evaluate!(op, generator, tlist, length(tlist) - 1; vals_dict)
+            catch exc
+                quiet || @error(
+                    "$(px)`evaluate!(op, generator, tlist, n; vals_dict)` must be defined.",
+                    exception = (exc, catch_abbreviated_backtrace())
+                )
+                success = false
+            end
         end
 
     end
@@ -284,28 +291,28 @@ function check_generator(
             success = false
         end
 
-        try
-            op = evaluate(generator, tlist[begin])
-            evaluate!(op, generator, tlist[end])
-        catch exc
-            quiet || @error(
-                "$(px)`evaluate!(op, generator, t)` must be defined.",
-                exception = (exc, catch_abbreviated_backtrace())
-            )
-            success = false
+        if for_mutable_operator
+            try
+                op = evaluate(generator, tlist[begin])
+                evaluate!(op, generator, tlist[end])
+            catch exc
+                quiet || @error(
+                    "$(px)`evaluate!(op, generator, t)` must be defined.",
+                    exception = (exc, catch_abbreviated_backtrace())
+                )
+                success = false
+            end
+            try
+                op = evaluate(generator, tlist[begin])
+                evaluate!(op, generator, tlist[end]; vals_dict)
+            catch exc
+                quiet || @error(
+                    "$(px)`evaluate!(op, generator, t; vals_dict)` must be defined.",
+                    exception = (exc, catch_abbreviated_backtrace())
+                )
+                success = false
+            end
         end
-
-        try
-            op = evaluate(generator, tlist[begin])
-            evaluate!(op, generator, tlist[end]; vals_dict)
-        catch exc
-            quiet || @error(
-                "$(px)`evaluate!(op, generator, t; vals_dict)` must be defined.",
-                exception = (exc, catch_abbreviated_backtrace())
-            )
-            success = false
-        end
-
     end
 
 

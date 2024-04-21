@@ -45,7 +45,8 @@ H = evaluate(f.generator, t; vals_dict=vals_dict)
 where `vals_dict` may be a dictionary mapping controls to values (set as the
 parameters `p` of the underlying ODE solver).
 
-If [`QuantumPropagators.enable_timings()` has been called](@extref QuantumPropagators TimerOutputs),
+If [`QuantumPropagators.enable_timings()`](@ref
+QuantumPropagators.enable_timings) has been called,
 profiling data is collected in `f.timing_data`.
 """
 function ode_function(generator::GT, tlist; c=-1im, _timing_data=TimerOutput()) where {GT}
@@ -74,9 +75,9 @@ end
 
 function (f::QuantumODEFunction)(u, p, t)
     @timeit_debug f.timing_data "operator evaluation" begin
-        evaluate!(f.operator, f.generator, t; vals_dict=p)
+        H = evaluate(f.generator, t; vals_dict=p)
     end
     @timeit_debug f.timing_data "matrix-vector product" begin
-        return f.c * f.operator * u
+        return f.c * H * u
     end
 end

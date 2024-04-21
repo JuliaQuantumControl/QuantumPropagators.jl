@@ -1,11 +1,5 @@
 using Pkg
 
-DOCUMENTER_VERSION =
-    [p for (uuid, p) in Pkg.dependencies() if p.name == "Documenter"][1].version
-if DOCUMENTER_VERSION <= v"1.3.0"
-    Pkg.develop("Documenter")
-end
-
 using Documenter
 using QuantumPropagators
 using QuantumPropagators: AbstractPropagator, set_t!, set_state!
@@ -35,10 +29,6 @@ links = InterLinks(
         "https://github.com/KristofferC/TimerOutputs.jl",
         joinpath(@__DIR__, "src", "inventories", "TimerOutputs.toml"),
     ),
-    # We'll use `@extref` for links from docstrings to sections so that the
-    # docstrings can also be rendered as part of the QuantumControl
-    # documentation.
-    "QuantumPropagators" => "https://juliaquantumcontrol.github.io/QuantumPropagators.jl/$DEV_OR_STABLE",
     "QuantumControlBase" => "https://juliaquantumcontrol.github.io/QuantumControlBase.jl/$DEV_OR_STABLE",
     "ComponentArrays" => (
         "https://jonniedie.github.io/ComponentArrays.jl/stable/",
@@ -89,7 +79,8 @@ makedocs(;
                 "https://juliaquantumcontrol.github.io/QuantumControl.jl/dev/assets/topbar/topbar.js"
             ),
         ],
-        footer="[$NAME.jl]($GITHUB) v$VERSION docs powered by [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl)."
+        footer="[$NAME.jl]($GITHUB) v$VERSION docs powered by [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl).",
+        size_threshold_ignore=["api/quantumpropagators.md",]
     ),
     pages=[
         "Home" => "index.md",
@@ -101,7 +92,7 @@ makedocs(;
         hide("Benchmarks" => "benchmarks.md", [joinpath("benchmarks", "profiling.md")]),
         "API" => "api/quantumpropagators.md",
         "References" => "references.md",
-    ]
+    ],
 )
 
 println("Finished makedocs")

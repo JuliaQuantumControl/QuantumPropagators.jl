@@ -3,7 +3,7 @@ module Storage
 using LinearAlgebra
 
 export init_storage, map_observables, map_observable, write_to_storage!
-export get_from_storage!
+export get_from_storage!, get_from_storage
 
 """Create a `storage` array for propagation.
 
@@ -162,8 +162,28 @@ extracts data from the `storage` for the i'th time slot. Inverse of
 developer's responsibility
 that [`init_storage`](@ref),  [`write_to_storage!`](@ref), and
 `get_from_storage!` are compatible.
+
+To extract immutable `data`, the non-in-place version
+
+```julia
+data = get_from_storage(storage, i)
+```
+
+can be used.
 """
 get_from_storage!(data, storage::AbstractVector, i) = copyto!(data, storage[i])
 get_from_storage!(data, storage::Matrix, i) = copyto!(data, storage[:, i])
+
+
+"""Obtain immutable data from storage.
+
+```julia
+data = get_from_storage(storage, i)
+```
+
+See [`get_from_storage!`](@ref).
+"""
+get_from_storage(storage::AbstractVector, i) = storage[i]
+get_from_storage(storage::Matrix, i) = storage[:, i]
 
 end
