@@ -40,6 +40,7 @@ links = InterLinks(
         "https://docs.sciml.ai/RecursiveArrayTools/stable/objects.inv",
         joinpath(@__DIR__, "src", "inventories", "RecursiveArrayTools.toml")
     ),
+    "qutip" => "https://qutip.readthedocs.io/en/qutip-5.0.x/",
 )
 
 externals = ExternalFallbacks(

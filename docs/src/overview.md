@@ -9,7 +9,7 @@
 ```
 
 
-The `QuantumPropagators` packages provides solvers for the dynamic equations of quantum mechanics, most importantly the Schrödinger and Liouville equations. We refer to the numerical evaluation of a quantum state ``|Ψ(t + dt)⟩``  from a state ``|Ψ(t)\rangle`` under a given equation of motion as "time propagation".
+The `QuantumPropagators` packages provides solvers for the dynamic equations of quantum mechanics, most importantly the Schrödinger and Liouville equations. We refer to the numerical evaluation of a quantum state ``|Ψ(t + dt)⟩``  from a state ``|Ψ(t)⟩`` under a given equation of motion as "time propagation".
 
 ## [Getting started](@id getting_started)
 
@@ -128,7 +128,7 @@ See the more extended discussion of [Propagation Methods](@ref) for more details
 
 ## [Dynamical generators](@id overview_dynamical_generators)
 
-In the [initial example](@ref getting_started), the "generator" `H` that is the second argument to [`propagate`](@ref) was a simple static operator. In general, we will want time-dependent Hamiltonians or Liouvillians. The standard way to initialize a time-dependent Hamiltonian is via the [`hamiltonian`](@ref) function, e.g., as  `hamiltonian(Ĥ₀, (Ĥ₁, ϵ₁), (Ĥ₂, ϵ₂))`. The `Ĥ₀`, `Ĥ₁`, and `Ĥ₂` are static operators, and `ϵ₁` and `ϵ₂` are control fields, typically functions ([or function-like objects](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects)) of time `t`. For piecewise-constant propagators, `ϵ₁` and `ϵ₂` may also be an array of amplitude values appropriate to the time grid `tlist`. The tuple-syntax for the time-dependent terms is inspired by [QuTiP](https://qutip.org/docs/latest/guide/dynamics/dynamics-time.html).
+In the [initial example](@ref getting_started), the "generator" `H` that is the second argument to [`propagate`](@ref) was a simple static operator. In general, we will want time-dependent Hamiltonians or Liouvillians. The standard way to initialize a time-dependent Hamiltonian is via the [`hamiltonian`](@ref) function, e.g., as  `hamiltonian(Ĥ₀, (Ĥ₁, ϵ₁), (Ĥ₂, ϵ₂))`. The `Ĥ₀`, `Ĥ₁`, and `Ĥ₂` are static operators, and `ϵ₁` and `ϵ₂` are control fields, typically functions ([or function-like objects](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects)) of time `t`. For piecewise-constant propagators, `ϵ₁` and `ϵ₂` may also be an array of amplitude values appropriate to the time grid `tlist`. The tuple-syntax for the time-dependent terms is inspired by [QuTiP](@extref qutip :label:`time`).
 
 Generally, the `generator`, or the operators/controls inside the tuples can be a arbitrary objects, as long as some relevant methods are implemented for these objects, see the full section on [Dynamical Generators](@ref).
 
