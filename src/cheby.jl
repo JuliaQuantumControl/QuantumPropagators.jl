@@ -13,7 +13,7 @@ using TimerOutputs: @timeit_debug, TimerOutput
 a::Vector{Float64} = cheby_coeffs(Δ, dt; limit=1e-12)
 ```
 
-return an array of coefficiencts larger than `limit`.
+return an array of coefficients larger than `limit`.
 
 # Arguments
 
@@ -141,7 +141,7 @@ cheby!(Ψ, H, dt, wrk; E_min=nothing, check_normalization=false)
    `E_min`, as long as the spectra radius `Δ` and the time step `dt` are the
    same as those used for the initialization of `wrk`.
 * `check_normalizataion`: perform checks that the H does not exceed the
-  spectral radius for which the the workspace was initialized.
+  spectral radius for which the workspace was initialized.
 
 The routine will not allocate any internal storage. This implementation
 requires `copyto!` `lmul!`, and `axpy!` to be implemented for `Ψ`, and the
