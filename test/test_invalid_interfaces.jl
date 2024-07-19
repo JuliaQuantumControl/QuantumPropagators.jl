@@ -1,10 +1,11 @@
 using Test
 using Logging: with_logger
-using QuantumControlTestUtils: QuantumTestLogger
+using IOCapture: IOCapture
 using QuantumControlTestUtils.RandomObjects: random_dynamic_generator, random_state_vector
 using StableRNGs: StableRNG
-using QuantumPropagators: init_prop
+using QuantumPropagators: QuantumPropagators, init_prop
 using LinearAlgebra
+import QuantumPropagators.Interfaces: supports_inplace
 using QuantumPropagators.Interfaces:
     check_amplitude,
     check_control,
@@ -21,16 +22,16 @@ using QuantumPropagators.Interfaces:
     tlist = collect(range(0, 10, length=101))
 
     ampl = InvalidAmplitude()
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_amplitude(ampl; tlist) ≡ false
+    captured = IOCapture.capture() do
+        check_amplitude(ampl; tlist)
     end
+    @test captured.value ≡ false
 
-    @test "get_controls(ampl)` must be defined" ∈ test_logger
-    @test "all controls in `ampl` must pass `check_control`" ∈ test_logger
-    @test "`substitute(ampl, replacements)` must be defined" ∈ test_logger
-    @test "`evaluate(ampl, tlist, 1)` must return a Number" ∈ test_logger
-    @test "`evaluate(ampl, tlist, n; vals_dict)` must be defined" ∈ test_logger
+    @test contains(captured.output, "get_controls(ampl)` must be defined")
+    @test contains(captured.output, "all controls in `ampl` must pass `check_control`")
+    @test contains(captured.output, "`substitute(ampl, replacements)` must be defined")
+    @test contains(captured.output, "`evaluate(ampl, tlist, 1)` must return a Number")
+    @test contains(captured.output, "`evaluate(ampl, tlist, n; vals_dict)` must be defined")
 
 end
 
@@ -42,23 +43,30 @@ end
     tlist = collect(range(0, 10, length=101))
 
     control = InvalidControl()
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_control(control; tlist) ≡ false
+    captured = IOCapture.capture() do
+        check_control(control; tlist)
     end
-
-    @test "`discretize(control, tlist)` must be defined" ∈ test_logger
-    @test "`discretize_on_midpoints(control, tlist)` must be defined" ∈ test_logger
+    @test captured.value ≡ false
+    @test contains(captured.output, "`discretize(control, tlist)` must be defined")
+    @test contains(
+        captured.output,
+        "`discretize_on_midpoints(control, tlist)` must be defined"
+    )
 
     tlist = [0.0, 1.0, 2.0, 3.0]
     control = [0.0, NaN, Inf, 0.0]
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_control(control; tlist) ≡ false
+    captured = IOCapture.capture() do
+        check_control(control; tlist)
     end
-    @test "all values in `discretize(control, tlist)` must be finite" ∈ test_logger
-    @test "all values in `discretize_on_midpoints(control, tlist)` must be finite" ∈
-          test_logger
+    @test captured.value ≡ false
+    @test contains(
+        captured.output,
+        "all values in `discretize(control, tlist)` must be finite"
+    )
+    @test contains(
+        captured.output,
+        "all values in `discretize_on_midpoints(control, tlist)` must be finite"
+    )
 
 end
 
@@ -71,16 +79,25 @@ end
     tlist = collect(range(0, 10, length=101))
 
     operator = InvalidOperator()
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_operator(operator; state, tlist) ≡ false
+    captured = IOCapture.capture() do
+        check_operator(operator; state, tlist)
     end
-
-    @test "op must not contain any controls" ∈ test_logger
-    @test "`op * state` must be defined" ∈ test_logger
-    @test "The 3-argument `mul!` must apply `op` to the given `state`" ∈ test_logger
-    @test "The 5-argument `mul!` must apply `op` to the given `state`" ∈ test_logger
-    @test "`dot(state, op, state)` must return return a number" ∈ test_logger
+    @test captured.value ≡ false
+    @test contains(
+        captured.output,
+        "The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for `op`"
+    )
+    @test contains(captured.output, "op must not contain any controls")
+    @test contains(captured.output, "`op * state` must be defined")
+    @test contains(
+        captured.output,
+        "The 3-argument `mul!` must apply `op` to the given `state`"
+    )
+    @test contains(
+        captured.output,
+        "The 5-argument `mul!` must apply `op` to the given `state`"
+    )
+    @test contains(captured.output, "`dot(state, op, state)` must return return a number")
 
 end
 
@@ -93,61 +110,82 @@ end
     tlist = collect(range(0, 10, length=101))
 
     generator = InvalidGenerator()
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_generator(generator; state, tlist) ≡ false
+    captured = IOCapture.capture() do
+        check_generator(generator; state, tlist)
     end
+    @test captured.value ≡ false
 
-    @test "`get_controls(generator)` must be defined" ∈ test_logger
-    @test "`evaluate(generator, tlist, n)` must return an operator that passes `check_operator`" ∈
-          test_logger
-    @test "`substitute(generator, replacements)` must be defined" ∈ test_logger
+    @test contains(captured.output, "`get_controls(generator)` must be defined")
+    @test contains(
+        captured.output,
+        "`evaluate(generator, tlist, n)` must return an operator that passes `check_operator`"
+    )
+    @test contains(captured.output, "`substitute(generator, replacements)` must be defined")
 
 end
 
 
 @testset "Invalid state" begin
 
-    struct InvalidState end
-    state = InvalidState()
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_state(state; normalized=true) ≡ false
+    struct InvalidStaticState end
+    state = InvalidStaticState()
+    captured = IOCapture.capture() do
+        check_state(state)
     end
-    @test "`similar(state)` must be defined" ∈ test_logger
-    @test "the inner product of two states must be a complex number" ∈ test_logger
-    @test "the norm of a state must be defined via the inner product" ∈ test_logger
-    @test "`state + state` and `state - state` must be defined" ∈ test_logger
-    @test "copy(state) must be defined" ∈ test_logger
-    @test "`c * state` for a scalar `c` must be defined" ∈ test_logger
-    @test "`0.0 * state` must produce a state with norm 0" ∈ test_logger
-    @test "`norm(state)` must be 1" ∈ test_logger
+    @test captured.value ≡ false
+    @test contains(
+        captured.output,
+        "The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for `state`"
+    )
 
+    struct InvalidState end
+    QuantumPropagators.Interfaces.supports_inplace(::InvalidState) = true
+    state = InvalidState()
+    captured = IOCapture.capture() do
+        check_state(state; normalized=true)
+    end
+    @test captured.value ≡ false
+    @test contains(captured.output, "`similar(state)` must be defined")
+    @test contains(
+        captured.output,
+        "the inner product of two states must be a complex number"
+    )
+    @test contains(
+        captured.output,
+        "the norm of a state must be defined via the inner product"
+    )
+    @test contains(captured.output, "`state + state` and `state - state` must be defined")
+    @test contains(captured.output, "copy(state) must be defined")
+    @test contains(captured.output, "`c * state` for a scalar `c` must be defined")
+    @test contains(captured.output, "`0.0 * state` must produce a state with norm 0")
+    @test contains(captured.output, "`norm(state)` must be 1")
 
     struct InvalidState2 end
+    QuantumPropagators.Interfaces.supports_inplace(::InvalidState2) = true
     state = InvalidState2()
     Base.similar(::InvalidState2) = InvalidState2()
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_state(state; normalized=true) ≡ false
+    captured = IOCapture.capture() do
+        check_state(state; normalized=true)
     end
-    @test "`copyto!(other, state)` must be defined" ∈ test_logger
+    @test captured.value ≡ false
+    @test contains(captured.output, "`copyto!(other, state)` must be defined")
 
     struct InvalidState3 end
+    QuantumPropagators.Interfaces.supports_inplace(::InvalidState3) = true
     state = InvalidState3()
     Base.similar(::InvalidState3) = InvalidState3()
     Base.copyto!(a::InvalidState3, b::InvalidState3) = a
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_state(state; normalized=true) ≡ false
+    captured = IOCapture.capture() do
+        check_state(state; normalized=true)
     end
-    @test "`similar(state)` must return a valid state" ∈ test_logger
-    @test "On `similar(state)`: " ∈ test_logger
-
+    @test captured.value ≡ false
+    @test contains(captured.output, "`similar(state)` must return a valid state")
+    @test contains(captured.output, "On `similar(state)`: ")
 
     struct InvalidState4
         Ψ
     end
+    QuantumPropagators.Interfaces.supports_inplace(::InvalidState4) = true
     Base.similar(state::InvalidState4) = InvalidState4(similar(state.Ψ))
     Base.copy(state::InvalidState4) = InvalidState4(copy(state.Ψ))
     Base.copyto!(a::InvalidState4, b::InvalidState4) = copyto!(a.Ψ, b.Ψ)
@@ -157,20 +195,20 @@ end
     Base.:-(a::InvalidState4, b::InvalidState4) = InvalidState4(a.Ψ - b.Ψ)
     Base.:*(α::Number, state::InvalidState4) = InvalidState4(α * state.Ψ)
     state = InvalidState4([1im, 0])
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_state(state; normalized=true) ≡ false
+    captured = IOCapture.capture() do
+        check_state(state; normalized=true)
     end
-    @test "`lmul!(c, state)` for a scalar `c` must be defined" ∈ test_logger
-    @test "`lmul!(0.0, state)` must produce a state with norm 0" ∈ test_logger
-    @test "`axpy!(c, state, other)` must be defined" ∈ test_logger
+    @test captured.value ≡ false
+    @test contains(captured.output, "`lmul!(c, state)` for a scalar `c` must be defined")
+    @test contains(captured.output, "`lmul!(0.0, state)` must produce a state with norm 0")
+    @test contains(captured.output, "`axpy!(c, state, other)` must be defined")
 
     state = [1, 0, 0, 0]
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_state(state; normalized=true) ≡ false
+    captured = IOCapture.capture() do
+        check_state(state; normalized=true)
     end
-    @test "`state ⋅ state` must return a Complex number type" ∈ test_logger
+    @test captured.value ≡ false
+    @test contains(captured.output, "`state ⋅ state` must return a Complex number type")
 
 end
 
@@ -183,12 +221,12 @@ end
 
     propagator = InvalidPropagatorEmpty()
 
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_propagator(propagator) ≡ false
+    captured = IOCapture.capture() do
+        check_propagator(propagator)
     end
+    @test captured.value ≡ false
 
-    @test "does not have the required properties" ∈ test_logger
+    @test contains(captured.output, "does not have the required properties")
 
     N = 10
     tlist = collect(range(0, 100, length=1001))
@@ -198,15 +236,13 @@ end
 
     propagator = init_prop(Ψ, Ĥ, tlist; method=:invalid_propagator_no_methods)
 
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_propagator(propagator) ≡ false
+    captured = IOCapture.capture() do
+        check_propagator(propagator)
     end
 
-    @test "`prop_step!(propagator)` must be defined" ∈ test_logger
-    @test "Failed to run `prop_step!(propagator)`" ∈ test_logger
-    @test "`reinit_prop!` must be defined" ∈ test_logger
-
+    @test contains(captured.output, "`prop_step!(propagator)` must be defined")
+    @test contains(captured.output, "Failed to run `prop_step!(propagator)`")
+    @test contains(captured.output, "`reinit_prop!` must be defined")
 
     propagator = init_prop(
         Ψ,
@@ -216,15 +252,21 @@ end
         inplace=true,
         backward=false
     )
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_propagator(propagator) ≡ false
+    captured = IOCapture.capture() do
+        check_propagator(propagator)
     end
-    @test "propagator.t ≠ propagator.tlist[begin]" ∈ test_logger
-    @test "`set_t!(propagator, t)` must set propagator.t" ∈ test_logger
-    @test "`prop_step!(propagator)` at final t=0.1 must return `nothing`" ∈ test_logger
-    @test "`propagator.parameters` must be a dict" ∈ test_logger
-    @test "`reinit_prop!(propagator, state)` must reset `propagator.t`" ∈ test_logger
+    @test captured.value ≡ false
+    @test contains(captured.output, "propagator.t ≠ propagator.tlist[begin]")
+    @test contains(captured.output, "`set_t!(propagator, t)` must set propagator.t")
+    @test contains(
+        captured.output,
+        "`prop_step!(propagator)` at final t=0.1 must return `nothing`"
+    )
+    @test contains(captured.output, "`propagator.parameters` must be a dict")
+    @test contains(
+        captured.output,
+        "`reinit_prop!(propagator, state)` must reset `propagator.t`"
+    )
 
     propagator = init_prop(
         Ψ,
@@ -234,15 +276,19 @@ end
         inplace=false,
         backward=true
     )
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_propagator(propagator) ≡ false
+    captured = IOCapture.capture() do
+        check_propagator(propagator)
     end
-    @test "propagator.t ≠ propagator.tlist[end]" ∈ test_logger
-    @test "For a not-in-place propagator, the state returned by `prop_step!` must be a new object" ∈
-          test_logger
-    @test "`prop_step!` must advance `propagator.t` forward or backward one step on the time grid" ∈
-          test_logger
+    @test captured.value ≡ false
+    @test contains(captured.output, "propagator.t ≠ propagator.tlist[end]")
+    @test contains(
+        captured.output,
+        "For a not-in-place propagator, the state returned by `prop_step!` must be a new object"
+    )
+    @test contains(
+        captured.output,
+        "`prop_step!` must advance `propagator.t` forward or backward one step on the time grid"
+    )
 
     propagator = init_prop(
         Ψ,
@@ -252,15 +298,19 @@ end
         inplace=true,
         backward=false
     )
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_propagator(propagator) ≡ false
+    captured = IOCapture.capture() do
+        check_propagator(propagator)
     end
-    @test "For an in-place propagator, the state returned by `prop_step!` must be the `propagator.state` object" ∈
-          test_logger
-    @test "`set_state!(propagator, state)` for an in-place propagator must overwrite `propagator.state` in-place." ∈
-          test_logger
-    @test "`reinit_prop!(propagator, state)` must be idempotent" ∈ test_logger
+    @test captured.value ≡ false
+    @test contains(
+        captured.output,
+        "For an in-place propagator, the state returned by `prop_step!` must be the `propagator.state` object"
+    )
+    @test contains(
+        captured.output,
+        "`set_state!(propagator, state)` for an in-place propagator must overwrite `propagator.state` in-place."
+    )
+    @test contains(captured.output, "`reinit_prop!(propagator, state)` must be idempotent")
 
     propagator = init_prop(
         Ψ,
@@ -270,13 +320,18 @@ end
         inplace=false,
         backward=true
     )
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_propagator(propagator) ≡ false
+    captured = IOCapture.capture() do
+        check_propagator(propagator)
     end
-    @test "For a not-in-place propagator, the state returned by `prop_step!` must be a new object" ∈
-          test_logger
-    @test "`reinit_prop!` must be defined and re-initialize the propagator" ∈ test_logger
+    @test captured.value ≡ false
+    @test contains(
+        captured.output,
+        "For a not-in-place propagator, the state returned by `prop_step!` must be a new object"
+    )
+    @test contains(
+        captured.output,
+        "`reinit_prop!` must be defined and re-initialize the propagator"
+    )
 
     propagator = init_prop(
         Ψ,
@@ -286,11 +341,13 @@ end
         inplace=true,
         backward=false
     )
-    test_logger = QuantumTestLogger()
-    with_logger(test_logger) do
-        @test check_propagator(propagator) ≡ false
+    captured = IOCapture.capture() do
+        check_propagator(propagator)
     end
-    @test "prop_step! must return a valid state until time grid is exhausted" ∈ test_logger
-
+    @test captured.value ≡ false
+    @test contains(
+        captured.output,
+        "prop_step! must return a valid state until time grid is exhausted"
+    )
 
 end

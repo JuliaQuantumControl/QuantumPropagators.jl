@@ -133,7 +133,7 @@ propagator = init_prop(
     state, generator, tlist;
     method,  # mandatory keyword argument
     backward=false,
-    inplace=true,
+    inplace=QuantumPropagators.Interfaces.supports_inplace(state),
     piecewise=nothing,
     pwc=nothing,
     kwargs...
@@ -172,8 +172,8 @@ time grid `tlist` under the time-dependent generator (Hamiltonian/Liouvillian)
   call to [`prop_step!`](@ref) changes the reference for `propagator.state`,
   and the propagation will not use any in-place operations. Not all propagation
   methods may support both in-place and not-in-place propagation. In-place
-  propagation is generally more efficient but may not be compatible, e.g., with
-  automatic differentiation.
+  propagation is generally more efficient for larger Hilbert space dimensions,
+  but may not be compatible, e.g., with automatic differentiation.
 * `piecewise`: If given as a boolean, `true` enforces that the resulting
   propagator is a [`PiecewisePropagator`](@ref), and `false` enforces that it
   not a [`PiecewisePropagator`](@ref). For the default `piecewise=nothing`,
@@ -211,7 +211,7 @@ function init_prop(
     tlist;
     method,  # mandatory keyword argument
     backward=false,
-    inplace=true,
+    inplace=Interfaces.supports_inplace(state),
     verbose=false,
     piecewise=nothing,
     pwc=nothing,

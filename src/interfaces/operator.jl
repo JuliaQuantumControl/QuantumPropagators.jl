@@ -8,7 +8,6 @@ using ..Controls: get_controls, evaluate
 
 ```julia
 @test check_operator(op; state, tlist=[0.0, 1.0],
-                     for_mutable_state=true, for_immutable_state=true,
                      for_expval=true, atol=1e-14, quiet=false)
 ```
 
@@ -20,12 +19,12 @@ time-dependent dynamic generator. The specific requirements for `op` are:
 
 * `op` must not be time-dependent: [`evaluate(op, tlist, 1) ≡ op`](@ref evaluate)
 * `op` must not contain any controls: [`length(get_controls(op)) == 0`](@ref get_controls)
-
-If `for_immutable_state` (e.g., for use in propagators with `inplace=false`):
-
 * `op * state` must be defined
+* The [`QuantumPropagators.Interfaces.supports_inplace`](@ref) method must be
+  defined for `op`. If it returns `true`, it must be possible to evaluate a
+  generator in-place into the existing `op`. See [`check_generator`](@ref).
 
-If `for_mutable_state` (e.g., for use in propagators with `inplace=true`):
+If [`QuantumPropagators.Interfaces.supports_inplace(state)`](@ref):
 
 * The 3-argument `LinearAlgebra.mul!` must apply `op` to the given `state`
 * The 5-argument `LinearAlgebra.mul!` must apply `op` to the given `state`
@@ -45,8 +44,6 @@ function check_operator(
     op;
     state,
     tlist=[0.0, 1.0],
-    for_mutable_state=true,
-    for_immutable_state=true,
     for_expval=true,
     atol=1e-14,
     quiet=false,
@@ -60,8 +57,18 @@ function check_operator(
 
     Ψ = state
 
-    @assert check_state(state; for_mutable_state, for_immutable_state, atol, quiet=true)
+    @assert check_state(state; atol, quiet=true)
     @assert tlist isa Vector{Float64}
+
+    try
+        supports_inplace(op)
+    catch exc
+        quiet || @error(
+            "$(px)The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for `op`.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
+        success = false
+    end
 
     try
         H = evaluate(op, tlist, 1)
@@ -92,26 +99,24 @@ function check_operator(
         success = false
     end
 
-    if for_immutable_state
 
-        try
-            ϕ = op * Ψ
-            if !(ϕ isa typeof(Ψ))
-                quiet ||
-                    @error "$(px)`op * state` must return an object of the same type as `state`, not $typeof(ϕ)"
-                success = false
-            end
-        catch exc
-            quiet || @error(
-                "$(px)`op * state` must be defined.",
-                exception = (exc, catch_abbreviated_backtrace())
-            )
+    try
+        ϕ = op * Ψ
+        if !(ϕ isa typeof(Ψ))
+            quiet ||
+                @error "$(px)`op * state` must return an object of the same type as `state`, not $typeof(ϕ)"
             success = false
         end
-
+    catch exc
+        quiet || @error(
+            "$(px)`op * state` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
+        success = false
     end
 
-    if for_mutable_state
+
+    if supports_inplace(state)
 
         try
             ϕ = similar(Ψ)
@@ -119,11 +124,9 @@ function check_operator(
                 quiet || @error "$(px)`mul!(ϕ, op, state)` must return the resulting ϕ"
                 success = false
             end
-            if for_immutable_state
-                if norm(ϕ - op * Ψ) > atol
-                    quiet || @error "$(px)`mul!(ϕ, op, state)` must match `op * state`"
-                    success = false
-                end
+            if norm(ϕ - op * Ψ) > atol
+                quiet || @error "$(px)`mul!(ϕ, op, state)` must match `op * state`"
+                success = false
             end
         catch exc
             quiet || @error(
@@ -143,12 +146,10 @@ function check_operator(
                     @error "$(px)`mul!(ϕ, op, state, α, β)` must return the resulting ϕ"
                 success = false
             end
-            if for_immutable_state
-                if norm(ϕ - (0.5 * ϕ0 + 0.5 * (op * Ψ))) > atol
-                    quiet ||
-                        @error "$(px)`mul!(ϕ, op, state, α, β)` must match β*ϕ + α*op*state"
-                    success = false
-                end
+            if norm(ϕ - (0.5 * ϕ0 + 0.5 * (op * Ψ))) > atol
+                quiet ||
+                    @error "$(px)`mul!(ϕ, op, state, α, β)` must match β*ϕ + α*op*state"
+                success = false
             end
         catch exc
             quiet || @error(
@@ -169,14 +170,12 @@ function check_operator(
                     @error "$(px)`dot(state, op, state)` must return a number, not $typeof(val)"
                 success = false
             end
-            if for_immutable_state
-                if abs(dot(Ψ, op, Ψ) - dot(Ψ, op * Ψ)) > atol
-                    quiet ||
-                        @error "$(px)`dot(state, op, state)` must match `dot(state, op * state)`"
-                    success = false
-                end
+            if abs(dot(Ψ, op, Ψ) - dot(Ψ, op * Ψ)) > atol
+                quiet ||
+                    @error "$(px)`dot(state, op, state)` must match `dot(state, op * state)`"
+                success = false
             end
-            if for_mutable_state
+            if supports_inplace(state)
                 ϕ = similar(Ψ)
                 mul!(ϕ, op, Ψ)
                 if abs(dot(Ψ, op, Ψ) - dot(Ψ, ϕ)) > atol

@@ -12,6 +12,7 @@ using QuantumPropagators:
     ode_function
 using QuantumPropagators.Controls:
     get_controls, get_parameters, evaluate, evaluate!, discretize_on_midpoints
+using QuantumPropagators.Interfaces: supports_inplace
 import QuantumPropagators: init_prop, reinit_prop!, prop_step!, set_state!, set_t!
 
 
@@ -24,7 +25,7 @@ ode_propagator = init_prop(
     generator,
     tlist;
     method=OrdinaryDiffEq,  # or: `method=DifferentialEquations`
-    inplace=true,
+    inplace=QuantumPropagators.Interfaces.supports_inplace(state),
     backward=false,
     verbose=false,
     parameters=nothing,
@@ -92,7 +93,7 @@ function init_prop(
     generator,
     tlist,
     method::Val{:OrdinaryDiffEq};
-    inplace=true,
+    inplace=supports_inplace(state),
     backward=false,
     verbose=false,
     parameters=nothing,

@@ -4,7 +4,7 @@ using ProgressMeter
 using .Storage: init_storage, write_to_storage!
 import .Storage: map_observables
 
-using .Interfaces: check_state, check_generator, check_tlist
+using .Interfaces: check_state, check_generator, check_tlist, supports_inplace
 
 
 # Default "observables" for just storing the propagated state. We want to keep
@@ -31,7 +31,7 @@ state = propagate(
     method,  # mandatory keyword argument
     check=true,
     backward=false,
-    inplace=true,
+    inplace=QuantumPropagators.Interfaces.supports_inplace(state),
     verbose=false,
     piecewise=nothing,
     pwc=nothing,
@@ -84,7 +84,9 @@ routine performs the following three steps:
 * `backward`: If `true`, propagate backward in time
 * `inplace`: If `true`, propagate using in-place operations. If `false`, avoid
   in-place operations. Not all propagation methods
-  support both in-place and not-in-place propagation.
+  support both in-place and not-in-place propagation. Note that `inplace=true`
+  requires that [`QuantumPropagators.Interfaces.supports_inplace`](@ref) for
+  `state` is `true`.
 * `piecewise`: If given as a boolean, ensure that the internal `propagator` is
   an instance of [`PiecewisePropagator`](@ref), cf. [`init_prop`](@ref).
 * `pwc`: If given a a boolean, do a piecewise constant propagation where the
@@ -172,11 +174,8 @@ function propagate(
     show_progress=false,
     observables=_StoreState(),
     callback=nothing,
-    inplace=true, # cf. default of init_prop
+    inplace=supports_inplace(state),
     for_expval=true,  # undocumented
-    for_immutable_state=true,  # undocumented
-    for_mutable_operator=inplace,  # undocumented
-    for_mutable_state=inplace,  # undocumented
     kwargs...
 )
     atol = get(kwargs, :atol, 1e-14)  # for checks
@@ -195,8 +194,6 @@ function propagate(
         end
         valid_state = check_state(
             state;
-            for_immutable_state,
-            for_mutable_state,
             atol,
             quiet,
             _message_prefix="On initial `state` in `propagate`: "
@@ -204,13 +201,17 @@ function propagate(
         if !valid_state
             error("The initial state in `propagate` does not pass `check_state`")
         end
+        if inplace
+            if !supports_inplace(state)
+                error(
+                    "The propagator is in-place, but the given state does not support in-place operations"
+                )
+            end
+        end
         valid_generator = check_generator(
             generator;
             state=state,
             tlist=tlist,
-            for_immutable_state,
-            for_mutable_operator,
-            for_mutable_state,
             for_expval,
             atol,
             quiet,

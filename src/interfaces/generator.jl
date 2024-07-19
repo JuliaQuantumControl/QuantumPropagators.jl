@@ -6,8 +6,6 @@ using ..Generators: Generator
 ```julia
 @test check_generator(
     generator; state, tlist,
-    for_mutable_operator=true, for_immutable_operator=true,
-    for_mutable_state=true, for_immutable_state=true,
     for_pwc=true, for_time_continuous=false,
     for_expval=true, for_parameterization=false,
     atol=1e-14, quiet=false)
@@ -26,10 +24,10 @@ verifies the given `generator`:
 
 If `for_pwc` (default):
 
-* [`evaluate(generator, tlist, n)`](@ref evaluate) must return a valid
+* [`op = evaluate(generator, tlist, n)`](@ref evaluate) must return a valid
   operator ([`check_operator`](@ref)), with forwarded keyword arguments
   (including `for_expval`)
-* If `for_mutable_operator`,
+* If `QuantumPropagators.Interfaces.supports_inplace(op)` is `true`,
   [`evaluate!(op, generator, tlist, n)`](@ref evaluate!) must be defined
 
 If `for_time_continuous`:
@@ -37,8 +35,9 @@ If `for_time_continuous`:
 * [`evaluate(generator, t)`](@ref evaluate) must return a valid
   operator ([`check_operator`](@ref)), with forwarded keyword arguments
   (including `for_expval`)
-* If `for_mutable_operator`, [`evaluate!(op, generator, t)`](@ref evaluate!)
-  must be defined
+
+* If `QuantumPropagators.Interfaces.supports_inplace(op)` is `true`,
+  [`evaluate!(op, generator, t)`](@ref evaluate!) must be defined
 
 If `for_parameterization` (may require the `RecursiveArrayTools` package to be
 loaded):
@@ -55,10 +54,6 @@ function check_generator(
     generator;
     state,
     tlist,
-    for_mutable_operator=true,
-    for_immutable_operator=true,
-    for_mutable_state=true,
-    for_immutable_state=true,
     for_expval=true,
     for_pwc=true,
     for_time_continuous=false,
@@ -69,7 +64,7 @@ function check_generator(
     _check_amplitudes=true  # undocumented (internal use)
 )
 
-    @assert check_state(state; for_mutable_state, for_immutable_state, atol, quiet=true)
+    @assert check_state(state; atol, quiet=true)
     @assert tlist isa Vector{Float64}
     @assert length(tlist) >= 2
 
@@ -170,8 +165,6 @@ function check_generator(
                 op;
                 state,
                 tlist,
-                for_mutable_state,
-                for_immutable_state,
                 for_expval,
                 atol,
                 quiet,
@@ -189,14 +182,13 @@ function check_generator(
             success = false
         end
 
+        op = evaluate(generator, tlist, 1)
+
         try
-            op = evaluate(generator, tlist, 1; vals_dict)
             if !check_operator(
                 op;
                 state,
                 tlist,
-                for_mutable_state,
-                for_immutable_state,
                 for_expval,
                 atol,
                 quiet,
@@ -214,9 +206,8 @@ function check_generator(
             success = false
         end
 
-        if for_mutable_operator
+        if success && supports_inplace(op)
             try
-                op = evaluate(generator, tlist, 1)
                 evaluate!(op, generator, tlist, length(tlist) - 1)
             catch exc
                 quiet || @error(
@@ -247,8 +238,6 @@ function check_generator(
                 op;
                 state,
                 tlist,
-                for_mutable_state,
-                for_immutable_state,
                 for_expval,
                 atol,
                 quiet,
@@ -272,8 +261,6 @@ function check_generator(
                 op;
                 state,
                 tlist,
-                for_mutable_state,
-                for_immutable_state,
                 for_expval,
                 atol,
                 quiet,
@@ -291,9 +278,9 @@ function check_generator(
             success = false
         end
 
-        if for_mutable_operator
+        op = evaluate(generator, tlist[begin])
+        if success && supports_inplace(op)
             try
-                op = evaluate(generator, tlist[begin])
                 evaluate!(op, generator, tlist[end])
             catch exc
                 quiet || @error(

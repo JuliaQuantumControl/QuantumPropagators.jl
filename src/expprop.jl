@@ -4,7 +4,6 @@ module ExpProp
 export ExpPropWrk, expprop!
 
 using LinearAlgebra
-import StaticArrays
 using TimerOutputs: @timeit_debug, TimerOutput
 
 

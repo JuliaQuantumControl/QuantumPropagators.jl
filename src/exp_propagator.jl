@@ -1,4 +1,5 @@
 using .Controls: get_controls
+using .Interfaces: supports_inplace
 using TimerOutputs: reset_timer!, @timeit_debug, TimerOutput
 
 """Propagator for propagation via direct exponentiation
@@ -46,7 +47,7 @@ exp_propagator = init_prop(
     generator,
     tlist;
     method=ExpProp,
-    inplace=true,
+    inplace=QuantumPropagators.Interfaces.supports_inplace(state),
     backward=false,
     verbose=false,
     parameters=nothing,
@@ -82,7 +83,7 @@ function init_prop(
     generator,
     tlist,
     method::Val{:ExpProp};
-    inplace=true,
+    inplace=supports_inplace(state),
     backward=false,
     verbose=false,
     parameters=nothing,
@@ -142,6 +143,7 @@ init_prop(state, generator, tlist, method::Val{:expprop}; kwargs...) =
 
 function prop_step!(propagator::ExpPropagator)
     @timeit_debug propagator.timing_data "prop_step!" begin
+        H = propagator.genop
         n = propagator.n
         tlist = getfield(propagator, :tlist)
         (0 < n < length(tlist)) || return nothing
@@ -151,8 +153,12 @@ function prop_step!(propagator::ExpPropagator)
         end
         Ψ = convert(propagator.convert_state, propagator.state)
         if propagator.inplace
-            _pwc_set_genop!(propagator, n)
-            H = convert(propagator.convert_operator, propagator.genop)
+            if supports_inplace(propagator.genop)
+                _pwc_set_genop!(propagator, n)
+                H = convert(propagator.convert_operator, propagator.genop)
+            else
+                H = convert(propagator.convert_operator, _pwc_get_genop(propagator, n))
+            end
             ExpProp.expprop!(Ψ, H, dt, propagator.wrk; func=propagator.func)
             if Ψ ≢ propagator.state  # `convert` of Ψ may have been a no-op
                 copyto!(propagator.state, convert(typeof(propagator.state), Ψ))

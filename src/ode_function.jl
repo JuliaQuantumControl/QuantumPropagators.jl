@@ -1,3 +1,4 @@
+using QuantumPropagators.Interfaces: supports_inplace
 using TimerOutputs: @timeit_debug, TimerOutput
 
 @doc raw"""
@@ -65,10 +66,14 @@ end
 
 function (f::QuantumODEFunction)(du, u, p, t)
     @timeit_debug f.timing_data "operator evaluation" begin
-        evaluate!(f.operator, f.generator, t; vals_dict=p)
+        if supports_inplace(f.operator)
+            H = evaluate!(f.operator, f.generator, t; vals_dict=p)
+        else
+            H = evaluate(f.generator, t; vals_dict=p)
+        end
     end
     @timeit_debug f.timing_data "matrix-vector product" begin
-        return mul!(du, f.operator, u, f.c, false)
+        return mul!(du, H, u, f.c, false)
     end
 end
 

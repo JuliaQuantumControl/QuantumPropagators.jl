@@ -19,9 +19,9 @@ initialized with [`init_prop`](@ref).
 
 * `propagator` must have the properties `state`, `tlist`, `t`, `parameters`,
   `backward`, and `inplace`
-* `propagator.state` must be a valid state (see [`check_state`](@ref)), with
-  support for in-place operations (`for_mutable_state=true`) if
-  `propagator.inplace` is true.
+* `propagator.state` must be a valid state (see [`check_state`](@ref))
+* If `propagator.inplace` is true, [`supports_inplace`](@ref) for
+  `propagator.state` must also be true
 * `propagator.tlist` must be monotonically increasing.
 * `propagator.t` must be the first or last element of `propagator.tlist`,
   depending on `propagator.backward`
@@ -89,16 +89,17 @@ function check_propagator(
     end
 
     try
-        valid_state = check_state(
-            state;
-            for_mutable_state=inplace,
-            for_immutable_state=true,
-            atol,
-            _message_prefix="On `propagator.state`: "
-        )
+        valid_state = check_state(state; atol, _message_prefix="On `propagator.state`: ")
         if !valid_state
             quiet || @error "$(px)`propagator.state` is not a valid state"
             success = false
+        end
+        if inplace
+            if !supports_inplace(state)
+                quiet ||
+                    @error "$(px)`supports_inplace(propagator.state)` is false even for an in-place `propagator`"
+                success = false
+            end
         end
     catch exc
         quiet || @error(
@@ -151,13 +152,8 @@ function check_propagator(
 
     try
         Ψ₁ = prop_step!(propagator)
-        valid_state = check_state(
-            Ψ₁;
-            for_mutable_state=false,
-            for_immutable_state=false,
-            atol,
-            _message_prefix="On `Ψ₁=prop_step!(propagator)`: "
-        )
+        valid_state =
+            check_state(Ψ₁; atol, _message_prefix="On `Ψ₁=prop_step!(propagator)`: ")
         if !valid_state
             quiet ||
                 @error "$(px)prop_step! must return a valid state until time grid is exhausted"

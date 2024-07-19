@@ -1,4 +1,5 @@
 using .Controls: get_controls, evaluate, discretize
+using .Interfaces: supports_inplace
 using TimerOutputs: reset_timer!, @timeit_debug, TimerOutput
 
 """Propagator for Chebychev propagation (`method=QuantumPropagators.Cheby`).
@@ -38,7 +39,7 @@ cheby_propagator = init_prop(
     generator,
     tlist;
     method=Cheby,
-    inplace=true,
+    inplace=QuantumPropagators.Interfaces.supports_inplace(state),
     backward=false,
     verbose=false,
     parameters=nothing,
@@ -88,7 +89,7 @@ function init_prop(
     generator,
     tlist,
     method::Val{:Cheby};
-    inplace=true,
+    inplace=supports_inplace(state),
     backward=false,
     verbose=false,
     parameters=nothing,
@@ -356,7 +357,11 @@ function prop_step!(propagator::ChebyPropagator)
         tlist = getfield(propagator, :tlist)
         (0 < n < length(tlist)) || return nothing
         if propagator.inplace
-            H = _pwc_set_genop!(propagator, n)
+            if supports_inplace(H)
+                H = _pwc_set_genop!(propagator, n)
+            else
+                H = _pwc_get_genop(propagator, n)
+            end
             Cheby.cheby!(
                 Ψ,
                 H,

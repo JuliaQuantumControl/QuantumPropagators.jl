@@ -102,7 +102,11 @@ constant `Number`. If the number of coefficients is less than the
 number of operators, the first `ops` are considered to have ``c_l = 1``.
 
 An `Operator` object would generally not be instantiated directly, but be
-obtained from a (@ref) via [`evaluate`](@ref).
+obtained from a [`Generator`](@ref) via [`evaluate`](@ref).
+
+The ``Ĥ_l`` in the sum are considered immutable. This implies that an
+`Operator` can be updated in-place with [`evaluate!`](@ref) by only changing
+the `coeffs`.
 """
 struct Operator{OT,CT<:Number}
 

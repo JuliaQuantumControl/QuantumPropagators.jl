@@ -1,4 +1,5 @@
 using .Controls: get_controls
+using .Interfaces: supports_inplace
 using TimerOutputs: reset_timer!, @timeit_debug
 
 """Propagator for Newton propagation (`method=QuantumPropagators.Newton`).
@@ -36,7 +37,7 @@ newton_propagator = init_prop(
     generator,
     tlist;
     method=Newton,
-    inplace=true,
+    inplace=QuantumPropagators.Interfaces.supports_inplace(state),
     backward=false,
     verbose=false,
     parameters=nothing,
@@ -63,7 +64,7 @@ function init_prop(
     generator,
     tlist,
     method::Val{:Newton};
-    inplace=true,
+    inplace=supports_inplace(state),
     backward=false,
     verbose=false,
     parameters=nothing,
@@ -119,6 +120,7 @@ init_prop(state, generator, tlist, method::Val{:newton}; kwargs...) =
 function prop_step!(propagator::NewtonPropagator)
     @timeit_debug propagator.timing_data "prop_step!" begin
         Ψ = propagator.state
+        H = propagator.genop
         n = propagator.n  # index of interval we're going to propagate
         tlist = getfield(propagator, :tlist)
         (0 < n < length(tlist)) || return nothing
@@ -127,7 +129,11 @@ function prop_step!(propagator::NewtonPropagator)
             dt = -dt
         end
         if propagator.inplace
-            H = _pwc_set_genop!(propagator, n)
+            if supports_inplace(H)
+                H = _pwc_set_genop!(propagator, n)
+            else
+                H = _pwc_get_genop(propagator, n)
+            end
             Newton.newton!(
                 Ψ,
                 H,

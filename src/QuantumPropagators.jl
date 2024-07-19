@@ -34,6 +34,25 @@ include("propagator.jl")
 export init_prop, reinit_prop!, prop_step!
 # not exported: set_t!, set_state!
 
+#! format: off
+module Interfaces
+    export supports_inplace
+    export check_operator, check_state, check_tlist, check_amplitude
+    export check_control, check_generator, check_propagator
+    export check_parameterized_function, check_parameterized
+    include("interfaces/supports_inplace.jl")
+    include("interfaces/utils.jl")
+    include("interfaces/state.jl")
+    include("interfaces/tlist.jl")
+    include("interfaces/operator.jl")
+    include("interfaces/amplitude.jl")
+    include("interfaces/control.jl")
+    include("interfaces/generator.jl")
+    include("interfaces/propagator.jl")
+    include("interfaces/parameterization.jl")
+end
+#! format: on
+
 include("pwc_utils.jl")
 include("cheby_propagator.jl")
 include("newton_propagator.jl")
@@ -41,22 +60,6 @@ include("exp_propagator.jl")
 
 include("ode_function.jl")
 
-#! format: off
-module Interfaces
-    export check_operator, check_state, check_tlist, check_amplitude
-    export check_control, check_generator, check_propagator
-    export check_parameterized_function, check_parameterized
-    include(joinpath("interfaces", "utils.jl"))
-    include(joinpath("interfaces", "state.jl"))
-    include(joinpath("interfaces", "tlist.jl"))
-    include(joinpath("interfaces", "operator.jl"))
-    include(joinpath("interfaces", "amplitude.jl"))
-    include(joinpath("interfaces", "control.jl"))
-    include(joinpath("interfaces", "generator.jl"))
-    include(joinpath("interfaces", "propagator.jl"))
-    include(joinpath("interfaces", "parameterization.jl"))
-end
-#! format: on
 
 include("timings.jl")
 
