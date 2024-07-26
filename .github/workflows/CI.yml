@@ -26,10 +26,10 @@ jobs:
             version: '1'
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v1
+      - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v2
       - name: "Instantiate test environment"
         run: |
           wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/scripts/installorg.jl
@@ -38,17 +38,17 @@ jobs:
         shell: julia --color=yes --project=test --code-coverage="@" --depwarn="yes" --check-bounds="yes" {0}
         run: |
           include(joinpath(pwd(), "test", "runtests.jl"))
-      - name: "Run uptream QuantumControlBase tests"
+      - name: "Run upstream QuantumControlBase tests"
         shell: julia --color=yes --project=test --code-coverage="@" --depwarn="yes" --check-bounds="yes" {0}
         run: |
           using Pkg
           Pkg.test("QuantumControlBase", coverage=true)
-      - name: "Run uptream Krotov tests"
+      - name: "Run upstream Krotov tests"
         shell: julia --color=yes --project=test --code-coverage="@" --depwarn="yes" --check-bounds="yes" {0}
         run: |
           using Pkg
           Pkg.test("Krotov", coverage=true)
-      - name: "Run uptream GRAPE tests"
+      - name: "Run upstream GRAPE tests"
         shell: julia --color=yes --project=test --code-coverage="@" --depwarn="yes" --check-bounds="yes" {0}
         run: |
           using Pkg
@@ -56,18 +56,19 @@ jobs:
       - uses: julia-actions/julia-processcoverage@v1
       - name: "Summarize coverage"
         run: julia --project=test -e 'using QuantumControlTestUtils; show_coverage();'
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v1
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v2
       - run: |
           # Install Python dependencies
           set -x
@@ -83,7 +84,7 @@ jobs:
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
       - name: Zip the HTML documentation
         run: zip-folder --debug --auto-root --outfile "docs.zip" docs/build
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         name: Upload documentation artifacts
         with:
           name: QuantumPropagators
@@ -97,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v1
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
       - name: Get typos settings
