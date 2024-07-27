@@ -29,23 +29,17 @@ links = InterLinks(
         "https://github.com/KristofferC/TimerOutputs.jl",
         joinpath(@__DIR__, "src", "inventories", "TimerOutputs.toml"),
     ),
-    "QuantumControlBase" => "https://juliaquantumcontrol.github.io/QuantumControlBase.jl/$DEV_OR_STABLE",
-    "ComponentArrays" => (
-        "https://jonniedie.github.io/ComponentArrays.jl/stable/",
-        "https://jonniedie.github.io/ComponentArrays.jl/stable/objects.inv",
-        joinpath(@__DIR__, "src", "inventories", "ComponentArrays.toml")
-    ),
-    "RecursiveArrayTools" => (
-        "https://docs.sciml.ai/RecursiveArrayTools/stable/",
-        "https://docs.sciml.ai/RecursiveArrayTools/stable/objects.inv",
-        joinpath(@__DIR__, "src", "inventories", "RecursiveArrayTools.toml")
-    ),
+    "QuantumControl" => "https://juliaquantumcontrol.github.io/QuantumControl.jl/$DEV_OR_STABLE",
+    "StaticArrays" => "https://juliaarrays.github.io/StaticArrays.jl/stable/",
+    "ComponentArrays" => "https://jonniedie.github.io/ComponentArrays.jl/stable/",
+    "RecursiveArrayTools" => "https://docs.sciml.ai/RecursiveArrayTools/stable/",
     "qutip" => "https://qutip.readthedocs.io/en/qutip-5.0.x/",
 )
 
 externals = ExternalFallbacks(
-    "QuantumControlBase.Trajectory" => "@extref QuantumControlBase :jl:type:`QuantumControlBase.Trajectory`",
-    "QuantumControlBase.ControlProblem" => "@extref QuantumControlBase :jl:type:`QuantumControlBase.ControlProblem`",
+    "Trajectory" => "@extref QuantumControl :jl:type:`QuantumControlBase.Trajectory`",
+    "QuantumControlBase.Trajectory" => "@extref QuantumControl :jl:type:`QuantumControlBase.Trajectory`",
+    "QuantumControlBase.ControlProblem" => "@extref QuantumControl :jl:type:`QuantumControlBase.ControlProblem`",
 )
 
 println("Starting makedocs")

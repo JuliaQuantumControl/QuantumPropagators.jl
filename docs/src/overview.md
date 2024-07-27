@@ -175,6 +175,16 @@ print("t = $(round(propagator.t / π; digits=3))π\n")
 t = 0.5π
 ```
 
+## In-place propagation
+
+Most propagators support both an in-place and a not-in-place mode. These modes can be switched via the `inplace` parameter to [`propagate`](@ref)/[`init_prop`](@ref), which defaults to the value of [`QuantumPropagators.Interfaces.supports_inplace`](@ref) for the given initial `state`. When using in-place operations, propagators should minimize the allocation of memory and modify states using in-place linear algebra operations ([BLAS](@extref Julia `BLAS-functions`)). Otherwise, with `inplace=false`, mutating states or operators is avoided. See the in-place and not-in-place operations described in [`QuantumPropagators.Interfaces.check_state`](@ref) and [`QuantumPropagators.Interfaces.check_operator`](@ref).
+
+In-place operations can be dramatically more efficient for large Hilbert space dimensions. On the other hand, not-in-place operations can be more efficient for small Hilbert spaces, in particular when a [static vector](@extref StaticArrays `SVector`) can be used to represent the state. Moreover, frameworks for automatic differentiation such as [Zygote](https://fluxml.ai/Zygote.jl/stable/) do not support in-place operations.
+
+When using custom structs for states, operators, or generators, the struct itself not not need to be mutable (according to [`Base.ismutable`](@extref Julia)) in order to support `inplace=true`. It only must support the in-place operations defined in the [formal interface](@ref QuantumPropagatorsInterfacesAPI) and indicate that support by defining [`QuantumPropagators.Interfaces.supports_inplace`](@ref).
+Typically, in-place operations on immutable custom structs involve mutating the mutable properties of that struct.
+
+
 ## Backward propagation
 
 When [`propagate`](@ref) or [`init_prop`](@ref) are called with `backward=true`, the propagation is initialized to run backward. The initial state is then defined at `propagator.t == tlist[end]` and each [`prop_step!`](@ref) moves to the previous point in `tlist`. The equation of motion is the Schrödinger or Liouville equation with a negative $dt$. For a Hermitian `generator`, doing a forward propagation followed by a backward propagation will recover the initial state. For a non-Hermitian `generator`, this no longer holds. Note that in optimal control methods such as GRAPE or Krotov's method, obtaining gradients involves a "backward propagation with the adjoint generator" (when the generator is non-Hermitian and adjoint/non-adjoint makes a difference). The [`propagate`](@ref) routine with `backward=true` will not automatically take this adjoint of the `generator`; instead, the adjoint generator must be passed explicitly.
