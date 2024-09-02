@@ -543,8 +543,8 @@ parameters = get_parameters(object)
 collects and combines all unique parameter arrays from the controls inside the
 `object`. The `object` may be a
 [`Generator`](@ref QuantumPropagators.Generators.Generator),
-[`Trajectory`](@ref QuantumControlBase.Trajectory),
-[`ControlProblem`](@ref QuantumControlBase.ControlProblem), or
+[`Trajectory`](@ref QuantumControl.Trajectory),
+[`ControlProblem`](@ref QuantumControl.ControlProblem), or
 any other object for which [`get_controls(object)`](@ref get_controls) is
 defined. If there are multiple controls with different parameter arrays, these
 are combined in a [`RecursiveArrayTools.ArrayPartition`](@extref).

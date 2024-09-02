@@ -27,8 +27,8 @@ Revise, JuliaFormatter, LiveServer, Plots with unicode backend are active.
 * `test()` – Run the entire test suite in a subprocess with coverage
 * `show_coverage()` – Print a tabular overview of coverage data
 * `generate_coverage_html()` – Generate an HTML coverage report
-* `Pkg.test("QuantumControlBase", coverage=true)` –
-  Run upstream QuantumControlBase tests for additional coverage
+* `Pkg.test("Krotov", coverage=true)` –
+  Run upstream Krotov tests for additional coverage
 * `include("docs/make.jl")` – Generate the documentation
 * `format(".")` – Apply code formatting to all files
 * `servedocs([port=8000, verbose=false])` –

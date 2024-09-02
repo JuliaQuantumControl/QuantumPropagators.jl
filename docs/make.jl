@@ -19,6 +19,22 @@ if endswith(VERSION, "dev")
     DEV_OR_STABLE = "dev/"
 end
 
+
+function org_inv(pkgname)
+    objects_inv = joinpath(
+        @__DIR__, "..", "..", "$pkgname.jl", "docs", "build", "objects.inv"
+    )
+    if isfile(objects_inv)
+        return (
+            "https://juliaquantumcontrol.github.io/$pkgname.jl/dev/",
+            objects_inv,
+        )
+    else
+        return "https://juliaquantumcontrol.github.io/$pkgname.jl/$DEV_OR_STABLE"
+    end
+end
+
+
 links = InterLinks(
     "Julia" => (
         "https://docs.julialang.org/en/v1/",
@@ -29,18 +45,14 @@ links = InterLinks(
         "https://github.com/KristofferC/TimerOutputs.jl",
         joinpath(@__DIR__, "src", "inventories", "TimerOutputs.toml"),
     ),
-    "QuantumControl" => "https://juliaquantumcontrol.github.io/QuantumControl.jl/$DEV_OR_STABLE",
+    "QuantumControl" => org_inv("QuantumControl"),
     "StaticArrays" => "https://juliaarrays.github.io/StaticArrays.jl/stable/",
     "ComponentArrays" => "https://jonniedie.github.io/ComponentArrays.jl/stable/",
     "RecursiveArrayTools" => "https://docs.sciml.ai/RecursiveArrayTools/stable/",
     "qutip" => "https://qutip.readthedocs.io/en/qutip-5.0.x/",
 )
 
-externals = ExternalFallbacks(
-    "Trajectory" => "@extref QuantumControl :jl:type:`QuantumControlBase.Trajectory`",
-    "QuantumControlBase.Trajectory" => "@extref QuantumControl :jl:type:`QuantumControlBase.Trajectory`",
-    "QuantumControlBase.ControlProblem" => "@extref QuantumControl :jl:type:`QuantumControlBase.ControlProblem`",
-)
+externals = ExternalFallbacks()
 
 println("Starting makedocs")
 
