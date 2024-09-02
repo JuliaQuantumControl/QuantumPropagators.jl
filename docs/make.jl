@@ -21,14 +21,10 @@ end
 
 
 function org_inv(pkgname)
-    objects_inv = joinpath(
-        @__DIR__, "..", "..", "$pkgname.jl", "docs", "build", "objects.inv"
-    )
+    objects_inv =
+        joinpath(@__DIR__, "..", "..", "$pkgname.jl", "docs", "build", "objects.inv")
     if isfile(objects_inv)
-        return (
-            "https://juliaquantumcontrol.github.io/$pkgname.jl/dev/",
-            objects_inv,
-        )
+        return ("https://juliaquantumcontrol.github.io/$pkgname.jl/dev/", objects_inv,)
     else
         return "https://juliaquantumcontrol.github.io/$pkgname.jl/$DEV_OR_STABLE"
     end

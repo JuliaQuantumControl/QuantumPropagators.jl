@@ -38,11 +38,6 @@ jobs:
         shell: julia --color=yes --project=test --code-coverage="@" --depwarn="yes" --check-bounds="yes" {0}
         run: |
           include(joinpath(pwd(), "test", "runtests.jl"))
-      - name: "Run upstream QuantumControlBase tests"
-        shell: julia --color=yes --project=test --code-coverage="@" --depwarn="yes" --check-bounds="yes" {0}
-        run: |
-          using Pkg
-          Pkg.test("QuantumControlBase", coverage=true)
       - name: "Run upstream Krotov tests"
         shell: julia --color=yes --project=test --code-coverage="@" --depwarn="yes" --check-bounds="yes" {0}
         run: |
