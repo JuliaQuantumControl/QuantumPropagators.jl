@@ -142,10 +142,10 @@ the backward propagation.
 If `callback` is given as a callable, it will be called after each propagation
 step, as `callback(propagator, observables)` where `propagator` is
 [`Propagator`](@ref AbstractPropagator) object driving the propagation.
-The `callback` is called before calculating any observables.
-Example usage includes writing data to file, or modifying `state` via
-[`set_state!`](@ref), e.g., removing amplitude from the lowest and highest
-level to mitigate "truncation error".
+The `callback` is called before calculating any observables, or storing the
+propagated state in `storage`. Example usage includes writing data to file, or
+modifying `state` via [`set_state!`](@ref), e.g., removing amplitude from the
+lowest and highest level to mitigate "truncation error".
 
 If `show_progress` is given as `true`, a progress bar will be shown for
 long-running propagation. In order to customize the progress bar,
@@ -321,6 +321,9 @@ function propagate(
 
     for (i, t_end) in intervals
         prop_step!(propagator)
+        if callback ≠ nothing
+            callback(propagator, observables)
+        end
         if storage ≠ nothing
             _write_to_storage!(
                 storage,
@@ -329,9 +332,6 @@ function propagate(
                 observables,
                 tlist
             )
-        end
-        if callback ≠ nothing
-            callback(propagator, observables)
         end
         next!(progressmeter)
     end
