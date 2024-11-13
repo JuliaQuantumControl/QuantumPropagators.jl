@@ -1,12 +1,12 @@
 using Test
 using Logging
 using LinearAlgebra
+using IOCapture: IOCapture
 
 using QuantumPropagators
 using QuantumPropagators: Generator, Operator
 using QuantumPropagators.Interfaces: check_generator, check_state
 using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
-using QuantumControlTestUtils: QuantumTestLogger
 _OT(::Generator{OT,AT}) where {OT,AT} = OT
 _AT(::Generator{OT,AT}) where {OT,AT} = AT
 _OT(::Operator{OT,CT}) where {OT,CT}  = OT
@@ -165,71 +165,57 @@ end
     @test contains(repl_repr, "ops::Vector{Nothing}")
     @test contains(repl_repr, "amplitudes::Vector{Function}")
 
-    logger = QuantumTestLogger()
-    with_logger(logger) do
-        try
-            H = hamiltonian((H₀, (H₁, ϵ₁), (H₂, ϵ₂)))
-        catch
-        end
+    c = IOCapture.capture(rethrow=Union{}, passthrough=false) do
+        H = hamiltonian((H₀, (H₁, ϵ₁), (H₂, ϵ₂)))
     end
-    @test "Warn: Generator terms may not have been properly expanded" ∈ logger
+    @test contains(c.output, "Generator terms may not have been properly expanded")
+    @test c.error
+    @test c.value.msg == "time-dependent term must be 2-tuple"
 
-    logger = QuantumTestLogger()
-    with_logger(logger) do
-        try
-            H = hamiltonian([H₀, (H₁, ϵ₁), (H₂, ϵ₂)])
-        catch
-        end
+    c = IOCapture.capture(rethrow=Union{}, passthrough=false) do
+        H = hamiltonian([H₀, (H₁, ϵ₁), (H₂, ϵ₂)])
     end
-    @test "Warn: Generator terms may not have been properly expanded" ∈ logger
+    @test contains(c.output, "Generator terms may not have been properly expanded")
+    @test c.error
+    @test c.value.msg == "time-dependent term must be 2-tuple"
 
-    logger = QuantumTestLogger()
-    with_logger(logger) do
+    c = IOCapture.capture(rethrow=Union{}, passthrough=false) do
         H = hamiltonian((H₀, (H₁, ϵ₁)))
     end
-    @test "Warn: Generator terms may not have been properly expanded" ∈ logger
+    @test contains(c.output, "Generator terms may not have been properly expanded")
+    @test !c.error
 
-    logger = QuantumTestLogger()
-    with_logger(logger) do
+    c = IOCapture.capture(rethrow=Union{}, passthrough=false) do
         H = hamiltonian([H₀, (H₁, ϵ₁)])
     end
-    @test "Warn: Generator terms may not have been properly expanded" ∈ logger
+    @test contains(c.output, "Generator terms may not have been properly expanded")
+    @test !c.error
 
-    logger = QuantumTestLogger()
-    with_logger(logger) do
-        try
-            H = hamiltonian(H₀_r, (H₁, ϵ₁, ϵ₂))
-            @test "raised Exception" == ""
-        catch exc
-            @test exc == ErrorException("time-dependent term must be 2-tuple")
-        end
+    c = IOCapture.capture(rethrow=Union{}, passthrough=false) do
+        H = hamiltonian(H₀_r, (H₁, ϵ₁, ϵ₂))
     end
+    @test c.output == ""
+    @test c.error
+    @test c.value.msg == "time-dependent term must be 2-tuple"
 
-    logger = QuantumTestLogger()
-    with_logger(logger) do
-        try
-            H = hamiltonian(H₀_r, ϵ₁, (H₂, ϵ₂))
-        catch exc
-        end
+    c = IOCapture.capture(rethrow=Union{}, passthrough=false) do
+        H = hamiltonian(H₀_r, ϵ₁, (H₂, ϵ₂))
     end
-    @test "Error: Collected drift operators are of a disparate type" ∈ logger
+    @test contains(c.output, "Collected drift operators are of a disparate type")
+    @test c.error
+    @test c.value isa MethodError
 
-    logger = QuantumTestLogger()
-    with_logger(logger) do
+    c = IOCapture.capture(rethrow=Union{}, passthrough=false) do
         H = hamiltonian((ϵ₁, H₁), (ϵ₂, H₂))
     end
-    @test "Warn: It looks like (op, ampl) in term are reversed" ∈ logger
-    @test "Warn: Collected operators are not of a concrete type" ∈ logger
+    @test contains(c.output, "It looks like (op, ampl) in term are reversed")
+    @test contains(c.output, "Collected operators are not of a concrete type")
 
-    logger = QuantumTestLogger()
-    with_logger(logger) do
+    c = IOCapture.capture(rethrow=Union{}, passthrough=false) do
         H = hamiltonian(H₀, (ϵ₁, H₁), (ϵ₂, H₂))
     end
-    @test "Warn: It looks like (op, ampl) in term are reversed" ∈ logger
-    @test "Warn: Collected operators are not of a concrete type: Any" ∈ logger
-    #@test r"Error: evaluate.* for amplitude does not return a number" ∈ logger
-    #@test "Warn: Collected amplitude #1 is invalid" ∈ logger
-    #@test "Warn: Collected amplitude #2 is invalid" ∈ logger
+    @test contains(c.output, "It looks like (op, ampl) in term are reversed")
+    @test contains(c.output, "Collected operators are not of a concrete type")
     @test startswith(repr(H), "Generator(Any[ComplexF64[")
     repl_repr = repr("text/plain", H; context=(:limit => true))
     @test startswith(repl_repr, "Generator with 3 ops and 2 amplitudes")
