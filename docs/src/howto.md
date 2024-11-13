@@ -54,6 +54,14 @@ Parameterized controls are [function-like objects](@extref Julia Function-like-o
 
 It is recommended to define a parameterized control as a subtype of [`QuantumPropagators.Controls.ParameterizedFunction`](@ref). The packages [`ComponentArrays`](https://github.com/jonniedie/ComponentArrays.jl) and [`UnPack`](https://github.com/mauro3/UnPack.jl) might be useful in the implementing of a suitable type . For example,
 
+```@meta
+DocTestSetup = quote
+    # Ensure there's not pre-compilation from package loading during the actual doctest
+    using ComponentArrays
+    using UnPack: @unpack
+end
+```
+
 
 ```jldoctest
 using ComponentArrays
