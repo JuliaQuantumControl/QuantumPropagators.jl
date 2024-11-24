@@ -18,7 +18,7 @@ map_observables(::_StoreState, tlist, i, state::Vector) = state
 # Work around https://github.com/timholy/ProgressMeter.jl/issues/214
 import ProgressMeter
 struct NoProgress end
-ProgressMeter.next!(p::NoProgress) = nothing
+ProgressMeter.next!(::NoProgress) = nothing
 
 
 """Propagate a state over an entire time grid.
@@ -89,7 +89,7 @@ routine performs the following three steps:
   `state` is `true`.
 * `piecewise`: If given as a boolean, ensure that the internal `propagator` is
   an instance of [`PiecewisePropagator`](@ref), cf. [`init_prop`](@ref).
-* `pwc`: If given a a boolean, do a piecewise constant propagation where the
+* `pwc`: If given a boolean, do a piecewise constant propagation where the
   generator in each interval is constant (the internal `propagator` is a
   [`PWCPropagator`](@ref), cf. [`init_prop`](@ref))
 * `storage`: Flag whether to store and return the propagated states /

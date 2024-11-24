@@ -464,7 +464,7 @@ function evaluate!(op::T, generator::T, args...; kwargs...) where {T}
         return op
     else
         # If they're not identical, they shouldn't be of the same type. If
-        # there's some weird custom type where static and timedependent
+        # there's some weird custom type where static and time-dependent
         # objects can be of the same type, they should define a custom method.
         error("typeof(op) = typeof(generator), but op ≢ generator")
     end

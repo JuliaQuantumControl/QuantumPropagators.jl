@@ -83,13 +83,13 @@ necessary and may have a size of up to `2*(n+n_use)`.
 
 # Arguments
 
-- `leja`: Array of leja values. Must contain the "old" leja values to be kept
-   in `leja(0:n-1)`. On output, `n_use` new leja points will be in
+- `leja`: Array of Leja values. Must contain the "old" Leja values to be kept
+   in `leja(0:n-1)`. On output, `n_use` new Leja points will be in
    `leja(n+:n+n_use-1)`, for the original value of `n`.  The `leja` array must
    use zero-based indexing.
-- `n`: On input, number of "old" leja points in `leja`. On output, total number
-  of leja points (i.e. `n=n+n_use`)
-- `newpoints`: On input, candidate points for new leja points.  The `n_use`
+- `n`: On input, number of "old" Leja points in `leja`. On output, total number
+  of Leja points (i.e. `n=n+n_use`)
+- `newpoints`: On input, candidate points for new Leja points.  The `n_use`
   best values will be chosen and added to `leja`. On output, the values of
   `new_points` are undefined.
 - `n_use`: Number of points that should be added to `leja`

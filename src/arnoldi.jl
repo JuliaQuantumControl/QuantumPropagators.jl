@@ -15,7 +15,7 @@ m = arnoldi!(Hess, q, m, Ψ, H, dt=1.0; extended=true, norm_min=1e-15)
 
 Calculate the Hessenberg matrix and Arnoldi vectors of `H dt`, from `Ψ`.
 
-For a given order `m`, the `m×m` Hessemberg matrix is calculated and stored in
+For a given order `m`, the `m×m` Hessenberg matrix is calculated and stored in
 in the pre-allocated `Hess`. Further  an array of `m` normalized Arnoldi
 vectors is stored in in the pre-allocated `q`, plus one additional unnormalized
 Arnoldi vector.  The unnormalized `m+1`st vector could be used to easily
@@ -36,13 +36,13 @@ the algorithm.
 
 # Arguments
 
-- `Hess::Matrix{ComplexF64}`: Pre-allocated storage for the Hessemberg matrix.
+- `Hess::Matrix{ComplexF64}`: Pre-allocated storage for the Hessenberg matrix.
    Can be uninitialized on input. The matrix must be at least of size `m×m`, or
    `(m+1)×(m+1)` if `extended=true`. On output, the `m×m` sub-matrix of `Hess`
    (with the returned output `m`) will contain the Hessenberg matrix, and all
    other elements of `Hess` be be set to zero.
 - `q`: Pre-allocated array of states similar to `Ψ`, as storage for the
-  calculated Arnoldi vectors. These may be un-initialized on input. Must be at
+  calculated Arnoldi vectors. These may be uninitialized on input. Must be at
   least of length `m+1`
 - `m`: The requested dimensions of the output Hessenberg matrix.
 - `Ψ`: The starting vector for the Arnoldi procedure. This can be of any type,
@@ -134,10 +134,10 @@ end
 diagonalize_hessenberg_matrix(Hess, m; accumulate=false)
 ```
 
-Diagonalize the m × m top left submatrix of the given Hessenberg matrix.
+Diagonalize the m × m top left sub-matrix of the given Hessenberg matrix.
 
 If `accumulate` is `true`, return the concatenated eigenvalues for
-`Hess[1:1,1:1]` to `Hess[1:m,1:m]`, that is, all sumatrices of size 1 through
+`Hess[1:1,1:1]` to `Hess[1:m,1:m]`, that is, all sub-matrices of size 1 through
 `m`.
 """
 function diagonalize_hessenberg_matrix(Hess, m; accumulate=false)

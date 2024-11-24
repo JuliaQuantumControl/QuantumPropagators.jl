@@ -115,7 +115,7 @@ end
 E_min, E_max = specrange(H, :diag)
 ```
 
-uses exact diagonization via the standard `eigvals` function to obtain the
+uses exact diagonalization via the standard `eigvals` function to obtain the
 smallest and largest eigenvalue. This should only be used for relatively small
 matrices.
 """
