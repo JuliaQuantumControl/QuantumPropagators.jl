@@ -101,7 +101,7 @@ function check_state(
         r2 = sqrt(real(state ⋅ state))
         Δ = abs(r1 - r2)
         if Δ > atol
-            quiet || @error "$(px)`norm(state)=$r1)` must match `√(state⋅state)=$r2` (Δ=$Δ)"
+            quiet || @error "$(px)`norm(state)=$r1)` must match `√(state⋅state)=$r2`" Δ atol
             success = false
         end
     catch exc
@@ -117,7 +117,7 @@ function check_state(
     try
         Δ = norm(state - state)
         if Δ > atol
-            quiet || @error "`$(px)state - state` must have norm 0"
+            quiet || @error "`$(px)state - state` must have norm 0" Δ atol
             success = false
         end
         η = norm(state + state)
@@ -141,8 +141,9 @@ function check_state(
                 @error "$(px)`copy(state)::$(typeof(ϕ))` must have the same type as `state::$(typeof(state))`"
             success = false
         end
-        if norm(ϕ - state) > atol
-            quiet || @error "$(px)`copy(state) - state` must have norm 0"
+        Δ = norm(ϕ - state)
+        if Δ > atol
+            quiet || @error "$(px)`copy(state) - state` must have norm 0" Δ atol
             success = false
         end
     catch exc
@@ -155,9 +156,10 @@ function check_state(
 
     try
         ϕ = 0.5 * state
-        if abs(norm(ϕ) - 0.5 * norm(state)) > atol
+        Δ = abs(norm(ϕ) - 0.5 * norm(state))
+        if Δ > atol
             quiet ||
-                @error "$(px)`norm(state)` must have absolute homogeneity: `norm(s * state) = s * norm(state)`"
+                @error "$(px)`norm(state)` must have absolute homogeneity: `norm(s * state) = s * norm(state)`" Δ atol
             success = false
         end
     catch exc
@@ -170,8 +172,9 @@ function check_state(
 
     try
         state_zero = zero(state)
-        if norm(state_zero) > atol
-            quiet || @error("$(px)`zero(state)` must produce a state with norm 0.")
+        Δ = norm(state_zero)
+        if Δ > atol
+            quiet || @error "$(px)`zero(state)` must produce a state with norm 0." Δ atol
         end
     catch exc
         quiet || @error(
@@ -182,8 +185,9 @@ function check_state(
     end
 
     try
-        if norm(0.0 * state) > atol
-            quiet || @error "$(px)`0.0 * state` must produce a state with norm 0"
+        Δ = norm(0.0 * state)
+        if Δ > atol
+            quiet || @error "$(px)`0.0 * state` must produce a state with norm 0" Δ atol
             success = false
         end
     catch exc
@@ -236,9 +240,10 @@ function check_state(
                         success = false
                     end
                 end
-                if norm(ϕ - state) > atol
+                Δ = norm(ϕ - state)
+                if Δ > atol
                     quiet ||
-                        @error "$(px)`ϕ - state` must have norm 0, where `ϕ = similar(state); copyto!(ϕ, state)`"
+                        @error "$(px)`ϕ - state` must have norm 0, where `ϕ = similar(state); copyto!(ϕ, state)`" Δ atol
                     success = false
                 end
             end
@@ -259,8 +264,9 @@ function check_state(
                     quiet || @error "$(px)`fill!(state, 0.0)` must return the filled state"
                     success = false
                 end
-                if norm(state_zero) > atol
-                    quiet || @error "$(px)`fill!(state, 0.0)` must have norm 0"
+                Δ = norm(state_zero)
+                if Δ > atol
+                    quiet || @error "$(px)`fill!(state, 0.0)` must have norm 0" Δ atol
                     success = false
                 end
             end
@@ -277,9 +283,10 @@ function check_state(
                 ϕ = similar(state)
                 copyto!(ϕ, state)
                 ϕ = lmul!(1im, ϕ)
-                if norm(ϕ - 1im * state) > atol
+                Δ = norm(ϕ - 1im * state)
+                if Δ > atol
                     quiet ||
-                        @error "$(px)`norm(state)` must have absolute homogeneity: `norm(s * state) = s * norm(state)`"
+                        @error "$(px)`norm(state)` must have absolute homogeneity: `norm(s * state) = s * norm(state)`" Δ atol
                     success = false
                 end
             end
@@ -296,9 +303,10 @@ function check_state(
                 ϕ = similar(state)
                 copyto!(ϕ, state)
                 ϕ = lmul!(0.0, ϕ)
-                if norm(ϕ) > atol
+                Δ = norm(ϕ)
+                if Δ > atol
                     quiet ||
-                        @error "$(px)`lmul!(0.0, state)` must produce a state with norm 0"
+                        @error "$(px)`lmul!(0.0, state)` must produce a state with norm 0" Δ atol
                     success = false
                 end
             end
@@ -315,8 +323,10 @@ function check_state(
                 ϕ = similar(state)
                 copyto!(ϕ, state)
                 ϕ = axpy!(1im, state, ϕ)
-                if norm(ϕ - (state + 1im * state)) > atol
-                    quiet || @error "$(px)`axpy!(a, state, ϕ)` must match `ϕ += a * state`"
+                Δ = norm(ϕ - (state + 1im * state))
+                if Δ > atol
+                    quiet ||
+                        @error "$(px)`axpy!(a, state, ϕ)` must match `ϕ += a * state`" Δ atol
                     success = false
                 end
             end
@@ -333,8 +343,9 @@ function check_state(
     if normalized
         try
             η = norm(state)
-            if abs(η - 1) > atol
-                quiet || @error "$(px)`norm(state)` must be 1, not $η"
+            Δ = abs(η - 1)
+            if Δ > atol
+                quiet || @error "$(px)`norm(state)` must be 1, not $η" Δ atol
                 success = false
             end
         catch exc

@@ -124,8 +124,9 @@ function check_operator(
                 quiet || @error "$(px)`mul!(ϕ, op, state)` must return the resulting ϕ"
                 success = false
             end
-            if norm(ϕ - op * Ψ) > atol
-                quiet || @error "$(px)`mul!(ϕ, op, state)` must match `op * state`"
+            Δ = norm(ϕ - op * Ψ)
+            if Δ > atol
+                quiet || @error "$(px)`mul!(ϕ, op, state)` must match `op * state`" Δ atol
                 success = false
             end
         catch exc
@@ -146,9 +147,10 @@ function check_operator(
                     @error "$(px)`mul!(ϕ, op, state, α, β)` must return the resulting ϕ"
                 success = false
             end
-            if norm(ϕ - (0.5 * ϕ0 + 0.5 * (op * Ψ))) > atol
+            Δ = norm(ϕ - (0.5 * ϕ0 + 0.5 * (op * Ψ)))
+            if Δ > atol
                 quiet ||
-                    @error "$(px)`mul!(ϕ, op, state, α, β)` must match β*ϕ + α*op*state"
+                    @error "$(px)`mul!(ϕ, op, state, α, β)` must match β*ϕ + α*op*state" Δ atol
                 success = false
             end
         catch exc
@@ -170,17 +172,19 @@ function check_operator(
                     @error "$(px)`dot(state, op, state)` must return a number, not $typeof(val)"
                 success = false
             end
-            if abs(dot(Ψ, op, Ψ) - dot(Ψ, op * Ψ)) > atol
+            Δ = abs(dot(Ψ, op, Ψ) - dot(Ψ, op * Ψ))
+            if Δ > atol
                 quiet ||
-                    @error "$(px)`dot(state, op, state)` must match `dot(state, op * state)`"
+                    @error "$(px)`dot(state, op, state)` must match `dot(state, op * state)`" Δ atol
                 success = false
             end
             if supports_inplace(state)
                 ϕ = similar(Ψ)
                 mul!(ϕ, op, Ψ)
-                if abs(dot(Ψ, op, Ψ) - dot(Ψ, ϕ)) > atol
+                Δ = abs(dot(Ψ, op, Ψ) - dot(Ψ, ϕ))
+                if Δ > atol
                     quiet ||
-                        @error "$(px)`dot(state, op, state)` must match `dot(state, op * state)`"
+                        @error "$(px)`dot(state, op, state)` must match `dot(state, op * state)`" Δ atol
                     success = false
                 end
             end

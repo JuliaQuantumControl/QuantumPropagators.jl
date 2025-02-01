@@ -179,7 +179,7 @@ function check_propagator(
         end
         if abs(Δ) > atol
             quiet ||
-                @error "$(px)`prop_step!` must advance `propagator.t` forward or backward one step on the time grid (Δ=$Δ)"
+                @error "$(px)`prop_step!` must advance `propagator.t` forward or backward one step on the time grid" Δ atol
             success = false
         end
     catch exc
@@ -234,9 +234,10 @@ function check_propagator(
 
     try
         Ψ = set_state!(propagator, Ψ₀)
-        if norm(propagator.state - Ψ₀) > atol
+        Δ = norm(propagator.state - Ψ₀)
+        if Δ > atol
             quiet ||
-                @error "$(px)`set_state!(propagator, state)` must set `propagator.state`"
+                @error "$(px)`set_state!(propagator, state)` must set `propagator.state`" Δ atol
             success = false
         end
         if inplace
@@ -281,14 +282,16 @@ function check_propagator(
     try
         reinit_prop!(propagator, Ψ₀)
         t = backward ? propagator.tlist[end] : propagator.tlist[begin]
-        if abs(propagator.t - t) > atol
+        Δ = abs(propagator.t - t)
+        if Δ > atol
             quiet ||
-                @error "$(px)`reinit_prop!(propagator, state)` must reset `propagator.t`"
+                @error "$(px)`reinit_prop!(propagator, state)` must reset `propagator.t`" Δ atol
             success = false
         end
-        if norm(propagator.state - Ψ₀) > atol
+        Δ = norm(propagator.state - Ψ₀)
+        if Δ > atol
             quiet ||
-                @error "$(px)`reinit_prop!(propagator, state)` must reset `propagator.state`"
+                @error "$(px)`reinit_prop!(propagator, state)` must reset `propagator.state`" Δ atol
             success = false
         end
         if propagator.backward ≠ backward
@@ -302,11 +305,13 @@ function check_propagator(
             success = false
         end
         prop_step!(propagator)
-        if norm(propagator.state - Ψ₁) > atol  # Ψ₁ from very first prop_step!
+        Δ = norm(propagator.state - Ψ₁)
+        if Δ > atol  # Ψ₁ from very first prop_step!
             # Without keyword arguments to reinit_prop!, the propagator should
             # be in the exact original state and thus reproduce the exact same
             # propagation
-            quiet || @error "$(px)`reinit_prop!(propagator, state)` must be idempotent"
+            quiet ||
+                @error "$(px)`reinit_prop!(propagator, state)` must be idempotent" Δ atol
             success = false
         end
         if inplace
