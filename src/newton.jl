@@ -24,10 +24,10 @@ mutable struct NewtonWrk{T}
     # arnoldi_vecs and v are pre-allocated for efficiency. Other values and
     # vectors are mainly for debugging, so that we can inspect internal
     # parameters like the Newton coefficients (a) after a call to newton!
-    arnoldi_vecs::Array{T}
+    arnoldi_vecs::Array{T,1}
     v::T
-    a::OffsetVector{ComplexF64}
-    leja::OffsetVector{ComplexF64}
+    a::OffsetArray{Complex{Float64},1,Array{Complex{Float64},1}}
+    leja::OffsetArray{Complex{Float64},1,Array{Complex{Float64},1}}
     radius::Float64
     n_a::Int64
     n_leja::Int64
@@ -45,10 +45,10 @@ mutable struct NewtonWrk{T}
             end
         end
         new{T}(
-            T[similar(v0) for _ = 1:m_max+1], # arnoldi_vecs
+            T[similar(v0) for _ = 1:(m_max+1)], # arnoldi_vecs
             similar(v0),                       # v
-            OffsetVector(zeros(ComplexF64, 10 * m_max + 1), 0:10*m_max),  # a
-            OffsetVector(zeros(ComplexF64, 10 * m_max + 1), 0:10*m_max),  # leja
+            OffsetVector(zeros(ComplexF64, 10 * m_max + 1), 0:(10*m_max)),  # a
+            OffsetVector(zeros(ComplexF64, 10 * m_max + 1), 0:(10*m_max)),  # leja
             0.0,                               # radius
             0,                                 # n_a
             0,                                 # n_leja
@@ -124,15 +124,17 @@ function extend_leja!(
         leja[0] = newpoints[end]
         i_add_start = 1
     end
-    ex = 1.0 / (n + n_use)
-    @inbounds for i_add = i_add_start:n_use-1
+    exponent::Float64 = 1.0 / (n + n_use)
+    @inbounds for i_add = i_add_start:(n_use-1)
         p_max::Float64 = 0
         i_max = 0
         @inbounds for i = lbound(newpoints, 1):(u-i_add)
             p::Float64 = 1
             @inbounds for j = 0:(n+i_add-1)  # existing Leja points
-                Δ = abs(newpoints[i] - leja[j])
-                p = p * Δ^ex
+                # Note: the following two lines are optimized for performance,
+                # using internals from the native `Δ^exponent`
+                Δ = reinterpret(UInt64, abs(newpoints[i] - leja[j]))
+                @inline p = p * Base.Math.pow_body(Δ, exponent)
             end
             if p > p_max
                 p_max = p
@@ -199,7 +201,7 @@ function extend_newton_coeffs!(
     for k = n0:(n_a-1+m)
         d::ComplexF64 = 1
         pn::ComplexF64 = 0
-        for n = 1:k-1
+        for n = 1:(k-1)
             zd = leja[k] - leja[n-1]
             d = d * zd / radius
             pn = pn + a[n] * d
@@ -305,7 +307,8 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
         # Get the Leja points (i.e. Ritz values in the proper order
         @timeit_debug wrk.timing_data "get Leja points" begin
             n_s = n_leja  # we need to keep the old n_leja
-            n_leja = extend_leja!(wrk.leja, n_leja, OffsetVector(ritz, 0:length(ritz)-1), m)
+            n_leja =
+                extend_leja!(wrk.leja, n_leja, OffsetVector(ritz, 0:(length(ritz)-1)), m)
         end
 
         # Extend the Newton coefficients
@@ -325,17 +328,19 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
 
         # Evaluate Newton Polynomial in the extended Hessenberg matrix
         @timeit_debug wrk.timing_data "evaluate polynomial" begin
+            # TODO: this code block has unnecessary allocations
             P .= 0.0
             R .= 0.0
             R[1] = β
             P[1] = wrk.a[n_s] * β
-            for k = 1:m-1
-                R[1:m+1] = (
-                    (Hess[1:m+1, 1:m+1] * R[1:m+1] - wrk.leja[n_s+k-1] * R[1:m+1]) /
+            for k = 1:(m-1)
+                z = wrk.leja[n_s+k-1]
+                R[1:(m+1)] = (
+                    (@view(Hess[1:(m+1), 1:(m+1)]) * R[1:(m+1)] - z * R[1:(m+1)]) /
                     wrk.radius
                 )
                 # P += a_{n_s+k} R
-                axpy!(wrk.a[n_s+k], view(R, 1:m+1), view(P, 1:m+1))
+                axpy!(wrk.a[n_s+k], view(R, 1:(m+1)), view(P, 1:(m+1)))
             end
         end
 
@@ -349,14 +354,17 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
         end
 
         # Calculate the starting vector v_{s+1} for the next iteration
-        R[1:m+1] =
-            (((Hess[1:m+1, 1:m+1] * R[1:m+1]) - wrk.leja[n_s+m-1] * R[1:m+1]) / wrk.radius)
-        R_abs[1:m+1] = abs.(R[1:m+1])
-        β = norm(R_abs[1:m+1])
-        lmul!(1 / β, view(R, 1:m+1))
+        # TODO: this has unnecessary allocations
+        R[1:(m+1)] = (
+            ((Hess[1:(m+1), 1:(m+1)] * R[1:(m+1)]) - wrk.leja[n_s+m-1] * R[1:(m+1)]) /
+            wrk.radius
+        )
+        R_abs[1:(m+1)] = abs.(R[1:(m+1)])
+        β = norm(view(R_abs, 1:(m+1)))
+        lmul!(1 / β, view(R, 1:(m+1)))
         copyto!(wrk.arnoldi_vecs[1], wrk.v)
         lmul!(R[1], wrk.v)
-        for i = 2:m+1
+        for i = 2:(m+1)
             axpy!(R[i], wrk.arnoldi_vecs[i], wrk.v)
         end
 

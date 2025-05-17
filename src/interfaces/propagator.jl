@@ -111,7 +111,7 @@ function check_propagator(
 
     try
         _t = tlist[begin]
-        for t in tlist[begin+1:end]
+        for t in tlist[(begin+1):end]
             if t <= _t
                 quiet || @error "$(px)`propagator.tlist` must be monotonically increasing"
                 success = false

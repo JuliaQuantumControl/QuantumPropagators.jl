@@ -21,7 +21,7 @@ using TimerOutputs
     Ψ = random_state_vector(N; rng)
     Ĥ = random_dynamic_generator(N, tlist; rng)
     propagator = init_prop(Ψ, Ĥ, tlist; method=:cheby)
-    for interval = 1:length(tlist)-1
+    for interval = 1:(length(tlist)-1)
         prop_step!(propagator)
     end
 

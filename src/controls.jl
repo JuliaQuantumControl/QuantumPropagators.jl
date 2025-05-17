@@ -58,7 +58,7 @@ function discretize(control::Vector, tlist)
         vals = zeros(eltype(control), length(control) + 1)
         vals[1] = control[1]
         vals[end] = control[end]
-        for i = 2:length(vals)-1
+        for i = 2:(length(vals)-1)
             vals[i] = 0.5 * (control[i-1] + control[i])
         end
         return vals
@@ -111,7 +111,7 @@ function get_tlist_midpoints(tlist::AbstractVector; preserve_start=true, preserv
         @assert dt > 0.0
         tlist_midpoints[end] = tlist[end-1] + 0.5 * dt
     end
-    for i = 2:length(tlist_midpoints)-1
+    for i = 2:(length(tlist_midpoints)-1)
         dt = float(tlist[begin+i] - tlist[begin+i-1])
         @assert dt > 0.0
         tlist_midpoints[i] = tlist[begin+i-1] + 0.5 * dt
@@ -194,7 +194,7 @@ function discretize_on_midpoints(control::Vector, tlist)
         vals = Vector{eltype(control)}(undef, length(tlist) - 1)
         vals[1] = control[1]
         vals[end] = control[end]
-        for i = 2:length(vals)-1
+        for i = 2:(length(vals)-1)
             vals[i] = 2 * control[i] - vals[i-1]
         end
         return vals

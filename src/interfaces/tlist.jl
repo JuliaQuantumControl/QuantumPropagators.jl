@@ -23,7 +23,7 @@ function check_tlist(tlist; quiet=false, _message_prefix="")
         if length(tlist) >= 2
             try
                 _t = tlist[begin]
-                for t in tlist[begin+1:end]
+                for t in tlist[(begin+1):end]
                     if t <= _t
                         quiet || @error "$(px)`tlist` must be monotonically increasing"
                         success = false

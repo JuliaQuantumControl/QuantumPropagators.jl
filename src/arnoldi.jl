@@ -59,7 +59,7 @@ the algorithm.
 """
 function arnoldi!(
     Hess::Matrix{ComplexF64},
-    q::Array{T},
+    q::Array{T,1},
     m::Int64,
     Ψ::T,
     H,
@@ -124,7 +124,7 @@ function extend_arnoldi!(Hess, q, m, H, dt::Float64=1.0; norm_min=1e-15)
     end
     # everything below the first sub-diagonal should be zero. We'll check the
     # last row (previous rows were checked in earlier extend_arnoldi!)
-    @assert all(Hess[m, 1:m-2] .== 0.0)
+    @assert all(Hess[m, 1:(m-2)] .== 0.0)
     return Hess
 end
 
@@ -162,10 +162,7 @@ function diagonalize_hessenberg_matrix(Hess, m; accumulate=false)
             eigenvals[offset+1] = 0.5 * (a + d - s)
             eigenvals[offset+2] = 0.5 * (a + d + s)
         else
-            # TODO: Wrap in UpperHessenberg?
-            # https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#Special-matrices
-            # TODO: use a view?
-            eigenvals[offset+1:offset+j] .= eigvals(Hess[1:j, 1:j])
+            eigenvals[(offset+1):(offset+j)] .= eigvals(Hess[1:j, 1:j])
         end
         offset += j
     end

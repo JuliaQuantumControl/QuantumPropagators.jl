@@ -266,7 +266,7 @@ end
 
 function _get_uniform_dt(tlist::Vector; tol=1e-12, warn=false)
     dt = float(tlist[2] - tlist[1])
-    for i = 2:length(tlist)-1
+    for i = 2:(length(tlist)-1)
         dt_i = tlist[i+1] - tlist[i]
         Δ = abs(dt_i - dt)
         if Δ > tol
