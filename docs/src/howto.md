@@ -7,6 +7,13 @@
 \gdef\Im{\operatorname{Im}}
 ```
 
+```@contents
+Pages=[
+ "howto.md"
+]
+Depth = 2:2
+```
+
 ## How to implement a new propagation method
 
 * Define a new sub-type of [`AbstractPropagator`](@ref QuantumPropagators.AbstractPropagator) type that is unique to the propagation method, e.g. `MyNewMethodPropagator`. If appropriate, sub-type [`PiecewisePropagator`](@ref QuantumPropagators.PiecewisePropagator) or [`PWCPropagator`](@ref QuantumPropagators.PWCPropagator).
