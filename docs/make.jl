@@ -91,7 +91,7 @@ makedocs(;
         "Dynamical Generators" => "generators.md",
         "Propagation Methods" => "methods.md",
         "Expectation Values" => "storage.md",
-        "Howtos" => "howto.md",
+        "How-to Guides" => "howto.md",
         hide("Benchmarks" => "benchmarks.md", [joinpath("benchmarks", "profiling.md")]),
         "API" => "api/quantumpropagators.md",
         "References" => "references.md",

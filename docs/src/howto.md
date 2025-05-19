@@ -1,4 +1,4 @@
-# Howtos
+# [How-to Guides](@id howto)
 
 ```math
 \gdef\op#1{\hat{#1}}
@@ -6,6 +6,8 @@
 \gdef\Re{\operatorname{Re}}
 \gdef\Im{\operatorname{Im}}
 ```
+
+**Contents**
 
 ```@contents
 Pages=[
