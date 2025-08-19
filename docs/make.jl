@@ -48,7 +48,12 @@ links = InterLinks(
     "qutip" => "https://qutip.readthedocs.io/en/qutip-5.0.x/",
 )
 
-externals = ExternalFallbacks()
+externals = ExternalFallbacks(
+    "Trajectory" => "@extref QuantumControl :jl:type:`QuantumControl.Trajectory`",
+    "QuantumControl.Trajectory" => "@extref QuantumControl :jl:type:`QuantumControl.Trajectory`",
+    "QuantumControl.ControlProblem" => "@extref QuantumControl :jl:type:`QuantumControl.ControlProblem`";
+    automatic=false
+)
 
 println("Starting makedocs")
 
