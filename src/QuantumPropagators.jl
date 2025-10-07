@@ -22,6 +22,8 @@ include("shapes.jl")  # submodule Shapes
 
 include("controls.jl")  # submodule Controls
 
+include("parameterized_functions.jl")  # submodule ParameterizedFunctions
+
 include("amplitudes.jl")  # submodule Amplitudes
 
 include("generators.jl")  # submodule Generators

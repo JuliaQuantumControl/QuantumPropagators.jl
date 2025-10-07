@@ -53,8 +53,8 @@ function check_parameterized_function(
         success = false
     end
 
+    t = tlist[begin]
     try
-        t = tlist[begin]
         v = f(t)
         if !(v isa Float64)
             quiet || @error "$(px)`f(t)` must return a Float64, not $(typeof(v))"

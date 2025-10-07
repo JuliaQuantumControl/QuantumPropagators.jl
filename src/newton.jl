@@ -317,7 +317,7 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
             @assert n_a == n_leja
         end
 
-        # allocate array R for Newton basis polynomicals in the extended
+        # allocate array R for Newton basis polynomials in the extended
         # Hessenberg matrix and P for the full Newton series
         if length(R) ≠ m + 1
             # we always treat R, R_abs, and P together
