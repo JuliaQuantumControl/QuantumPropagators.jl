@@ -12,7 +12,7 @@ i \frac{∂}{∂t} |Ψ⟩ = Ĥ(t) |Ψ⟩\,.
 
 ## Operators
 
-When evaluating the right-hand-side of Eq. [(SE)](#eq-se), the time-dependent `generator` ``Ĥ(t)`` is first evaluated into a static `operator` object ``Ĥ`` for a specific point in time via the [`QuantumPropagators.Controls.evaluate`](@ref) function. The 5-argument [`LinearAlgebra.mul!`](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.mul!) then implements the application of the operator to the state ``|Ψ⟩``.
+When evaluating the right-hand-side of Eq. [(SE)](#eq-se), the time-dependent `generator` ``Ĥ(t)`` is first evaluated into a static `operator` object ``Ĥ`` for a specific point in time via the [`QuantumPropagators.Controls.evaluate`](@ref) function. The 5-argument [`LinearAlgebra.mul!`](@extref) then implements the application of the operator to the state ``|Ψ⟩``.
 
 
 
@@ -62,10 +62,10 @@ The object representing ``L`` should be constructed with the [`liouvillian`](@re
 For an "unusual" generator, first decide at which level to address the issue:
 
 * If there is no optimal control being done, it may be sufficient to define a new `control` object directly. The required interface is defined in [`QuantumPropagators.Interfaces.check_control`](@ref).
-* For e.g. non-linear controls, it is enough to define a new [control amplitude](@ref ControlAmplitudes) type (representing the ``a_l`` in Eq. [(Generator)](#eq-generator)). See [`QuantumPropagators.Interfaces.check_amplitude`](@ref) for the required interface. Some amplitudes that are useful in the context of optimal control defined in [`QuantumPropagators.Amplitudes`](https://juliaquantumcontrol.github.io/QuantumControl.jl/stable/api/quantum_propagators/#QuantumPropagatorsAmplitudesAPI). Moreover, [`QuantumControl.PulseParametrizations`](https://juliaquantumcontrol.github.io/QuantumControl.jl/stable/api/quantum_control_reference/#QuantumControlPulseParametrizationsLocalAPI) provides the tools to define amplitudes of the form ``a_l(t) = a(ϵ_l(t))``. That is, anything where the value of ``a_l(t)`` depends directly on the value of ``ϵ_l(t)``). This includes nonlinear controls such as ``ϵ^2(t)``.
+* For e.g. non-linear controls, it is enough to define a new [control amplitude](@ref ControlAmplitudes) type (representing the ``a_l`` in Eq. [(Generator)](#eq-generator)). See [`QuantumPropagators.Interfaces.check_amplitude`](@ref) for the required interface. Some amplitudes that are useful in the context of optimal control defined in [`QuantumPropagators.Amplitudes`](@ref QuantumPropagatorsAmplitudesAPI). Moreover, [`QuantumControl.PulseParametrizations`](@extref QuantumControl `QuantumControlPulseParameterizationsAPI`) provides the tools to define amplitudes of the form ``a_l(t) = a(ϵ_l(t))``. That is, anything where the value of ``a_l(t)`` depends directly on the value of ``ϵ_l(t)``). This includes nonlinear controls such as ``ϵ^2(t)``.
 * For any Hamiltonian or Liouvillian that is more general than the form in Eq. [(Generator)](#eq-generator), a fully custom generator type would have to be implemented, see below.
 
-In general, the [methods defined in the `QuantumPropagators.Controls` module](@ref QuantumPropagatorsControlsAPI) (respectively [`QuantumControl.Controls`](https://juliaquantumcontrol.github.io/QuantumControl.jl/stable/api/quantum_control/#QuantumControlControlsAPI) in the broader context of optimal control) determine the relationship between generators, operators, amplitudes, and controls and must be implemented for any custom types.
+In general, the [methods defined in the `QuantumPropagators.Controls` module](@ref QuantumPropagatorsControlsAPI) (respectively [`QuantumControl.Controls`](@extref QuantumControl `QuantumControlControlsAPI`) in the broader context of optimal control) determine the relationship between generators, operators, amplitudes, and controls and must be implemented for any custom types.
 
 In particular,
 

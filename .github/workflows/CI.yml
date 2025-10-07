@@ -79,9 +79,9 @@ jobs:
       - name: "Instantiate build environment"
         run: |
           wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/scripts/installorg.jl
-          julia --project=test installorg.jl
+          julia --project=docs installorg.jl
       - name: "Build documentation"
-        run: julia --project=test docs/make.jl
+        run: julia --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

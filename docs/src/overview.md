@@ -45,8 +45,9 @@ using QuantumPropagators: propagate, ExpProp # hide
 H = ComplexF64[0 1; 1 0] # hide
 tlist = collect(range(0, π/2, length=101)) # hide
 states = propagate(Ψ₀, H, tlist; method=ExpProp, storage=true)
-plot(tlist./π, abs.(states').^2; label=["ground" "excited"],
-     xlabel="pulse area / π", ylabel="population", legend=:right)
+fig = plot(tlist./π, abs.(states').^2; label=["ground" "excited"],
+           xlabel="pulse area / π", ylabel="population", legend=:right)
+using DisplayAs; fig |> DisplayAs.SVG # hide
 ```
 
 The `storage` parameter provides a powerful way to obtain arbitrary dynamic quantities from the propagation:
