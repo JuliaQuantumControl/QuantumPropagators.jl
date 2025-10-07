@@ -55,6 +55,14 @@ jobs:
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Save Julia depot cache on cancel or failure
+        id: julia-cache-save
+        if: cancelled() || failure()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ steps.julia-cache.outputs.cache-paths }}
+          key: ${{ steps.julia-cache.outputs.cache-key }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest
@@ -64,15 +72,15 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v2
-      - run: |
-          # Install Python dependencies
+      - name: "Install Python dependencies"
+        run: |
           set -x
           /usr/bin/python3 -m pip install zip-files
-      - name: Instantiate Pkg
+      - name: "Instantiate build environment"
         run: |
           wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/scripts/installorg.jl
           julia --project=test installorg.jl
-      - name: Make documentations
+      - name: "Build documentation"
         run: julia --project=test docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -88,6 +96,14 @@ jobs:
           path: |
             README.md
             ./docs.zip
+      - name: Save Julia depot cache on cancel or failure
+        id: julia-cache-save
+        if: cancelled() || failure()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ steps.julia-cache.outputs.cache-paths }}
+          key: ${{ steps.julia-cache.outputs.cache-key }}
   codestyle:
     name: Codestyle
     runs-on: ubuntu-latest
@@ -132,20 +148,19 @@ jobs:
       - name: Get codestyle settings
         run: wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/.JuliaFormatter.toml
       - name: Install JuliaFormatter and format
-        # This will use the latest version by default but you can set the version like so:
-        #
-        # julia  -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter", version="0.13.0"))'
+        shell: julia {0}
         run: |
-          julia  -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter"))'
-          julia  -e 'using JuliaFormatter; format(".", verbose=true)'
-      - name: Format check
+          using Pkg
+          Pkg.add(PackageSpec(name="JuliaFormatter"))
+          using JuliaFormatter
+          format(".", verbose=true)
+      - name: Format Check
+        shell: julia {0}
         run: |
-          julia -e '
-          out = Cmd(`git diff --name-only`) |> read |> String
+          out = Cmd(`git diff -U0`) |> read |> String
           if out == ""
               exit(0)
           else
-              @error "Some files have not been formatted !!!"
-              write(stdout, out)
+              @error "Some files have not been formatted !!!\n\n$out"
               exit(1)
-          end'
+          end

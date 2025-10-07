@@ -218,8 +218,15 @@ open(outfile, "w") do out
     write_module_api(
         out,
         QuantumPropagators.Controls,
-        """The following routines define method that must be defined for any
+        """The following routines define methods that must be defined for any
         control function, or for generators with respect to control functions.
+        """
+    )
+    write_module_api(
+        out,
+        QuantumPropagators.ParameterizedFunctions,
+        """The following types implement useful instances of
+        [`QuantumPropagators.Controls.ParameterizedFunction`](@ref).
         """
     )
     write_module_api(

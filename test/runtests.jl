@@ -48,6 +48,11 @@ using SafeTestsets
         include("test_parameterization.jl")
     end
 
+    println("\n* CRAB Functions (test_crab_functions.jl):")
+    @time @safetestset "CRAB Functions" begin
+        include("test_crab_functions.jl")
+    end
+
     println("\n* Discretization (test_discretization.jl):")
     @time @safetestset "Discretization" begin
         include("test_discretization.jl")
