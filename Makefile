@@ -18,6 +18,7 @@ export PRINT_HELP_JLSCRIPT
 
 
 help:  ## show this help
+	@git config --local blame.ignoreRevsFile .git-blame-ignore-revs
 	@julia -e "$$PRINT_HELP_JLSCRIPT" < $(MAKEFILE_LIST)
 
 
