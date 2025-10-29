@@ -131,10 +131,8 @@ function extend_leja!(
         @inbounds for i = lbound(newpoints, 1):(u-i_add)
             p::Float64 = 1
             @inbounds for j = 0:(n+i_add-1)  # existing Leja points
-                # Note: the following two lines are optimized for performance,
-                # using internals from the native `Δ^exponent`
-                Δ = reinterpret(UInt64, abs(newpoints[i] - leja[j]))
-                @inline p = p * Base.Math.pow_body(Δ, exponent)
+                Δ = abs(newpoints[i] - leja[j])
+                p = p * Δ^exponent
             end
             if p > p_max
                 p_max = p
