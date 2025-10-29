@@ -40,7 +40,7 @@ case, [`discretize`](@ref) acts as the inverse of
 how control values on `tlist` and control values on the intervals of `tlist`
 are related.
 """
-function discretize(control::Function, tlist; via_midpoints=true)
+function discretize(control::Function, tlist; via_midpoints = true)
     if via_midpoints
         vals_on_midpoints = discretize_on_midpoints(control, tlist)
         return discretize(vals_on_midpoints, tlist)
@@ -89,7 +89,11 @@ the first and last interval, respectively.
 
 * [`t_mid`](@ref) – get a particular midpoint.
 """
-function get_tlist_midpoints(tlist::AbstractVector; preserve_start=true, preserve_end=true)
+function get_tlist_midpoints(
+    tlist::AbstractVector;
+    preserve_start = true,
+    preserve_end = true
+)
     N = length(tlist)
     if N < 3
         @error "N = length(tlist) < 3" N
@@ -184,7 +188,7 @@ midpoints marked as `x` in the above diagram..
 """
 function discretize_on_midpoints(control::T, tlist) where {T<:Function}
     tlist_midpoints = get_tlist_midpoints(tlist)
-    return discretize(control, tlist_midpoints; via_midpoints=false)
+    return discretize(control, tlist_midpoints; via_midpoints = false)
 end
 
 function discretize_on_midpoints(control::Vector, tlist)
@@ -295,7 +299,7 @@ in `generator`.
 * [`evaluate!`](@ref) — update an existing operator with a re-evaluation of a
 generator at a different point in time.
 """
-function evaluate(object, args...; vals_dict=IdDict())
+function evaluate(object, args...; vals_dict = IdDict())
     # Fallback: If `object` has to components, just look up `object` in
     # `vals_dict`
     return get(vals_dict, object, object)
@@ -339,7 +343,7 @@ function t_mid(tlist, n)
 end
 
 
-function evaluate(func::Function, tlist::Vector, n::Int64; vals_dict=IdDict())
+function evaluate(func::Function, tlist::Vector, n::Int64; vals_dict = IdDict())
     if haskey(vals_dict, func)
         return vals_dict[func]
     else
@@ -348,7 +352,7 @@ function evaluate(func::Function, tlist::Vector, n::Int64; vals_dict=IdDict())
 end
 
 
-function evaluate(func::Function, t::Float64; vals_dict=IdDict())
+function evaluate(func::Function, t::Float64; vals_dict = IdDict())
     if haskey(vals_dict, func)
         return vals_dict[func]
     else
@@ -357,7 +361,7 @@ function evaluate(func::Function, t::Float64; vals_dict=IdDict())
 end
 
 
-function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict=IdDict())
+function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict = IdDict())
     if haskey(vals_dict, control)
         return vals_dict[control]
     else
@@ -381,7 +385,7 @@ function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict=IdDict())
 end
 
 
-function evaluate(control::Vector, t::Float64; vals_dict=IdDict())
+function evaluate(control::Vector, t::Float64; vals_dict = IdDict())
     if haskey(vals_dict, control)
         return vals_dict[control]
     else
@@ -392,7 +396,7 @@ function evaluate(control::Vector, t::Float64; vals_dict=IdDict())
 end
 
 
-function evaluate(generator::Tuple, args...; vals_dict=IdDict())
+function evaluate(generator::Tuple, args...; vals_dict = IdDict())
     if isa(generator[1], Tuple)
         control = generator[1][2]
         coeff = evaluate(control, args...; vals_dict)
@@ -435,7 +439,7 @@ performs an in-place update on an `op` the was obtained from a previous call to
 [`evaluate`](@ref) with the same `generator`, but for a different point in time
 and/or different values in `vals_dict`.
 """
-function evaluate!(op, generator::Tuple, args...; vals_dict=IdDict())
+function evaluate!(op, generator::Tuple, args...; vals_dict = IdDict())
     if generator[1] isa Tuple
         control = generator[1][2]
         copyto!(op, generator[1][1])
@@ -569,10 +573,10 @@ the mid-points of the time grid, as obtained by
 [`discretize_on_midpoints`](@ref), and `get_parameters` is ignored.
 """
 function get_parameters(object)
-    return _get_parameters(object; via=get_controls)
+    return _get_parameters(object; via = get_controls)
 end
 
-function _get_parameters(object; via=get_controls)
+function _get_parameters(object; via = get_controls)
     parameter_arrays = []
     seen_parameter_array = IdDict{Any,Bool}()
     seen_component = IdDict{Any,Bool}()

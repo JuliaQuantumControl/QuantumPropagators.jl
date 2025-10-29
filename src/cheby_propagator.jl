@@ -89,16 +89,16 @@ function init_prop(
     generator,
     tlist,
     method::Val{:Cheby};
-    inplace=supports_inplace(state),
-    backward=false,
-    verbose=false,
-    parameters=nothing,
-    control_ranges=nothing,
-    specrange_method=:auto,
-    specrange_buffer=0.01,
-    cheby_coeffs_limit=1e-12,
-    check_normalization=false,
-    uniform_dt_tolerance=1e-12,
+    inplace = supports_inplace(state),
+    backward = false,
+    verbose = false,
+    parameters = nothing,
+    control_ranges = nothing,
+    specrange_method = :auto,
+    specrange_buffer = 0.01,
+    cheby_coeffs_limit = 1e-12,
+    check_normalization = false,
+    uniform_dt_tolerance = 1e-12,
     specrange_kwargs...
 )
     tlist = convert(Vector{Float64}, tlist)
@@ -131,7 +131,7 @@ function init_prop(
     δ = specrange_buffer * Δ
     E_min = E_min - δ / 2
     Δ = Δ + δ
-    dt = _get_uniform_dt(tlist; tol=uniform_dt_tolerance, warn=true)
+    dt = _get_uniform_dt(tlist; tol = uniform_dt_tolerance, warn = true)
     if isnothing(dt)
         error("Chebychev propagation only works on a uniform time grid")
     end
@@ -141,8 +141,8 @@ function init_prop(
         Δ,
         E_min,
         dt;
-        limit=cheby_coeffs_limit,
-        _timing_data=timing_data
+        limit = cheby_coeffs_limit,
+        _timing_data = timing_data
     )
     n = 1
     t = tlist[1]
@@ -243,7 +243,7 @@ All other keyword arguments are ignored.
 function reinit_prop!(
     propagator::ChebyPropagator,
     state;
-    transform_control_ranges=_transform_control_ranges,
+    transform_control_ranges = _transform_control_ranges,
     _...
 )
     state = set_state!(propagator, state)
@@ -289,7 +289,7 @@ function reinit_prop!(
         Δ = Δ + δ
         dt = float(tlist[2] - tlist[1])
         propagator.control_ranges = control_ranges
-        wrk = Cheby.ChebyWrk(state, Δ, E_min, dt; limit=wrk.limit)
+        wrk = Cheby.ChebyWrk(state, Δ, E_min, dt; limit = wrk.limit)
     else
         reset_timer!(propagator.timing_data)
     end
@@ -334,9 +334,9 @@ function cheby_get_spectral_envelope(generator, tlist, control_ranges, method; k
     # amplitude ≠ control function). For now, we just take any explicit time
     # dependency in the middle of the time grid.
     n = length(tlist) ÷ 2
-    G_min = evaluate(generator, tlist, n; vals_dict=min_vals)
+    G_min = evaluate(generator, tlist, n; vals_dict = min_vals)
     max_vals = IdDict(control => r[2] for (control, r) ∈ control_ranges)
-    G_max = evaluate(generator, tlist, n; vals_dict=max_vals)
+    G_max = evaluate(generator, tlist, n; vals_dict = max_vals)
     E_min, E_max = SpectralRange.specrange(G_max, method; kwargs...)
     _E_min, _E_max = SpectralRange.specrange(G_min, method; kwargs...)
     E_min = (_E_min < E_min) ? _E_min : E_min
@@ -367,7 +367,7 @@ function prop_step!(propagator::ChebyPropagator)
                 H,
                 dt,
                 propagator.wrk;
-                check_normalization=propagator.check_normalization
+                check_normalization = propagator.check_normalization
             )
         else
             H = _pwc_get_genop(propagator, n)
@@ -376,7 +376,7 @@ function prop_step!(propagator::ChebyPropagator)
                 H,
                 dt,
                 propagator.wrk;
-                check_normalization=propagator.check_normalization
+                check_normalization = propagator.check_normalization
             )
             setfield!(propagator, :state, Ψ)
         end

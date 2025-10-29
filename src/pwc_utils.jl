@@ -79,7 +79,7 @@ function _pwc_get_max_genop(generator, controls, tlist)
     n = length(tlist) ÷ 2
     max_vals =
         IdDict(control => maximum(controlvals[i]) for (i, control) in enumerate(controls))
-    return evaluate(generator, tlist, n; vals_dict=max_vals)
+    return evaluate(generator, tlist, n; vals_dict = max_vals)
 end
 
 
@@ -87,7 +87,7 @@ function _pwc_set_genop!(propagator::PiecewisePropagator, n)
     vals_dict = IdDict(c => propagator.parameters[c][n] for c in propagator.controls)
     generator = getfield(propagator, :generator)
     tlist = propagator.tlist
-    evaluate!(propagator.genop, generator, tlist, n; vals_dict=vals_dict)
+    evaluate!(propagator.genop, generator, tlist, n; vals_dict = vals_dict)
     return propagator.genop
 end
 
@@ -95,7 +95,7 @@ function _pwc_get_genop(propagator::PiecewisePropagator, n)
     vals_dict = IdDict(c => propagator.parameters[c][n] for c in propagator.controls)
     generator = getfield(propagator, :generator)
     tlist = propagator.tlist
-    return evaluate(generator, tlist, n; vals_dict=vals_dict)
+    return evaluate(generator, tlist, n; vals_dict = vals_dict)
 end
 
 

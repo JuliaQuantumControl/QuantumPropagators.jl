@@ -90,8 +90,8 @@ keyword arguments to `propagate_sequence` directly.
 function propagate_sequence(
     state,
     propagations::Vector{Propagation};
-    pre_propagation=nothing,
-    post_propagation=nothing,
+    pre_propagation = nothing,
+    post_propagation = nothing,
     kwargs...,
 )
     Ψ = state

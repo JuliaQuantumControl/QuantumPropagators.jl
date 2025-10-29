@@ -26,7 +26,7 @@ using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
     dt = 0.5
 
     if SERIALIZATION < 2
-        H = random_matrix(N; spectral_radius=ρ, hermitian=true)
+        H = random_matrix(N; spectral_radius = ρ, hermitian = true)
         Ψ₀ = random_state_vector(N)
     end
 
@@ -56,8 +56,8 @@ using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
     @test norm(Ψ_out_expected) ≈ 1
 
     Ψ = copy(Ψ₀)
-    wrk = NewtonWrk(Ψ₀; m_max=5)
-    newton!(Ψ, H, dt, wrk; max_restarts=200)
+    wrk = NewtonWrk(Ψ₀; m_max = 5)
+    newton!(Ψ, H, dt, wrk; max_restarts = 200)
     Ψ_out = copy(Ψ)
     @test norm(Ψ_out) ≈ 1
 
@@ -89,7 +89,7 @@ end
     dt = 0.5
 
     if SERIALIZATION < 2
-        H = random_matrix(N; spectral_radius=ρ)
+        H = random_matrix(N; spectral_radius = ρ)
         Ψ₀ = random_state_vector(N)
     end
 
@@ -117,8 +117,8 @@ end
     Ψ_out_expected = U * Ψ₀
 
     Ψ = copy(Ψ₀)
-    wrk = NewtonWrk(Ψ₀; m_max=50)
-    newton!(Ψ, H, dt, wrk; max_restarts=200)
+    wrk = NewtonWrk(Ψ₀; m_max = 50)
+    newton!(Ψ, H, dt, wrk; max_restarts = 200)
     Ψ_out = copy(Ψ)
 
     # Comparison
@@ -146,7 +146,7 @@ end
     dt = 0.5
 
     if SERIALIZATION < 2
-        L = random_matrix(N^2; spectral_radius=ρ, density)
+        L = random_matrix(N^2; spectral_radius = ρ, density)
         Ψ₀ = random_state_vector(N)
         ρ₀ = reshape(Ψ₀ * Ψ₀', :)
     end
@@ -167,8 +167,8 @@ end
     ρ_out_expected = U * ρ₀
 
     ρ = copy(ρ₀)
-    wrk = NewtonWrk(ρ₀; m_max=50)
-    newton!(ρ, L, dt, wrk; max_restarts=20, func=(L_dt -> exp(L_dt)))
+    wrk = NewtonWrk(ρ₀; m_max = 50)
+    newton!(ρ, L, dt, wrk; max_restarts = 20, func = (L_dt -> exp(L_dt)))
     ρ_out = copy(ρ)
 
     # Comparison

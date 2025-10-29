@@ -169,13 +169,13 @@ function propagate(
     generator,
     tlist;
     method,
-    check=true,
-    storage=nothing,
-    show_progress=false,
-    observables=_StoreState(),
-    callback=nothing,
-    inplace=supports_inplace(state),
-    for_expval=true,  # undocumented
+    check = true,
+    storage = nothing,
+    show_progress = false,
+    observables = _StoreState(),
+    callback = nothing,
+    inplace = supports_inplace(state),
+    for_expval = true,  # undocumented
     kwargs...
 )
     atol = get(kwargs, :atol, 1e-14)  # for checks
@@ -188,7 +188,7 @@ function propagate(
             )
         end
         valid_tlist =
-            check_tlist(tlist; quiet, _message_prefix="On `tlist` in `propagate`: ")
+            check_tlist(tlist; quiet, _message_prefix = "On `tlist` in `propagate`: ")
         if !valid_tlist
             error("The `tlist` in `propagate` does not pass `check_tlist`")
         end
@@ -196,7 +196,7 @@ function propagate(
             state;
             atol,
             quiet,
-            _message_prefix="On initial `state` in `propagate`: "
+            _message_prefix = "On initial `state` in `propagate`: "
         )
         if !valid_state
             error("The initial state in `propagate` does not pass `check_state`")
@@ -210,12 +210,12 @@ function propagate(
         end
         valid_generator = check_generator(
             generator;
-            state=state,
-            tlist=tlist,
+            state = state,
+            tlist = tlist,
             for_expval,
             atol,
             quiet,
-            _message_prefix="On `generator` in `propagate`: "
+            _message_prefix = "On `generator` in `propagate`: "
         )
         if !valid_generator
             error(
@@ -254,10 +254,10 @@ and then calls the lower-level `propagate(propagator; ...)`.
 function propagate(
     state,
     propagator;
-    storage=nothing,
-    observables=_StoreState(),
-    show_progress=false,
-    callback=nothing,
+    storage = nothing,
+    observables = _StoreState(),
+    show_progress = false,
+    callback = nothing,
     kwargs...
 )
     reinit_prop!(propagator, state; kwargs...)
@@ -282,10 +282,10 @@ propagates a freshly initialized `propagator` (immediately after
 """
 function propagate(
     propagator;
-    storage=nothing,
-    observables=_StoreState(),
-    show_progress=false,
-    callback=nothing,
+    storage = nothing,
+    observables = _StoreState(),
+    show_progress = false,
+    callback = nothing,
 )
 
     state = propagator.state
@@ -312,7 +312,7 @@ function propagate(
     if isa(show_progress, Function)
         progressmeter = show_progress(N)
     else
-        progressmeter = Progress(N, enabled=show_progress)
+        progressmeter = Progress(N, enabled = show_progress)
         if !show_progress
             # XXX: https://github.com/timholy/ProgressMeter.jl/issues/214
             progressmeter = NoProgress()

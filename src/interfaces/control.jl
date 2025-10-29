@@ -51,10 +51,10 @@ conditions failed.
 function check_control(
     control;
     tlist,
-    for_parameterization=true,
-    for_time_continuous=(control isa Function),
-    quiet=false,
-    _message_prefix=""  # for recursive calling
+    for_parameterization = true,
+    for_time_continuous = (control isa Function),
+    quiet = false,
+    _message_prefix = ""  # for recursive calling
 )
 
     @assert tlist isa Vector{Float64}
@@ -65,9 +65,9 @@ function check_control(
     if for_parameterization
         if control isa ParameterizedFunction
             success &=
-                check_parameterized_function(control; tlist, quiet, _message_prefix=px)
+                check_parameterized_function(control; tlist, quiet, _message_prefix = px)
         else
-            success &= check_parameterized(control; quiet, _message_prefix=px)
+            success &= check_parameterized(control; quiet, _message_prefix = px)
         end
     end
 
@@ -87,7 +87,7 @@ function check_control(
     end
     try
         v₀ = rand()
-        v = evaluate(control, tlist, 1; vals_dict=IdDict(control => v₀))
+        v = evaluate(control, tlist, 1; vals_dict = IdDict(control => v₀))
         if v != v₀
             msg = "$(px)`evaluate(control, tlist, n; vals_dict=IdDict(control => v))` must return `v`"
             quiet || @error msg v = v₀ result = v
@@ -118,7 +118,7 @@ function check_control(
         end
         try
             v₀ = rand()
-            v = evaluate(control, tlist[1]; vals_dict=IdDict(control => v₀))
+            v = evaluate(control, tlist[1]; vals_dict = IdDict(control => v₀))
             if v != v₀
                 msg = "$(px)`evaluate(control, t; vals_dict=IdDict(control => v))` must return `v`"
                 quiet || @error msg v = v₀ result = v

@@ -33,7 +33,7 @@ The default `method=:auto` chooses the best method for the given `H`. This is
 Keyword arguments not relevant to the underlying implementation will be
 ignored.
 """
-function specrange(H; method=Val(:auto), kwargs...)
+function specrange(H; method = Val(:auto), kwargs...)
     return specrange(H, method; kwargs...)
 end
 
@@ -86,8 +86,8 @@ under-estimating it.
 function specrange(
     H,
     method::Val{:arnoldi};
-    rng=GLOBAL_RNG,
-    state=random_state(H; rng),
+    rng = GLOBAL_RNG,
+    state = random_state(H; rng),
     kwargs...
 )
 
@@ -97,7 +97,7 @@ function specrange(
     norm_min = get(kwargs, :norm_min, 1e-15)
     enlarge = get(kwargs, :enlarge, true)
 
-    R = ritzvals(H, state, m_min, m_max; prec=prec, norm_min=norm_min)
+    R = ritzvals(H, state, m_min, m_max; prec = prec, norm_min = norm_min)
     E_min = real(R[1])
     E_max = real(R[end])
     if enlarge && (length(R) > 1)
@@ -148,7 +148,7 @@ returns a random normalized state compatible with the Hamiltonian `H`. This is
 intended to provide a starting vector for estimating the spectral radius of `H`
 via an Arnoldi method.
 """
-function random_state(H; rng=GLOBAL_RNG)
+function random_state(H; rng = GLOBAL_RNG)
     N = size(H)[2]
     Ψ = rand(rng, N) .* exp.((2π * im) .* rand(rng, N))
     Ψ ./= norm(Ψ)
@@ -165,7 +165,7 @@ R = ritzvals(G, state, m_min, m_max=2*m_min; prec=1e-5, norm_min=1e-15)
 calculates a complex vector `R` of at least `m_min` (assuming a sufficient
 Krylov dimension) and at most `m_max` Ritz values.
 """
-function ritzvals(G, state, m_min, m_max=2 * m_min; prec=1e-5, norm_min=1e-15)
+function ritzvals(G, state, m_min, m_max = 2 * m_min; prec = 1e-5, norm_min = 1e-15)
     if m_max <= m_min
         throw(ArgumentError("m_max=$m_max must be smaller than m_min=$min"))
     end
@@ -177,7 +177,7 @@ function ritzvals(G, state, m_min, m_max=2 * m_min; prec=1e-5, norm_min=1e-15)
     # Get the Ritz eigenvalues for order m-1, so that we can decide whether
     # the values for order m are already precise enough
     m₀ = m - 1
-    m₀ = arnoldi!(Hess, q, m₀, state, G; extended=false, norm_min=norm_min)
+    m₀ = arnoldi!(Hess, q, m₀, state, G; extended = false, norm_min = norm_min)
     eigenvals = diagonalize_hessenberg_matrix(Hess, m₀)
     v̲r₀ = minimum(real(eigenvals))
     v̄r₀ = maximum(real(eigenvals))
@@ -185,7 +185,7 @@ function ritzvals(G, state, m_min, m_max=2 * m_min; prec=1e-5, norm_min=1e-15)
     if m₀ == m - 1
         # Starting from original order m, increase `m` until the Ritz values
         # reach the desired precision
-        extend_arnoldi!(Hess, q, m, G; norm_min=norm_min)
+        extend_arnoldi!(Hess, q, m, G; norm_min = norm_min)
         eigenvals = diagonalize_hessenberg_matrix(Hess, m)
         v̲r = minimum(real(eigenvals))
         v̄r = maximum(real(eigenvals))
@@ -199,7 +199,7 @@ function ritzvals(G, state, m_min, m_max=2 * m_min; prec=1e-5, norm_min=1e-15)
             v̄i₀ = v̄i
             m₀ = m
             m = m + 1
-            extend_arnoldi!(Hess, q, m, G; norm_min=norm_min)
+            extend_arnoldi!(Hess, q, m, G; norm_min = norm_min)
             (m == m₀) && break  # dimensionality exhausted
             eigenvals = diagonalize_hessenberg_matrix(Hess, m)
             v̲r = minimum(real(eigenvals))

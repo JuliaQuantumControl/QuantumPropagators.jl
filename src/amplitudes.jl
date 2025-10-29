@@ -183,7 +183,7 @@ end
 (ampl::ShapedContinuousAmplitude)(t::Float64) = ampl.shape(t) * ampl.control(t)
 
 
-function evaluate(ampl::ShapedAmplitude, args...; vals_dict=IdDict())
+function evaluate(ampl::ShapedAmplitude, args...; vals_dict = IdDict())
     S_t = evaluate(ampl.shape, args...; vals_dict)
     ϵ_t = evaluate(ampl.control, args...; vals_dict)
     return S_t * ϵ_t

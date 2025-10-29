@@ -7,8 +7,8 @@ using QuantumPropagators.Controls: discretize_on_midpoints # DEBUG
 
 @testset "LockedAmplitude" begin
 
-    tlist = collect(range(0, 10, length=101))
-    S(t) = flattop(t, T=10, t_rise=2, func=:blackman)
+    tlist = collect(range(0, 10, length = 101))
+    S(t) = flattop(t, T = 10, t_rise = 2, func = :blackman)
 
     ampl = LockedAmplitude(S)
     @test startswith("$ampl", "LockedAmplitude(")
@@ -30,13 +30,13 @@ end
 
 
 @testset "ShapedAmplitude" begin
-    tlist = collect(range(0, 10, length=101))
-    S(t) = flattop(t, T=10, t_rise=2, func=:blackman)
+    tlist = collect(range(0, 10, length = 101))
+    S(t) = flattop(t, T = 10, t_rise = 2, func = :blackman)
     ϵ(t) = 1.0
 
     @test check_control(ϵ; tlist)
 
-    ampl = ShapedAmplitude(ϵ; shape=S)
+    ampl = ShapedAmplitude(ϵ; shape = S)
     @test startswith("$ampl", "ShapedAmplitude(")
     controls = get_controls(ampl)
     @test length(controls) == 1
@@ -49,7 +49,7 @@ end
     @test evaluate(ampl, tlist, 20) ≈ ϵ(t) * S(t)
 
 
-    ampl = ShapedAmplitude(ϵ, tlist; shape=S)
+    ampl = ShapedAmplitude(ϵ, tlist; shape = S)
     @test startswith("$ampl", "ShapedAmplitude(")
     controls = get_controls(ampl)
     @test length(controls) == 1

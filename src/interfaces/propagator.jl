@@ -54,9 +54,9 @@ conditions failed.
 """
 function check_propagator(
     propagator;
-    atol=1e-14,
-    quiet=false,
-    _message_prefix=""  # for recursive calling
+    atol = 1e-14,
+    quiet = false,
+    _message_prefix = ""  # for recursive calling
 )
 
     local state, tlist, t, parameters, backward, inplace
@@ -82,14 +82,14 @@ function check_propagator(
     success || return false  # no point in going on
 
     valid_tlist =
-        check_tlist(propagator.tlist; quiet, _message_prefix="On `propagator.tlist`: ")
+        check_tlist(propagator.tlist; quiet, _message_prefix = "On `propagator.tlist`: ")
     if !valid_tlist
         quiet || @error "$(px)`propagator.tlist` is not a valid time grid"
         success = false
     end
 
     try
-        valid_state = check_state(state; atol, _message_prefix="On `propagator.state`: ")
+        valid_state = check_state(state; atol, _message_prefix = "On `propagator.state`: ")
         if !valid_state
             quiet || @error "$(px)`propagator.state` is not a valid state"
             success = false
@@ -153,7 +153,7 @@ function check_propagator(
     try
         Ψ₁ = prop_step!(propagator)
         valid_state =
-            check_state(Ψ₁; atol, _message_prefix="On `Ψ₁=prop_step!(propagator)`: ")
+            check_state(Ψ₁; atol, _message_prefix = "On `Ψ₁=prop_step!(propagator)`: ")
         if !valid_state
             quiet ||
                 @error "$(px)prop_step! must return a valid state until time grid is exhausted"

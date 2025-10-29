@@ -63,10 +63,10 @@ function arnoldi!(
     m::Int64,
     Ψ::T,
     H,
-    dt::Float64=1.0;
-    extended=true,
-    norm_min=1e-15,
-    _timing_data=_DEFAULT_TIMING_DATA  # undocumented (internal use)
+    dt::Float64 = 1.0;
+    extended = true,
+    norm_min = 1e-15,
+    _timing_data = _DEFAULT_TIMING_DATA  # undocumented (internal use)
 ) where {T}
     if extended
         dim_hess = m + 1
@@ -112,7 +112,7 @@ created by a call to [`arnoldi!`](@ref) with `extended=false` or a previous
 call to `extend_arnoldi!`. Note that `Hess` itself is not resized, so it must
 be allocated to size m×m or greater on input.
 """
-function extend_arnoldi!(Hess, q, m, H, dt::Float64=1.0; norm_min=1e-15)
+function extend_arnoldi!(Hess, q, m, H, dt::Float64 = 1.0; norm_min = 1e-15)
     h = norm(q[m])
     (h < norm_min) && return m
     Hess[m, m-1] = dt * h
@@ -140,7 +140,7 @@ If `accumulate` is `true`, return the concatenated eigenvalues for
 `Hess[1:1,1:1]` to `Hess[1:m,1:m]`, that is, all sub-matrices of size 1 through
 `m`.
 """
-function diagonalize_hessenberg_matrix(Hess, m; accumulate=false)
+function diagonalize_hessenberg_matrix(Hess, m; accumulate = false)
     j_min = m
     j_max = m
     if accumulate

@@ -35,9 +35,9 @@ conditions failed.
 function check_amplitude(
     ampl;
     tlist,
-    for_parameterization=false,
-    quiet=false,
-    _message_prefix=""  # for recursive calling
+    for_parameterization = false,
+    quiet = false,
+    _message_prefix = ""  # for recursive calling
 )
 
     px = _message_prefix
@@ -59,7 +59,7 @@ function check_amplitude(
     end
 
     if for_parameterization
-        success &= check_parameterized(ampl; _message_prefix=px)
+        success &= check_parameterized(ampl; _message_prefix = px)
     end
 
     try
@@ -69,7 +69,7 @@ function check_amplitude(
                 control;
                 tlist,
                 quiet,
-                _message_prefix="On control $i ($(typeof(control))) in `ampl`: "
+                _message_prefix = "On control $i ($(typeof(control))) in `ampl`: "
             )
             if !valid_control
                 quiet ||

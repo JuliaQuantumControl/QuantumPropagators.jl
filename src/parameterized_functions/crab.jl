@@ -90,15 +90,15 @@ end
 
 function CRABFunction(
     N;
-    max_frequency=0.0,
-    rng=Random.GLOBAL_RNG,
-    frequencies=sort(max_frequency * rand(rng, N)),
-    guess=nothing,
-    shape=nothing,
-    parity=:evenodd,
-    scale_guess=true,
-    random_amplitude=true,
-    parameters=crab_initial_parameters(
+    max_frequency = 0.0,
+    rng = Random.GLOBAL_RNG,
+    frequencies = sort(max_frequency * rand(rng, N)),
+    guess = nothing,
+    shape = nothing,
+    parity = :evenodd,
+    scale_guess = true,
+    random_amplitude = true,
+    parameters = crab_initial_parameters(
         N;
         guess,
         scale_guess,
@@ -117,7 +117,7 @@ function CRABFunction(
         parity,
         scale_guess,
         parameters,
-        vary_frequencies=false,
+        vary_frequencies = false,
     )
 end
 
@@ -165,12 +165,12 @@ All random numbers are generated via the given `rng`.
 """
 function crab_initial_parameters(
     N;
-    guess=nothing,
-    scale_guess=true,
-    random_amplitude=false,
-    vary_frequencies=false,
-    parity=:evenodd,
-    rng=Random.GLOBAL_RNG
+    guess = nothing,
+    scale_guess = true,
+    random_amplitude = false,
+    vary_frequencies = false,
+    parity = :evenodd,
+    rng = Random.GLOBAL_RNG
 )
     isnothing(guess) && (scale_guess = false)
     guess_weight = scale_guess ? Float64[1.0] : Float64[]
@@ -294,22 +294,22 @@ end
 
 function VariedFrequencyCRABFunction(
     N;
-    max_frequency=0.0,
-    rng=Random.GLOBAL_RNG,
-    frequencies=sort(max_frequency * rand(rng, N)),
-    guess=nothing,
-    shape=nothing,
-    parity=:evenodd,
-    scale_guess=true,
-    random_amplitude=true,
-    parameters=crab_initial_parameters(
+    max_frequency = 0.0,
+    rng = Random.GLOBAL_RNG,
+    frequencies = sort(max_frequency * rand(rng, N)),
+    guess = nothing,
+    shape = nothing,
+    parity = :evenodd,
+    scale_guess = true,
+    random_amplitude = true,
+    parameters = crab_initial_parameters(
         N;
         guess,
         scale_guess,
         random_amplitude,
         parity,
         rng,
-        vary_frequencies=true,
+        vary_frequencies = true,
     )
 )
     return _instantiate_crab_function(
@@ -322,7 +322,7 @@ function VariedFrequencyCRABFunction(
         parity,
         scale_guess,
         parameters,
-        vary_frequencies=true,
+        vary_frequencies = true,
     )
 end
 

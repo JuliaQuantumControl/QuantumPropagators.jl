@@ -14,7 +14,7 @@ The function returns `true` for a valid time grid and `false` for an invalid
 time grid. Unless `quiet=true`, it will log an error to indicated which of the
 conditions failed.
 """
-function check_tlist(tlist; quiet=false, _message_prefix="")
+function check_tlist(tlist; quiet = false, _message_prefix = "")
 
     px = _message_prefix
     success = true

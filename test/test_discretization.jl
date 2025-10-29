@@ -9,22 +9,22 @@ using IOCapture: IOCapture
 
     tlist = Origin(0)([1.0, 3.0, 5.0, 6.0, 7.0])
     @test get_tlist_midpoints(tlist) == [1.0, 4.0, 5.5, 7.0]
-    @test get_tlist_midpoints(tlist; preserve_start=false) == [2.0, 4.0, 5.5, 7.0]
-    @test get_tlist_midpoints(tlist; preserve_end=false) == [1.0, 4.0, 5.5, 6.5]
-    @test get_tlist_midpoints(tlist; preserve_start=false, preserve_end=false) ==
+    @test get_tlist_midpoints(tlist; preserve_start = false) == [2.0, 4.0, 5.5, 7.0]
+    @test get_tlist_midpoints(tlist; preserve_end = false) == [1.0, 4.0, 5.5, 6.5]
+    @test get_tlist_midpoints(tlist; preserve_start = false, preserve_end = false) ==
           [2.0, 4.0, 5.5, 6.5]
 
-    c = IOCapture.capture(rethrow=Union{}) do
+    c = IOCapture.capture(rethrow = Union{}) do
         get_tlist_midpoints([1.0, 2.0])
     end
     @test c.value isa ArgumentError
 
-    c = IOCapture.capture(rethrow=Union{}) do
-        get_tlist_midpoints([0.0, 0.0, 0.0], preserve_start=false, preserve_end=false)
+    c = IOCapture.capture(rethrow = Union{}) do
+        get_tlist_midpoints([0.0, 0.0, 0.0], preserve_start = false, preserve_end = false)
     end
     @test c.value isa AssertionError
 
-    c = IOCapture.capture(rethrow=Union{}) do
+    c = IOCapture.capture(rethrow = Union{}) do
         get_tlist_midpoints([0.0, 1.0, 1.0, 0.0])
     end
     @test c.value isa AssertionError
@@ -33,7 +33,7 @@ end
 
 
 @testset "discretize/discretize_on_midpoints" begin
-    tlist = collect(range(0, 10, length=20))
+    tlist = collect(range(0, 10, length = 20))
 
     t₀ = 0.0
     T = 10.0
@@ -42,13 +42,13 @@ end
         return blackman(t, t₀, T)
     end
 
-    control_vals1 = discretize(control_func, tlist; via_midpoints=true)
+    control_vals1 = discretize(control_func, tlist; via_midpoints = true)
     pulse_vals1 = discretize_on_midpoints(control_func, tlist)
 
     control_vals2 = discretize(pulse_vals1, tlist)
     pulse_vals2 = discretize_on_midpoints(control_vals1, tlist)
 
-    control_vals3 = discretize(control_func, tlist; via_midpoints=false)
+    control_vals3 = discretize(control_func, tlist; via_midpoints = false)
 
     control_vals4 = discretize(control_vals1, tlist)
     pulse_vals3 = discretize_on_midpoints(pulse_vals1, tlist)

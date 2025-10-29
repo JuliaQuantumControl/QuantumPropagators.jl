@@ -50,7 +50,12 @@ If [`QuantumPropagators.enable_timings()`](@ref
 QuantumPropagators.enable_timings) has been called,
 profiling data is collected in `f.timing_data`.
 """
-function ode_function(generator::GT, tlist; c=-1im, _timing_data=TimerOutput()) where {GT}
+function ode_function(
+    generator::GT,
+    tlist;
+    c = -1im,
+    _timing_data = TimerOutput()
+) where {GT}
     H = evaluate(generator, tlist, 1)
     OT = typeof(H)
     return QuantumODEFunction{GT,OT}(generator, H, c, _timing_data)
@@ -67,9 +72,9 @@ end
 function (f::QuantumODEFunction)(du, u, p, t)
     @timeit_debug f.timing_data "operator evaluation" begin
         if supports_inplace(f.operator)
-            H = evaluate!(f.operator, f.generator, t; vals_dict=p)
+            H = evaluate!(f.operator, f.generator, t; vals_dict = p)
         else
-            H = evaluate(f.generator, t; vals_dict=p)
+            H = evaluate(f.generator, t; vals_dict = p)
         end
     end
     @timeit_debug f.timing_data "matrix-vector product" begin
@@ -80,7 +85,7 @@ end
 
 function (f::QuantumODEFunction)(u, p, t)
     @timeit_debug f.timing_data "operator evaluation" begin
-        H = evaluate(f.generator, t; vals_dict=p)
+        H = evaluate(f.generator, t; vals_dict = p)
     end
     @timeit_debug f.timing_data "matrix-vector product" begin
         return f.c * H * u

@@ -58,11 +58,11 @@ failed.
 """
 function check_state(
     state;
-    normalized=false,
-    atol=1e-14,
-    quiet=false,
-    _check_similar=true,  # to avoid infinite recursion
-    _message_prefix=""  # for recursive calling
+    normalized = false,
+    atol = 1e-14,
+    quiet = false,
+    _check_similar = true,  # to avoid infinite recursion
+    _message_prefix = ""  # for recursive calling
 )
 
     ≈(a, b) = isapprox(a, b; atol)
@@ -229,10 +229,10 @@ function check_state(
                     # the checks
                     if !check_state(
                         ϕ;
-                        normalized=false,
+                        normalized = false,
                         atol,
-                        _check_similar=false,
-                        _message_prefix="On `similar(state)`: ",
+                        _check_similar = false,
+                        _message_prefix = "On `similar(state)`: ",
                         quiet
                     )
                         quiet || @error("$(px)`similar(state)` must return a valid state")

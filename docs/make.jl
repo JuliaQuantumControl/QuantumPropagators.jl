@@ -52,14 +52,14 @@ externals = ExternalFallbacks(
     "Trajectory" => "@extref QuantumControl :jl:type:`QuantumControl.Trajectory`",
     "QuantumControl.Trajectory" => "@extref QuantumControl :jl:type:`QuantumControl.Trajectory`",
     "QuantumControl.ControlProblem" => "@extref QuantumControl :jl:type:`QuantumControl.ControlProblem`";
-    automatic=false
+    automatic = false
 )
 
 println("Starting makedocs")
 
 include("generate_api.jl")
 
-bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:numeric)
+bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style = :numeric)
 
 warnonly = [:linkcheck,]
 if get(ENV, "DOCUMENTER_WARN_ONLY", "0") == "1"  # cf. test/init.jl
@@ -68,17 +68,17 @@ end
 
 
 makedocs(;
-    plugins=[bib, links, externals],
-    authors=AUTHORS,
-    sitename="QuantumPropagators.jl",
+    plugins = [bib, links, externals],
+    authors = AUTHORS,
+    sitename = "QuantumPropagators.jl",
     # Link checking is disabled in REPL, see `devrepl.jl`.
-    linkcheck=(get(ENV, "DOCUMENTER_CHECK_LINKS", "1") != "0"),
+    linkcheck = (get(ENV, "DOCUMENTER_CHECK_LINKS", "1") != "0"),
     warnonly,
-    doctest=false,  # doctests run as part of test suite
-    format=Documenter.HTML(;
-        prettyurls=true,
-        canonical="https://juliaquantumcontrol.github.io/QuantumPropagators.jl",
-        assets=[
+    doctest = false,  # doctests run as part of test suite
+    format = Documenter.HTML(;
+        prettyurls = true,
+        canonical = "https://juliaquantumcontrol.github.io/QuantumPropagators.jl",
+        assets = [
             "assets/citations.css",
             asset(
                 "https://juliaquantumcontrol.github.io/QuantumControl.jl/dev/assets/topbar/topbar.css"
@@ -87,10 +87,10 @@ makedocs(;
                 "https://juliaquantumcontrol.github.io/QuantumControl.jl/dev/assets/topbar/topbar.js"
             ),
         ],
-        footer="[$NAME.jl]($GITHUB) v$VERSION docs powered by [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl).",
-        size_threshold_ignore=["api/quantumpropagators.md",]
+        footer = "[$NAME.jl]($GITHUB) v$VERSION docs powered by [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl).",
+        size_threshold_ignore = ["api/quantumpropagators.md",]
     ),
-    pages=[
+    pages = [
         "Home" => "index.md",
         "Overview" => "overview.md",
         "Dynamical Generators" => "generators.md",
@@ -105,4 +105,4 @@ makedocs(;
 
 println("Finished makedocs")
 
-deploydocs(; repo="github.com/JuliaQuantumControl/QuantumPropagators.jl")
+deploydocs(; repo = "github.com/JuliaQuantumControl/QuantumPropagators.jl")

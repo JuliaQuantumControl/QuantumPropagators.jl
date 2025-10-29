@@ -26,9 +26,9 @@ function init_prop(
     generator,
     tlist,
     method::Val{:invalid_propagator_no_methods};
-    inplace=true,
-    backward=false,
-    parameters=nothing,
+    inplace = true,
+    backward = false,
+    parameters = nothing,
     _...
 )
     controls = get_controls(generator)
@@ -74,9 +74,9 @@ function init_prop(
     generator,
     tlist,
     method::Val{:invalid_propagator_empty_methods};
-    inplace=true,
-    backward=false,
-    parameters=nothing,
+    inplace = true,
+    backward = false,
+    parameters = nothing,
     _...
 )
     n = 2 # invalid
@@ -137,9 +137,9 @@ function init_prop(
     generator,
     tlist,
     method::Val{:invalid_random_propagator};
-    inplace=true,
-    backward=false,
-    parameters=nothing,
+    inplace = true,
+    backward = false,
+    parameters = nothing,
     _...
 )
     controls = get_controls(generator)
@@ -204,9 +204,9 @@ function init_prop(
     generator,
     tlist,
     method::Val{:invalid_propagator_no_state};
-    inplace=true,
-    backward=false,
-    parameters=nothing,
+    inplace = true,
+    backward = false,
+    parameters = nothing,
     _...
 )
     controls = get_controls(generator)

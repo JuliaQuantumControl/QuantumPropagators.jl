@@ -325,9 +325,9 @@ Operator with 2 ops and 1 coeffs
 The `hamiltonian` function may generate warnings if the `terms` are of an
 unexpected type or structure.  These can be suppressed with `check=false`.
 """
-hamiltonian(terms...; check=true) = _make_generator(terms...; check)
+hamiltonian(terms...; check = true) = _make_generator(terms...; check)
 
-function _make_generator(terms...; check=false)
+function _make_generator(terms...; check = false)
     ops = Any[]
     drift = Any[]
     amplitudes = Any[]
@@ -426,7 +426,7 @@ function ham_to_superop(H::AbstractSparseMatrix; convention)
 end
 
 function ham_to_superop(H::AbstractMatrix; convention)
-    return ham_to_superop(sparse(H); convention=convention)
+    return ham_to_superop(sparse(H); convention = convention)
 end
 
 
@@ -449,7 +449,7 @@ function lindblad_to_superop(A::AbstractSparseMatrix; convention)
 end
 
 function lindblad_to_superop(A::AbstractMatrix; convention)
-    return lindblad_to_superop(sparse(A); convention=convention)
+    return lindblad_to_superop(sparse(A); convention = convention)
 end
 
 
@@ -458,7 +458,7 @@ function dissipator(c_ops; convention)
     @assert N == size(c_ops[1])[2]
     D = spzeros(ComplexF64, N^2, N^2)
     for A in c_ops
-        D += lindblad_to_superop(A; convention=convention)
+        D += lindblad_to_superop(A; convention = convention)
     end
     return (D,)
 end
@@ -528,12 +528,12 @@ Liouvillian superoperator as a sparse matrix.
 Passing `check=false`, suppresses warnings and errors about unexpected types or
 the structure of the arguments, cf. [`hamiltonian`](@ref).
 """
-function liouvillian(H::Tuple, c_ops=(); kwargs...)
+function liouvillian(H::Tuple, c_ops = (); kwargs...)
     check = get(kwargs, :check, true)
     return liouvillian(_make_generator(H...; check), c_ops; kwargs...)
 end
 
-function liouvillian(H::Generator, c_ops=(); convention, check=true)
+function liouvillian(H::Generator, c_ops = (); convention, check = true)
     terms = []
     if length(c_ops) > 0
         append!(terms, dissipator(c_ops; convention))
@@ -552,7 +552,7 @@ function liouvillian(H::Generator, c_ops=(); convention, check=true)
     return _make_generator(terms...; check)
 end
 
-function liouvillian(H::AbstractMatrix, c_ops=(); convention, check=true)
+function liouvillian(H::AbstractMatrix, c_ops = (); convention, check = true)
     L0 = ham_to_superop(H; convention)
     terms = Any[L0,]
     if length(c_ops) > 0
@@ -561,9 +561,9 @@ function liouvillian(H::AbstractMatrix, c_ops=(); convention, check=true)
     return _make_generator(terms...; check)
 end
 
-function liouvillian(H::Nothing, c_ops=(); convention, check=true)
+function liouvillian(H::Nothing, c_ops = (); convention, check = true)
     if length(c_ops) > 0
-        terms = dissipator(c_ops; convention=convention)
+        terms = dissipator(c_ops; convention = convention)
         return _make_generator(terms...; check)
     else
         error("Empty Liouvillian, must give at least one of `H` or `c_ops`")
@@ -677,7 +677,7 @@ get_controls(operator::Operator) = Tuple([])
 get_controls(operator::ScaledOperator) = Tuple([])
 
 
-function evaluate(generator::Generator, args...; vals_dict=IdDict())
+function evaluate(generator::Generator, args...; vals_dict = IdDict())
     coeffs = []
     for (i, ampl) in enumerate(generator.amplitudes)
         coeff = evaluate(ampl, args...; vals_dict)
@@ -694,7 +694,7 @@ function evaluate(generator::Generator, args...; vals_dict=IdDict())
 end
 
 
-function evaluate!(op::Operator, generator::Generator, args...; vals_dict=IdDict())
+function evaluate!(op::Operator, generator::Generator, args...; vals_dict = IdDict())
     @assert length(op.ops) == length(generator.ops)
     @assert all(O ≡ P for (O, P) in zip(op.ops, generator.ops))
     for (i, ampl) in enumerate(generator.amplitudes)

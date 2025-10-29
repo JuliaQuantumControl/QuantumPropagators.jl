@@ -83,13 +83,13 @@ function init_prop(
     generator,
     tlist,
     method::Val{:ExpProp};
-    inplace=supports_inplace(state),
-    backward=false,
-    verbose=false,
-    parameters=nothing,
-    func=(H_dt -> exp(-1im * H_dt)),
-    convert_state=_exp_prop_convert_state(state),
-    convert_operator=_exp_prop_convert_operator(generator),
+    inplace = supports_inplace(state),
+    backward = false,
+    verbose = false,
+    parameters = nothing,
+    func = (H_dt -> exp(-1im * H_dt)),
+    convert_state = _exp_prop_convert_state(state),
+    convert_operator = _exp_prop_convert_operator(generator),
     _...
 )
     if !isconcretetype(convert_state)
@@ -105,7 +105,7 @@ function init_prop(
 
     parameters = _pwc_process_parameters(parameters, controls, tlist)
     timing_data = TimerOutput()
-    wrk = ExpProp.ExpPropWrk(convert(convert_state, state); _timing_data=timing_data)
+    wrk = ExpProp.ExpPropWrk(convert(convert_state, state); _timing_data = timing_data)
     n = 1
     t = tlist[1]
     if backward
@@ -159,13 +159,13 @@ function prop_step!(propagator::ExpPropagator)
             else
                 H = convert(propagator.convert_operator, _pwc_get_genop(propagator, n))
             end
-            ExpProp.expprop!(Ψ, H, dt, propagator.wrk; func=propagator.func)
+            ExpProp.expprop!(Ψ, H, dt, propagator.wrk; func = propagator.func)
             if Ψ ≢ propagator.state  # `convert` of Ψ may have been a no-op
                 copyto!(propagator.state, convert(typeof(propagator.state), Ψ))
             end
         else
             H = convert(propagator.convert_operator, _pwc_get_genop(propagator, n))
-            Ψ = ExpProp.expprop(Ψ, H, dt, propagator.wrk; func=propagator.func)
+            Ψ = ExpProp.expprop(Ψ, H, dt, propagator.wrk; func = propagator.func)
             setfield!(propagator, :state, convert(typeof(propagator.state), Ψ))
         end
         _pwc_advance_time!(propagator)

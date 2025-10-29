@@ -8,46 +8,46 @@ using IOCapture: IOCapture
 const 𝕚 = 1im;
 
 function ramsey_scheme(;
-    T=37,                 # duration of each pulse (μs)
-    nt=1001,              # number of time steps for each pulse
-    τ=1428,               # the free evolution time (μs) = 1.428ms
-    μ=1.0,                # extra prefactor for pulse amplitudes
-    signs=(+1, +1),       # the signs of the π-pulses
-    storage=nothing,      # optional: 4 storage objects
+    T = 37,                 # duration of each pulse (μs)
+    nt = 1001,              # number of time steps for each pulse
+    τ = 1428,               # the free evolution time (μs) = 1.428ms
+    μ = 1.0,                # extra prefactor for pulse amplitudes
+    signs = (+1, +1),       # the signs of the π-pulses
+    storage = nothing,      # optional: 4 storage objects
 )
 
-    tlist = collect(range(0, T; length=1001))
+    tlist = collect(range(0, T; length = 1001))
     S1, S2 = signs
     @assert S1 in [-1, 1]
     @assert S2 in [-1, 1]
 
     propagations = [
         Propagation(
-            ramsey_rwa_hamiltonian(; Ωₚ=(t -> μ * pi_shape(t; T)), Ωₛ=(t -> 0.0)),
-            collect(range(0, T; length=nt));
-            pre_propagation=apply_global_phase,
-            post_propagation=nothing
+            ramsey_rwa_hamiltonian(; Ωₚ = (t -> μ * pi_shape(t; T)), Ωₛ = (t -> 0.0)),
+            collect(range(0, T; length = nt));
+            pre_propagation = apply_global_phase,
+            post_propagation = nothing
         ),
         Propagation(
             ramsey_rwa_hamiltonian(;
-                Ωₚ=(t -> (√2 / 2) * μ * pi_shape(t - T; T)),
-                Ωₛ=(t -> (√2 / 2) * μ * pi_shape(t - T; T))
+                Ωₚ = (t -> (√2 / 2) * μ * pi_shape(t - T; T)),
+                Ωₛ = (t -> (√2 / 2) * μ * pi_shape(t - T; T))
             ),
-            collect(range(T, 2T; length=nt));
-            post_propagation=ramsey_state_to_lab
+            collect(range(T, 2T; length = nt));
+            post_propagation = ramsey_state_to_lab
         ),
         Propagation(
             ramsey_lab_free_hamiltonian(),
             [2T, 2T + τ];
-            post_propagation=ramsey_state_to_rwa
+            post_propagation = ramsey_state_to_rwa
         ),
         Propagation(
             ramsey_rwa_hamiltonian(;
-                Ωₚ=(t -> S1 * (√2 / 2) * μ * pi_shape(t - (2T + τ); T)),
-                Ωₛ=(t -> S2 * (√2 / 2) * μ * pi_shape(t - (2T + τ); T))
+                Ωₚ = (t -> S1 * (√2 / 2) * μ * pi_shape(t - (2T + τ); T)),
+                Ωₛ = (t -> S2 * (√2 / 2) * μ * pi_shape(t - (2T + τ); T))
             ),
-            collect(range(2T + τ, 3T + τ; length=nt));
-            post_propagation=nothing
+            collect(range(2T + τ, 3T + τ; length = nt));
+            post_propagation = nothing
         )
     ]
     if !isnothing(storage)
@@ -60,14 +60,14 @@ end
 
 
 function ramsey_scheme_pre_initialized(;
-    T=37,                 # duration of each pulse (μs)
-    nt=1001,              # number of time steps for each pulse
-    τ=1428,               # the free evolution time (μs) = 1.428ms
-    μ=1.0,                # extra prefactor for pulse amplitudes
-    signs=(+1, +1),       # the signs of the π-pulses
+    T = 37,                 # duration of each pulse (μs)
+    nt = 1001,              # number of time steps for each pulse
+    τ = 1428,               # the free evolution time (μs) = 1.428ms
+    μ = 1.0,                # extra prefactor for pulse amplitudes
+    signs = (+1, +1),       # the signs of the π-pulses
 )
 
-    tlist = collect(range(0, T; length=1001))
+    tlist = collect(range(0, T; length = 1001))
     S1, S2 = signs
     @assert S1 in [-1, 1]
     @assert S2 in [-1, 1]
@@ -77,45 +77,45 @@ function ramsey_scheme_pre_initialized(;
     propagators = [
         init_prop(
             copy(Ψ),
-            ramsey_rwa_hamiltonian(; Ωₚ=(t -> μ * pi_shape(t; T)), Ωₛ=(t -> 0.0)),
-            collect(range(0, T; length=nt));
-            method=ExpProp,
-            check=false,
+            ramsey_rwa_hamiltonian(; Ωₚ = (t -> μ * pi_shape(t; T)), Ωₛ = (t -> 0.0)),
+            collect(range(0, T; length = nt));
+            method = ExpProp,
+            check = false,
         ),
         init_prop(
             copy(Ψ),
             ramsey_rwa_hamiltonian(;
-                Ωₚ=(t -> (√2 / 2) * μ * pi_shape(t - T; T)),
-                Ωₛ=(t -> (√2 / 2) * μ * pi_shape(t - T; T))
+                Ωₚ = (t -> (√2 / 2) * μ * pi_shape(t - T; T)),
+                Ωₛ = (t -> (√2 / 2) * μ * pi_shape(t - T; T))
             ),
-            collect(range(T, 2T; length=nt));
-            method=ExpProp,
-            check=false,
+            collect(range(T, 2T; length = nt));
+            method = ExpProp,
+            check = false,
         ),
         init_prop(
             copy(Ψ),
             ramsey_lab_free_hamiltonian(),
             [2T, 2T + τ];
-            method=ExpProp,
-            check=false,
+            method = ExpProp,
+            check = false,
         ),
         init_prop(
             copy(Ψ),
             ramsey_rwa_hamiltonian(;
-                Ωₚ=(t -> S1 * (√2 / 2) * μ * pi_shape(t - (2T + τ); T)),
-                Ωₛ=(t -> S2 * (√2 / 2) * μ * pi_shape(t - (2T + τ); T))
+                Ωₚ = (t -> S1 * (√2 / 2) * μ * pi_shape(t - (2T + τ); T)),
+                Ωₛ = (t -> S2 * (√2 / 2) * μ * pi_shape(t - (2T + τ); T))
             ),
-            collect(range(2T + τ, 3T + τ; length=nt));
-            method=ExpProp,
-            check=false,
+            collect(range(2T + τ, 3T + τ; length = nt));
+            method = ExpProp,
+            check = false,
         ),
     ]
 
     propagations = [
-        Propagation(propagators[1]; post_propagation=nothing),
-        Propagation(propagators[2]; post_propagation=ramsey_state_to_lab),
-        Propagation(propagators[3]; post_propagation=ramsey_state_to_rwa),
-        Propagation(propagators[4]; post_propagation=nothing)
+        Propagation(propagators[1]; post_propagation = nothing),
+        Propagation(propagators[2]; post_propagation = ramsey_state_to_lab),
+        Propagation(propagators[3]; post_propagation = ramsey_state_to_rwa),
+        Propagation(propagators[4]; post_propagation = nothing)
     ]
 
     return propagations
@@ -125,10 +125,10 @@ end
 
 function ramsey_U_RWA(
     t;
-    f_DQ=0.293 * 2π,
-    f_RF=4.94 * 2π,
-    f1=(f_RF + f_DQ / 2),
-    f2=(f_RF - f_DQ / 2)
+    f_DQ = 0.293 * 2π,
+    f_RF = 4.94 * 2π,
+    f1 = (f_RF + f_DQ / 2),
+    f2 = (f_RF - f_DQ / 2)
 )
     Diagonal([1.0, exp(𝕚 * f1 * t), exp(𝕚 * (f1 - f2) * t)])
 end
@@ -168,10 +168,10 @@ function ramsey_state_to_rwa(Ψ, propagator; _...)
 end
 
 
-pi_shape(t; T) = (2π / T) * flattop(t; T, t_rise=0.5 * T, func=:sinsq)
+pi_shape(t; T) = (2π / T) * flattop(t; T, t_rise = 0.5 * T, func = :sinsq)
 
 
-function ramsey_rwa_hamiltonian(; Δ=0.0, δ=0.0, ν=0.0, Ωₚ, Ωₛ)
+function ramsey_rwa_hamiltonian(; Δ = 0.0, δ = 0.0, ν = 0.0, Ωₚ, Ωₛ)
     H₀ = [
         0 0 0
         0 Δ+ν 0
@@ -191,7 +191,13 @@ function ramsey_rwa_hamiltonian(; Δ=0.0, δ=0.0, ν=0.0, Ωₚ, Ωₛ)
 end
 
 
-function ramsey_lab_free_hamiltonian(; f_DQ=0.293 * 2π, f_RF=4.94 * 2π, ν=0.0, Δ=0.0, δ=0.0)
+function ramsey_lab_free_hamiltonian(;
+    f_DQ = 0.293 * 2π,
+    f_RF = 4.94 * 2π,
+    ν = 0.0,
+    Δ = 0.0,
+    δ = 0.0
+)
     Diagonal([0.0, f_DQ / 2 + f_RF + Δ + ν, f_DQ + δ + 2ν])
 end
 
@@ -203,9 +209,9 @@ end
     captured = IOCapture.capture() do
         propagate_sequence(
             Ψ₀,
-            ramsey_scheme(signs=(+1, +1), τ=1380),
-            method=ExpProp,
-            check=false,
+            ramsey_scheme(signs = (+1, +1), τ = 1380),
+            method = ExpProp,
+            check = false,
         )
     end
     ENV["DEBUG_RAMSEY_STATES"] = ""
@@ -232,10 +238,10 @@ end
 
     result = propagate_sequence(
         Ψ₀,
-        ramsey_scheme(signs=(+1, +1), τ=1380),
-        method=ExpProp,
-        check=false,
-        storage=true,
+        ramsey_scheme(signs = (+1, +1), τ = 1380),
+        method = ExpProp,
+        check = false,
+        storage = true,
     )
     @test result isa Vector
     @test length(result) == 4
@@ -248,11 +254,11 @@ end
     P₃ = Float64[0 0 0; 0 0 0; 0 0 1]
     result = propagate_sequence(
         Ψ₀,
-        ramsey_scheme(signs=(+1, +1), τ=1380),
-        method=ExpProp,
-        check=false,
-        storage=true,
-        observables=[P₁, P₂, P₃]
+        ramsey_scheme(signs = (+1, +1), τ = 1380),
+        method = ExpProp,
+        check = false,
+        storage = true,
+        observables = [P₁, P₂, P₃]
     )
     @test result isa Vector
     @test length(result) == 4
@@ -268,10 +274,10 @@ end
     ]
     result = propagate_sequence(
         Ψ₀,
-        ramsey_scheme(signs=(+1, +1), τ=1380, storage=storage),
-        method=ExpProp,
-        check=false,
-        observables=[Ψ -> abs2.(Ψ)]
+        ramsey_scheme(signs = (+1, +1), τ = 1380, storage = storage),
+        method = ExpProp,
+        check = false,
+        observables = [Ψ -> abs2.(Ψ)]
     )
     @test result isa Vector
     @test length(result) == 4
@@ -279,8 +285,10 @@ end
     @test norm(result[end] - Ψout) < 1e-12
     @test norm(storage[end][:, end] - abs2.(Ψout)) < 1e-12
 
-    result =
-        propagate_sequence(𝕚 * Ψ₀, ramsey_scheme_pre_initialized(signs=(+1, +1), τ=1380),)
+    result = propagate_sequence(
+        𝕚 * Ψ₀,
+        ramsey_scheme_pre_initialized(signs = (+1, +1), τ = 1380),
+    )
     @test result isa Vector
     @test length(result) == 4
     @test norm(result[end] - Ψout) < 1e-12

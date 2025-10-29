@@ -40,7 +40,7 @@ using Test
     Ψ = ComplexF64[0, 0]
     H = MyCustomPseudoGeneratorXXX()
     tlist = [0.0, 1.0]
-    Ψ_out = QuantumPropagators.propagate(Ψ, H, tlist; method=:Cheby, check=false)
+    Ψ_out = QuantumPropagators.propagate(Ψ, H, tlist; method = :Cheby, check = false)
     # The `method=:Cheby` is irrelevant here: The dispatch for the custom type
     # of `H` should take precedence.
     @test Ψ_out ≡ Ψ

@@ -19,7 +19,7 @@ Initializes the workspace for the propagation of a vector `v0`
 struct ExpPropWrk{T}
     v::T
     timing_data::TimerOutput
-    function ExpPropWrk(v0::T; _timing_data=TimerOutput()) where {T}
+    function ExpPropWrk(v0::T; _timing_data = TimerOutput()) where {T}
         new{T}(similar(v0), _timing_data)
     end
 end
@@ -38,7 +38,7 @@ storage for a temporary state.
 
 Keyword arguments besides `func` are ignored.
 """
-function expprop!(Ψ, H, dt, wrk; func=(H_dt -> exp(-1im * H_dt)), _...)
+function expprop!(Ψ, H, dt, wrk; func = (H_dt -> exp(-1im * H_dt)), _...)
     copyto!(wrk.v, Ψ)
     @timeit_debug wrk.timing_data "matrix exponentiation" begin
         U = func(H * dt)
@@ -57,7 +57,7 @@ end
 evaluates `Ψ_out = func(H*dt) Ψ` as in [`expprop!`](@ref), but not acting
 in-place.
 """
-function expprop(Ψ, H, dt, wrk; func=(H_dt -> exp(-1im * H_dt)), _...)
+function expprop(Ψ, H, dt, wrk; func = (H_dt -> exp(-1im * H_dt)), _...)
     @timeit_debug wrk.timing_data "matrix exponentiation" begin
         U = func(H * dt)
     end

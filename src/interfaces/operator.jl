@@ -43,11 +43,11 @@ conditions failed.
 function check_operator(
     op;
     state,
-    tlist=[0.0, 1.0],
-    for_expval=true,
-    atol=1e-14,
-    quiet=false,
-    _message_prefix=""  # for recursive calling
+    tlist = [0.0, 1.0],
+    for_expval = true,
+    atol = 1e-14,
+    quiet = false,
+    _message_prefix = ""  # for recursive calling
 )
 
     ≈(a, b) = isapprox(a, b; atol)
@@ -57,7 +57,7 @@ function check_operator(
 
     Ψ = state
 
-    @assert check_state(state; atol, quiet=true)
+    @assert check_state(state; atol, quiet = true)
     @assert tlist isa Vector{Float64}
 
     try

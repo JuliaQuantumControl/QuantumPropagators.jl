@@ -19,7 +19,7 @@ using QuantumPropagators.Interfaces:
 
     struct InvalidAmplitude end
 
-    tlist = collect(range(0, 10, length=101))
+    tlist = collect(range(0, 10, length = 101))
 
     ampl = InvalidAmplitude()
     captured = IOCapture.capture() do
@@ -40,7 +40,7 @@ end
 
     struct InvalidControl end
 
-    tlist = collect(range(0, 10, length=101))
+    tlist = collect(range(0, 10, length = 101))
 
     control = InvalidControl()
     captured = IOCapture.capture() do
@@ -76,7 +76,7 @@ end
     struct InvalidOperator end
 
     state = ComplexF64[1, 0, 0, 0]
-    tlist = collect(range(0, 10, length=101))
+    tlist = collect(range(0, 10, length = 101))
 
     operator = InvalidOperator()
     captured = IOCapture.capture() do
@@ -107,7 +107,7 @@ end
     struct InvalidGenerator end
 
     state = ComplexF64[1, 0, 0, 0]
-    tlist = collect(range(0, 10, length=101))
+    tlist = collect(range(0, 10, length = 101))
 
     generator = InvalidGenerator()
     captured = IOCapture.capture() do
@@ -142,7 +142,7 @@ end
     QuantumPropagators.Interfaces.supports_inplace(::InvalidState) = true
     state = InvalidState()
     captured = IOCapture.capture() do
-        check_state(state; normalized=true)
+        check_state(state; normalized = true)
     end
     @test captured.value ≡ false
     @test contains(captured.output, "`similar(state)` must be defined")
@@ -165,7 +165,7 @@ end
     state = InvalidState2()
     Base.similar(::InvalidState2) = InvalidState2()
     captured = IOCapture.capture() do
-        check_state(state; normalized=true)
+        check_state(state; normalized = true)
     end
     @test captured.value ≡ false
     @test contains(captured.output, "`copyto!(other, state)` must be defined")
@@ -176,7 +176,7 @@ end
     Base.similar(::InvalidState3) = InvalidState3()
     Base.copyto!(a::InvalidState3, b::InvalidState3) = a
     captured = IOCapture.capture() do
-        check_state(state; normalized=true)
+        check_state(state; normalized = true)
     end
     @test captured.value ≡ false
     @test contains(captured.output, "`similar(state)` must return a valid state")
@@ -196,7 +196,7 @@ end
     Base.:*(α::Number, state::InvalidState4) = InvalidState4(α * state.Ψ)
     state = InvalidState4([1im, 0])
     captured = IOCapture.capture() do
-        check_state(state; normalized=true)
+        check_state(state; normalized = true)
     end
     @test captured.value ≡ false
     @test contains(captured.output, "`lmul!(c, state)` for a scalar `c` must be defined")
@@ -205,7 +205,7 @@ end
 
     state = [1, 0, 0, 0]
     captured = IOCapture.capture() do
-        check_state(state; normalized=true)
+        check_state(state; normalized = true)
     end
     @test captured.value ≡ false
     @test contains(captured.output, "`state ⋅ state` must return a Complex number type")
@@ -229,12 +229,12 @@ end
     @test contains(captured.output, "does not have the required properties")
 
     N = 10
-    tlist = collect(range(0, 100, length=1001))
+    tlist = collect(range(0, 100, length = 1001))
     rng = StableRNG(93655235)
     Ĥ = random_dynamic_generator(N, tlist; rng)
     Ψ = random_state_vector(N; rng)
 
-    propagator = init_prop(Ψ, Ĥ, tlist; method=:invalid_propagator_no_methods)
+    propagator = init_prop(Ψ, Ĥ, tlist; method = :invalid_propagator_no_methods)
 
     captured = IOCapture.capture() do
         check_propagator(propagator)
@@ -248,9 +248,9 @@ end
         Ψ,
         Ĥ,
         tlist;
-        method=:invalid_propagator_empty_methods,
-        inplace=true,
-        backward=false
+        method = :invalid_propagator_empty_methods,
+        inplace = true,
+        backward = false
     )
     captured = IOCapture.capture() do
         check_propagator(propagator)
@@ -272,9 +272,9 @@ end
         Ψ,
         Ĥ,
         tlist;
-        method=:invalid_propagator_empty_methods,
-        inplace=false,
-        backward=true
+        method = :invalid_propagator_empty_methods,
+        inplace = false,
+        backward = true
     )
     captured = IOCapture.capture() do
         check_propagator(propagator)
@@ -294,9 +294,9 @@ end
         Ψ,
         Ĥ,
         tlist;
-        method=:invalid_random_propagator,
-        inplace=true,
-        backward=false
+        method = :invalid_random_propagator,
+        inplace = true,
+        backward = false
     )
     captured = IOCapture.capture() do
         check_propagator(propagator)
@@ -316,9 +316,9 @@ end
         Ψ,
         Ĥ,
         tlist;
-        method=:invalid_random_propagator,
-        inplace=false,
-        backward=true
+        method = :invalid_random_propagator,
+        inplace = false,
+        backward = true
     )
     captured = IOCapture.capture() do
         check_propagator(propagator)
@@ -337,9 +337,9 @@ end
         Ψ,
         Ĥ,
         tlist;
-        method=:invalid_propagator_no_state,
-        inplace=true,
-        backward=false
+        method = :invalid_propagator_no_state,
+        inplace = true,
+        backward = false
     )
     captured = IOCapture.capture() do
         check_propagator(propagator)

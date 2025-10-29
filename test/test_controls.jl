@@ -10,9 +10,9 @@ using QuantumControlTestUtils.RandomObjects: random_matrix
 
 @testset "Simple get_controls" begin
 
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
 
     @test length(get_controls(H₀)) == 0
 
@@ -36,9 +36,9 @@ end
 
 
 @testset "Tuple evaluate" begin
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
     ϵ₁(t) = 1.0
     ϵ₂(t) = 1.0
     H = (H₀, (H₁, ϵ₁), (H₂, ϵ₂))
@@ -68,20 +68,20 @@ end
 
     H = ((H₁, ϵ₁), (H₂, ϵ₂))
 
-    Op = evaluate(H; vals_dict=IdDict(ϵ₁ => 1.2, ϵ₂ => 1.3))
+    Op = evaluate(H; vals_dict = IdDict(ϵ₁ => 1.2, ϵ₂ => 1.3))
     @test Op isa Matrix{ComplexF64}
     @test norm(Op - (1.2 * H₁ + 1.3 * H₂)) < 1e-15
 
-    evaluate!(Op, H; vals_dict=IdDict(ϵ₁ => 2.2, ϵ₂ => 2.3))
+    evaluate!(Op, H; vals_dict = IdDict(ϵ₁ => 2.2, ϵ₂ => 2.3))
     @test norm(Op - (2.2 * H₁ + 2.3 * H₂)) < 1e-15
 
     H = ((H₁, ϵ₁), H₂)
 
-    Op = evaluate(H; vals_dict=IdDict(ϵ₁ => 1.2, ϵ₂ => 1.3))
+    Op = evaluate(H; vals_dict = IdDict(ϵ₁ => 1.2, ϵ₂ => 1.3))
     @test Op isa Matrix{ComplexF64}
     @test norm(Op - (1.2 * H₁ + H₂)) < 1e-15
 
-    evaluate!(Op, H; vals_dict=IdDict(ϵ₁ => 2.2, ϵ₂ => 2.3))
+    evaluate!(Op, H; vals_dict = IdDict(ϵ₁ => 2.2, ϵ₂ => 2.3))
     @test norm(Op - (2.2 * H₁ + H₂)) < 1e-15
 
 end
@@ -89,9 +89,9 @@ end
 
 @testset "Generator evaluate" begin
 
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
     ϵ₁ = t -> 1.0
     ϵ₂ = t -> 1.0
 
@@ -130,18 +130,18 @@ end
         end
 
         @test_throws "not a number" begin
-            evaluate(H; vals_dict=IdDict(ϵ₁ => 1.2))
+            evaluate(H; vals_dict = IdDict(ϵ₁ => 1.2))
         end
 
     end
 
     H = hamiltonian((H₁, ϵ₁), (H₂, ϵ₂))
 
-    Op = evaluate(H; vals_dict=IdDict(ϵ₁ => 1.2, ϵ₂ => 1.3))
+    Op = evaluate(H; vals_dict = IdDict(ϵ₁ => 1.2, ϵ₂ => 1.3))
     @test Op isa Operator{Matrix{ComplexF64},Float64}
     @test norm(Array(Op) - (1.2 * H₁ + 1.3 * H₂)) < 1e-15
 
-    evaluate!(Op, H; vals_dict=IdDict(ϵ₁ => 2.2, ϵ₂ => 2.3))
+    evaluate!(Op, H; vals_dict = IdDict(ϵ₁ => 2.2, ϵ₂ => 2.3))
     @test norm(Array(Op) - (2.2 * H₁ + 2.3 * H₂)) < 1e-15
 
 end
@@ -149,9 +149,9 @@ end
 
 @testset "vector controls substitution" begin
 
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
     ϵ₁ = [0.0, 0.1, 0.5, 0.1, 0.0]
     ϵ₂ = [0.0, 0.1, 0.5, 0.1, 0.0]
 
@@ -180,9 +180,9 @@ end
 
 
 @testset "Tuple substitute" begin
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
     ϵ₁ = t -> 1.0
     ϵ₂ = t -> 1.0
     H = (H₀, (H₁, ϵ₁), (H₂, ϵ₂))
@@ -205,9 +205,9 @@ end
 
 @testset "Generator substitute" begin
 
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
     ϵ₁ = t -> 1.0
     ϵ₂ = t -> 1.0
     H = hamiltonian(H₀, (H₁, ϵ₁), (H₂, ϵ₂))
@@ -243,16 +243,20 @@ function QuantumPropagators.Controls.substitute(a::MySquareAmpl, controls_map)
     return MySquareAmpl(get(controls_map, a.control, a.control))
 end
 
-function QuantumPropagators.Controls.evaluate(a::MyScaledAmpl, args...; vals_dict=IdDict())
+function QuantumPropagators.Controls.evaluate(
+    a::MyScaledAmpl,
+    args...;
+    vals_dict = IdDict()
+)
     return a.c * evaluate(a.control, args...; vals_dict)
 end
 
 
 @testset "Nonlinear substitute" begin
 
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
     ϵ₁ = t -> 1.0
     ϵ₂ = t -> 1.0
 

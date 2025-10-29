@@ -116,7 +116,7 @@ function Base.setproperty!(propagator::AbstractPropagator, name::Symbol, value)
     end
 end
 
-function Base.propertynames(propagator::AbstractPropagator, private::Bool=false)
+function Base.propertynames(propagator::AbstractPropagator, private::Bool = false)
     public_properties = (:state, :tlist, :t, :parameters, :backward, :inplace)
     if private
         return Tuple(union(public_properties, fieldnames(typeof(propagator))))
@@ -210,11 +210,11 @@ function init_prop(
     generator,
     tlist;
     method,  # mandatory keyword argument
-    backward=false,
-    inplace=Interfaces.supports_inplace(state),
-    verbose=false,
-    piecewise=nothing,
-    pwc=nothing,
+    backward = false,
+    inplace = Interfaces.supports_inplace(state),
+    verbose = false,
+    piecewise = nothing,
+    pwc = nothing,
     kwargs...
 )
     # convert `method` from keyword argument to positional argument:
@@ -264,7 +264,7 @@ function init_prop(state, generator, tlist, method; kwargs...)
 end
 
 
-function _get_uniform_dt(tlist::Vector; tol=1e-12, warn=false)
+function _get_uniform_dt(tlist::Vector; tol = 1e-12, warn = false)
     dt = float(tlist[2] - tlist[1])
     for i = 2:(length(tlist)-1)
         dt_i = tlist[i+1] - tlist[i]

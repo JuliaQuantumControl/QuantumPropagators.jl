@@ -28,13 +28,13 @@ using SparseArrays
 
     Ψ₀ = (ket(0) + ket(1)) / √2
     ρ⃗₀ = reshape(Ψ₀ * Ψ₀', :)
-    ℒ_op = liouvillian(nothing, [Âᵧ₁, Âᵧ₂]; convention=:TDSE)
+    ℒ_op = liouvillian(nothing, [Âᵧ₁, Âᵧ₂]; convention = :TDSE)
     ℒ = Array(ℒ_op)
 
     T = 1.0
     tlist = [0.0, T]
 
-    ρ⃗_out = propagate(ρ⃗₀, ℒ, tlist; method=:expprop)
+    ρ⃗_out = propagate(ρ⃗₀, ℒ, tlist; method = :expprop)
     ρ_out = reshape(ρ⃗_out, 2, 2)
 
     #! format: off
@@ -65,8 +65,8 @@ end
 
     ketbra(i, j) = ket(i) * bra(j)
 
-    Ĥ₀ = random_matrix(N; hermitian=true, spectral_radius=1)
-    Ĥ₁ = random_matrix(N; hermitian=true, spectral_radius=0.1)
+    Ĥ₀ = random_matrix(N; hermitian = true, spectral_radius = 1)
+    Ĥ₁ = random_matrix(N; hermitian = true, spectral_radius = 0.1)
 
     ϵ(t) = 1.0
     H = (Ĥ₀, (Ĥ₁, ϵ))
@@ -77,11 +77,11 @@ end
     ρ⃗₀ = reshape(ρ₀, :)
     𝕚 = 1im
 
-    ℒ_nodiss = liouvillian(Ĥ; convention=:LvN)
+    ℒ_nodiss = liouvillian(Ĥ; convention = :LvN)
     @test ℒ_nodiss isa SparseMatrixCSC{ComplexF64,Int64}
     @test norm(𝕚 * (Ĥ * ρ₀ - ρ₀ * Ĥ) - reshape(ℒ_nodiss * ρ⃗₀, N, N)) < 1e-15
 
-    ℒ_nodiss = liouvillian(Ĥ; convention=:TDSE)
+    ℒ_nodiss = liouvillian(Ĥ; convention = :TDSE)
     @test ℒ_nodiss isa SparseMatrixCSC{ComplexF64,Int64}
     @test norm((Ĥ * ρ₀ - ρ₀ * Ĥ) - reshape(ℒ_nodiss * ρ⃗₀, N, N)) < 1e-15
 
@@ -93,7 +93,7 @@ end
 
     c_ops = (decay_to_ground..., dephasing...)
 
-    L = liouvillian(Ĥ₀, c_ops; convention=:LvN)
+    L = liouvillian(Ĥ₀, c_ops; convention = :LvN)
     @test L isa SparseMatrixCSC
     ρ̇_LvN = (
         𝕚 * (Ĥ₀ * ρ₀ - ρ₀ * Ĥ₀) +
@@ -102,13 +102,13 @@ end
     ρ̇ = reshape(L * ρ⃗₀, N, N)
     @test norm(ρ̇ - ρ̇_LvN) < 1e-15
 
-    L = liouvillian(H, c_ops; convention=:LvN)
+    L = liouvillian(H, c_ops; convention = :LvN)
     t = 0.0
     ℒ = L.ops[1] + L.ops[2] * L.amplitudes[1](t)
     L0 = evaluate(L, t)
     @test norm(ℒ - Array(L0)) < 1e-12
 
-    L = liouvillian(hamiltonian(H...), c_ops; convention=:LvN)
+    L = liouvillian(hamiltonian(H...), c_ops; convention = :LvN)
     L0 = evaluate(L, t)
     @test norm(ℒ - Array(L0)) < 1e-12
 

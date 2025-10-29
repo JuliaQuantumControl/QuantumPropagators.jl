@@ -22,7 +22,7 @@ return an array of coefficients larger than `limit`.
 
 See also [`cheby_coeffs!`](@ref) for an in-place version.
 """
-function cheby_coeffs(Δ, dt; limit=1e-12)
+function cheby_coeffs(Δ, dt; limit = 1e-12)
     α = abs(0.5 * Δ * dt)
     coeffs = Float64[]
     a = besselj(0, α)
@@ -51,7 +51,7 @@ array will be resized if necessary, and may have a length > `n` on exit.
 
 See also [`cheby_coeffs`](@ref) for an non-in-place version.
 """
-function cheby_coeffs!(coeffs, Δ, dt, limit=1e-12)
+function cheby_coeffs!(coeffs, Δ, dt, limit = 1e-12)
     α = abs(0.5 * Δ * dt)
     a = besselj(0, α)
     coeffs[1] = a
@@ -100,13 +100,13 @@ mutable struct ChebyWrk{ST,CFS,FT<:AbstractFloat}
         Δ::FT,
         E_min::FT,
         dt::FT;
-        limit::FT=1e-12,
-        _timing_data=TimerOutput()
+        limit::FT = 1e-12,
+        _timing_data = TimerOutput()
     ) where {ST,FT}
         v0::ST = similar(Ψ)
         v1::ST = similar(Ψ)
         v2::ST = similar(Ψ)
-        coeffs = cheby_coeffs(Δ, dt; limit=limit)
+        coeffs = cheby_coeffs(Δ, dt; limit = limit)
         n_coeffs = length(coeffs)
         new{ST,typeof(coeffs),FT}(
             v0,

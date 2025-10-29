@@ -64,15 +64,15 @@ function init_prop(
     generator,
     tlist,
     method::Val{:Newton};
-    inplace=supports_inplace(state),
-    backward=false,
-    verbose=false,
-    parameters=nothing,
-    m_max=10,
-    func=(z -> exp(-1im * z)),
-    norm_min=1e-14,
-    relerr=1e-12,
-    max_restarts=50,
+    inplace = supports_inplace(state),
+    backward = false,
+    verbose = false,
+    parameters = nothing,
+    m_max = 10,
+    func = (z -> exp(-1im * z)),
+    norm_min = 1e-14,
+    relerr = 1e-12,
+    max_restarts = 50,
     _...
 )
     tlist = convert(Vector{Float64}, tlist)
@@ -81,7 +81,7 @@ function init_prop(
 
     parameters = _pwc_process_parameters(parameters, controls, tlist)
     timing_data = TimerOutput()
-    wrk = Newton.NewtonWrk(state; m_max=m_max, _timing_data=timing_data)
+    wrk = Newton.NewtonWrk(state; m_max = m_max, _timing_data = timing_data)
     n = 1
     t = tlist[1]
     if backward
@@ -139,10 +139,10 @@ function prop_step!(propagator::NewtonPropagator)
                 H,
                 dt,
                 propagator.wrk;
-                func=propagator.func,
-                norm_min=propagator.norm_min,
-                relerr=propagator.relerr,
-                max_restarts=propagator.max_restarts
+                func = propagator.func,
+                norm_min = propagator.norm_min,
+                relerr = propagator.relerr,
+                max_restarts = propagator.max_restarts
             )
         else
             error("The Newton propagator is only implemented in-place")

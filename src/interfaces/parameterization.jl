@@ -26,8 +26,8 @@ verifies that the given `f`:
 function check_parameterized_function(
     f;
     tlist,
-    quiet=false,
-    _message_prefix="",  # for recursive calling
+    quiet = false,
+    _message_prefix = "",  # for recursive calling
 )
     px = _message_prefix
     success = true
@@ -93,9 +93,9 @@ verifies that the given `object`:
 """
 function check_parameterized(
     object;
-    name="::$(typeof(object))",
-    quiet=false,
-    _message_prefix="",  # for recursive calling
+    name = "::$(typeof(object))",
+    quiet = false,
+    _message_prefix = "",  # for recursive calling
 )
     px = _message_prefix
     success = true

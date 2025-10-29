@@ -54,17 +54,17 @@ function check_generator(
     generator;
     state,
     tlist,
-    for_expval=true,
-    for_pwc=true,
-    for_time_continuous=false,
-    for_parameterization=false,
-    atol=1e-14,
-    quiet=false,
-    _message_prefix="",  # for recursive calling
-    _check_amplitudes=true  # undocumented (internal use)
+    for_expval = true,
+    for_pwc = true,
+    for_time_continuous = false,
+    for_parameterization = false,
+    atol = 1e-14,
+    quiet = false,
+    _message_prefix = "",  # for recursive calling
+    _check_amplitudes = true  # undocumented (internal use)
 )
 
-    @assert check_state(state; atol, quiet=true)
+    @assert check_state(state; atol, quiet = true)
     @assert tlist isa Vector{Float64}
     @assert length(tlist) >= 2
 
@@ -87,7 +87,7 @@ function check_generator(
     end
 
     if for_parameterization
-        success &= check_parameterized(generator; _message_prefix=px)
+        success &= check_parameterized(generator; _message_prefix = px)
     end
 
     try
@@ -96,12 +96,12 @@ function check_generator(
             valid_control = check_control(
                 control;
                 tlist,
-                for_parameterization=false,
+                for_parameterization = false,
                 # We already check the parametrization for the entire
                 # generator, so it would be redundant to do it again for
                 # the controls
                 quiet,
-                _message_prefix="On control $i ($(typeof(control))) in `generator`: "
+                _message_prefix = "On control $i ($(typeof(control))) in `generator`: "
             )
             if !valid_control
                 quiet ||
@@ -168,7 +168,7 @@ function check_generator(
                 for_expval,
                 atol,
                 quiet,
-                _message_prefix="On `op = evaluate(generator, tlist, 1)`: "
+                _message_prefix = "On `op = evaluate(generator, tlist, 1)`: "
             )
                 quiet ||
                     @error "$(px)`evaluate(generator, tlist, n)` must return an operator that passes `check_operator`"
@@ -192,7 +192,7 @@ function check_generator(
                 for_expval,
                 atol,
                 quiet,
-                _message_prefix="On `op = evaluate(generator, tlist, 1; vals_dict)`: "
+                _message_prefix = "On `op = evaluate(generator, tlist, 1; vals_dict)`: "
             )
                 quiet ||
                     @error "$(px)`evaluate(generator, tlist, n; vals_dict)` must return an operator that passes `check_operator`"
@@ -241,7 +241,7 @@ function check_generator(
                 for_expval,
                 atol,
                 quiet,
-                _message_prefix="On `op = evaluate(generator, tlist[1])`: "
+                _message_prefix = "On `op = evaluate(generator, tlist[1])`: "
             )
                 quiet ||
                     @error "$(px)`evaluate(generator, t)` must return an operator that passes `check_operator`"
@@ -264,7 +264,7 @@ function check_generator(
                 for_expval,
                 atol,
                 quiet,
-                _message_prefix="On `op = evaluate(generator, tlist[1]; vals_dict)`: "
+                _message_prefix = "On `op = evaluate(generator, tlist[1]; vals_dict)`: "
             )
                 quiet ||
                     @error "$(px)`evaluate(generator, t; vals_dict)` must return an operator that passes `check_operator`"
@@ -309,12 +309,12 @@ function check_generator(
                 valid_ampl = check_amplitude(
                     ampl;
                     tlist,
-                    for_parameterization=false,
+                    for_parameterization = false,
                     # We already check the parametrization for the entire
                     # generator, so it would be redundant to do it again for
                     # the amplitudes
                     quiet,
-                    _message_prefix="On ampl $i ($(typeof(ampl))) in `generator`: "
+                    _message_prefix = "On ampl $i ($(typeof(ampl))) in `generator`: "
                 )
                 if !valid_ampl
                     quiet ||

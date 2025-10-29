@@ -9,9 +9,9 @@ using QuantumPropagators: Generator, Operator, ScaledOperator
 
 @testset "Operator mul!" begin
 
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
 
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
     H = H₀ + 2.1 * H₁ + 1.1 * H₂
@@ -47,9 +47,9 @@ end
 @testset "Operator * Ψ" begin
 
     N = 5
-    H₀ = SMatrix{N,N}(random_matrix(N; hermitian=true))
-    H₁ = SMatrix{N,N}(random_matrix(N; hermitian=true))
-    H₂ = SMatrix{N,N}(random_matrix(N; hermitian=true))
+    H₀ = SMatrix{N,N}(random_matrix(N; hermitian = true))
+    H₁ = SMatrix{N,N}(random_matrix(N; hermitian = true))
+    H₂ = SMatrix{N,N}(random_matrix(N; hermitian = true))
 
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
     H = H₀ + 2.1 * H₁ + 1.1 * H₂
@@ -66,20 +66,20 @@ end
 
 
 @testset "Operator interface" begin
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
     Ψ = random_state_vector(5)
-    @test check_operator(Op; state=Ψ)
+    @test check_operator(Op; state = Ψ)
 end
 
 
 @testset "Operator copy" begin
 
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
 
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
     Op2 = copy(Op)
@@ -108,9 +108,9 @@ end
 
 @testset "Operator array conversion" begin
 
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
 
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
     H = H₀ + 2.1 * H₁ + 1.1 * H₂
@@ -134,7 +134,7 @@ end
     Op = ScaledOperator(2, Operator([H₀, H₁, H₂], [2.1, 1.1]))
     @test startswith(repr(Op), "ScaledOperator(2, Operator(Matrix{ComplexF64}")
     @test summary(Op) == "ScaledOperator with coeff=2"
-    repl_repr = repr("text/plain", Op; context=(:limit => true))
+    repl_repr = repr("text/plain", Op; context = (:limit => true))
     @test contains(repl_repr, "operator.ops::Vector{Matrix{ComplexF64}}")
     @test contains(repl_repr, "operator.coeffs: [2.1, 1.1]")
     H = 2 * (H₀ + 2.1 * H₁ + 1.1 * H₂)
@@ -166,9 +166,9 @@ end
 
 @testset "Operator dot" begin
 
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
 
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
     H = H₀ + 2.1 * H₁ + 1.1 * H₂
@@ -185,9 +185,9 @@ end
 
 @testset "ScaledOperator mul!" begin
 
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
 
     @test norm(Array(ScaledOperator(0.5, H₀)) - 0.5 * H₀) < 1e-12
 
@@ -230,9 +230,9 @@ end
 @testset "ScaledOperator * Ψ" begin
 
     N = 5
-    H₀ = SMatrix{N,N}(random_matrix(N; hermitian=true))
-    H₁ = SMatrix{N,N}(random_matrix(N; hermitian=true))
-    H₂ = SMatrix{N,N}(random_matrix(N; hermitian=true))
+    H₀ = SMatrix{N,N}(random_matrix(N; hermitian = true))
+    H₁ = SMatrix{N,N}(random_matrix(N; hermitian = true))
+    H₂ = SMatrix{N,N}(random_matrix(N; hermitian = true))
 
     Op = 0.5 * Operator([H₀, H₁, H₂], [2.1, 1.1])
     @test Op isa ScaledOperator
@@ -252,9 +252,9 @@ end
 
 @testset "ScaledOperator dot" begin
 
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
 
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1]) * 0.5
     @test Op isa ScaledOperator
@@ -271,11 +271,11 @@ end
 
 
 @testset "ScaledOperator interface" begin
-    H₀ = random_matrix(5; hermitian=true)
-    H₁ = random_matrix(5; hermitian=true)
-    H₂ = random_matrix(5; hermitian=true)
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1]) * 0.5
     @test Op isa ScaledOperator
     Ψ = random_state_vector(5)
-    @test check_operator(Op; state=Ψ)
+    @test check_operator(Op; state = Ψ)
 end

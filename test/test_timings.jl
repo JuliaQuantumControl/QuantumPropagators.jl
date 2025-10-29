@@ -16,11 +16,11 @@ using TimerOutputs
     @test enabled ≡ true
 
     N = 10
-    tlist = collect(range(0, 10, length=101))
+    tlist = collect(range(0, 10, length = 101))
     rng = StableRNG(677918056)
     Ψ = random_state_vector(N; rng)
     Ĥ = random_dynamic_generator(N, tlist; rng)
-    propagator = init_prop(Ψ, Ĥ, tlist; method=:cheby)
+    propagator = init_prop(Ψ, Ĥ, tlist; method = :cheby)
     for interval = 1:(length(tlist)-1)
         prop_step!(propagator)
     end

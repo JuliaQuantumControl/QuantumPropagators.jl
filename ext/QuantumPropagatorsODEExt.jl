@@ -93,14 +93,14 @@ function init_prop(
     generator,
     tlist,
     method::Val{:OrdinaryDiffEq};
-    inplace=supports_inplace(state),
-    backward=false,
-    verbose=false,
-    parameters=nothing,
-    piecewise=false,
-    pwc=false,
-    alg=ODE.Tsit5(),
-    _ode_function_extra=Dict{Symbol,Any}(),  # undocumented
+    inplace = supports_inplace(state),
+    backward = false,
+    verbose = false,
+    parameters = nothing,
+    piecewise = false,
+    pwc = false,
+    alg = ODE.Tsit5(),
+    _ode_function_extra = Dict{Symbol,Any}(),  # undocumented
     solver_options...
 )
     pwc = (pwc ≡ true) || (piecewise ≡ true)
@@ -108,7 +108,7 @@ function init_prop(
     # not pwc (e.g., piecewise-linear). We don't have anything like that
     # implemented at the moment, to piecewise and pwc are equivalent.
     timing_data = TimerOutput()
-    f = ode_function(generator, tlist; _timing_data=timing_data)
+    f = ode_function(generator, tlist; _timing_data = timing_data)
     u0 = state
     tspan = (tlist[begin], tlist[end])
     if backward
@@ -132,7 +132,7 @@ function init_prop(
     end
     f_ode = ODE.ODEFunction{inplace,FullSpecialize}(f; _ode_function_extra...)
     prob = ODE.ODEProblem(f_ode, u0, tspan, vals_dict)
-    integrator = ODE.init(prob, alg; save_everystep=false, solver_options...)
+    integrator = ODE.init(prob, alg; save_everystep = false, solver_options...)
     IT = typeof(integrator)
     if pwc
         return ODEPWCPropagator{IT}(

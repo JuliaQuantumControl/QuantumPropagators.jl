@@ -19,7 +19,7 @@ The default switch-on/-off shape is half of a Blackman window (see
 
 For `func=:sinsq`, the switch-on/-off shape is a sine-squared curve.
 """
-function flattop(t; T, t_rise, t₀=0.0, t_fall=t_rise, func=:blackman)
+function flattop(t; T, t_rise, t₀ = 0.0, t_fall = t_rise, func = :blackman)
     if func == :blackman
         return flattop_blackman(t, t₀, T, t_rise, t_fall)
     elseif func == :sinsq
@@ -32,7 +32,7 @@ function flattop(t; T, t_rise, t₀=0.0, t_fall=t_rise, func=:blackman)
 end
 
 
-function flattop_sinsq(t, t₀, T, t_rise, t_fall=t_rise)
+function flattop_sinsq(t, t₀, T, t_rise, t_fall = t_rise)
     f::Float64 = 0.0
     if t₀ ≤ t ≤ T
         f = 1.0
@@ -46,7 +46,7 @@ function flattop_sinsq(t, t₀, T, t_rise, t_fall=t_rise)
 end
 
 
-function flattop_blackman(t, t₀, T, t_rise, t_fall=t_rise)
+function flattop_blackman(t, t₀, T, t_rise, t_fall = t_rise)
     f::Float64 = 0.0
     if t₀ ≤ t ≤ T
         f = 1.0
@@ -97,7 +97,7 @@ interval between `t₀` and `T`.  Unlike the Gaussian, however, it will go
 exactly to zero at the edges. Thus, Blackman pulses are often preferable to
 Gaussians.
 """
-function blackman(t, t₀, T; a=0.16)
+function blackman(t, t₀, T; a = 0.16)
     ΔT = T - t₀
     return (
         0.5 *
