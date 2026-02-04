@@ -15,7 +15,7 @@ As discussed in the [Overview](@ref overview_approaches), time propagation can b
    We consider this especially in the piecewise-constant case (`pwc=true` in [`propagate`](@ref)/[`init_prop`](@ref)), which is required for the traditional optimization methods [GRAPE](https://juliaquantumcontrol.github.io/GRAPE.jl/stable/) and [Krotov](https://juliaquantumcontrol.github.io/Krotov.jl/stable/). In these propagations, the time-dependent generator ``\op{H}(t)`` is [evaluated](@ref QuantumPropagators.Controls.evaluate) to a constant operator ``\op{H}`` on each interval of the time grid. The analytical solution to the Schrödinger or Liouville equation is well known, and propagation step simply has to evaluate the application of the time evolution operator ``\op{U} = \exp[-i \op{H} dt]`` to the state ``|Ψ⟩``. The following methods are built in to `QuantumPropagators`:
 
    * [`ExpProp`](@ref method_expprop) – constructs ``\op{U}`` explicitly and then applies it to ``|Ψ⟩``
-   * [`ExponentialUtilities`](@ref method_exponentialutilities) – applies ``\exp(\op{H} dt) |Ψ⟩`` using Krylov methods without explicitly forming ``\op{U}``
+   * [`ExponentialUtilities`](@ref method_exponentialutilities) – applies ``\op{U} |Ψ⟩`` using Krylov methods without explicitly forming ``\op{U}``
    * [`Cheby`](@ref method_cheby) — expansion of ``\op{U} |Ψ⟩`` into Chebychev polynomials, valid if ``\op{H}`` has real eigenvalues
    * [`Newton`](@ref method_newton) – expansion of ``\op{U} |Ψ⟩`` into Newton polynomials, valid if ``\op{H}`` has complex eigenvalues (non-Hermitian Hamiltonian, Liouvillian)
 
@@ -78,14 +78,58 @@ using ExponentialUtilities
 and then passed as `method=ExponentialUtilities` (or `method=:expv`) to
 [`propagate`](@ref) or [`init_prop`](@ref):
 
-```@docs
-init_prop(state, generator, tlist, method::Val{:ExponentialUtilities}; kwargs...)
+```julia
+init_prop(
+    state,
+    generator,
+    tlist,
+    method::Val{:ExponentialUtilities};
+    kwargs...
+)
 ```
 
 This method evaluates ``\exp(-i \op{H} dt) |Ψ⟩`` via a Krylov expv algorithm
 without explicitly forming the matrix exponential. It is therefore often a
 good fit for larger systems or matrix-free operators where direct matrix
 exponentiation is too costly.
+
+Example initialization:
+
+```julia
+using ExponentialUtilities
+
+expv_propagator = init_prop(
+    state,
+    generator,
+    tlist;
+    method=ExponentialUtilities,  # or :expv
+    inplace=QuantumPropagators.Interfaces.supports_inplace(state),
+    backward=false,
+    verbose=false,
+    parameters=nothing,
+    expv_kwargs=(; ishermitian=false),  # set for non-Hermitian generators
+    convert_state=typeof(state),
+    convert_operator=Matrix{ComplexF64},
+)
+```
+
+**Method-specific keyword arguments**
+
+* `expv_kwargs`: NamedTuple of keyword arguments forwarded to
+  `ExponentialUtilities.expv`. Use this to set `ishermitian=false` for
+  non-Hermitian generators (e.g., Liouvillians).
+* `convert_state`: Type to which to temporarily convert the state before
+  calling `expv`.
+* `convert_operator`: Type to which to convert the operator before calling
+  `expv`.
+
+**GRAPE note**
+
+* When using `method=:expv` with GRAPE, set `gradient_method=:taylor`.
+  The default `:gradgen` path uses `GradVector`/`GradgenOperator`, which is
+  not currently supported by the ExponentialUtilities Krylov backend.
+* For non-Hermitian generators (e.g., Liouvillians), pass
+  `prop_expv_kwargs=(; ishermitian=false)` to avoid Hermitian-only paths.
 
 **Advantages**
 
