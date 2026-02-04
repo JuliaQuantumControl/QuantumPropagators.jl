@@ -93,6 +93,16 @@ using SafeTestsets
         include("test_propagate_sequence.jl")
     end
 
+    println("\n* GRAPE with ExponentialUtilities (test_grape_exponentialutilities.jl):")
+    @time @safetestset "GRAPE ExponentialUtilities" begin
+        include("test_grape_exponentialutilities.jl")
+    end
+
+    println("\n* GRAPE ExponentialUtilities Liouvillian (test_grape_exputils_liouvillian.jl):")
+    @time @safetestset "GRAPE ExponentialUtilities Liouvillian" begin
+        include("test_grape_exputils_liouvillian.jl")
+    end
+
     println("\n* Time-dependent observables (test_timedependent_observables.jl):")
     @time @safetestset "Time-dependent observables" begin
         include("test_timedependent_observables.jl")
