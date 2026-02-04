@@ -29,6 +29,11 @@ using StaticArrays: @SMatrix, SVector, @SVector
 
     Ψ_out = propagate(Ψ0, generator, tlist; method = :expprop, storage = storage)
     Ψ_out_expv = propagate(Ψ0, generator, tlist; method = ExponentialUtilities)
+    Ψ_out_expv_ni =
+        propagate(Ψ0, generator, tlist; method = ExponentialUtilities, inplace = false)
+    generator_herm = (Hermitian(Ĥ),)
+    Ψ_out_expv_herm =
+        propagate(Ψ0, generator_herm, tlist; method = ExponentialUtilities, inplace = true)
     Ψ_expected = ComplexF64[-1/√2, -1im/√2]  # note the phases
 
     pop0 = abs.(storage[1, :]) .^ 2
@@ -36,6 +41,8 @@ using StaticArrays: @SMatrix, SVector, @SVector
 
     @test norm(Ψ_out - Ψ_expected) < 1e-12
     @test norm(Ψ_out_expv - Ψ_expected) < 1e-9
+    @test norm(Ψ_out_expv_ni - Ψ_expected) < 1e-9
+    @test norm(Ψ_out_expv_herm - Ψ_expected) < 1e-9
     @test pop0[end] ≈ 0.5
 
     # Propagating backward in time should exactly reverse the dynamics (since

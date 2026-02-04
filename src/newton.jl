@@ -34,7 +34,7 @@ mutable struct NewtonWrk{T}
     restarts::Int64
     m_max::Int64
     timing_data::TimerOutput
-    function NewtonWrk(v0::T; m_max::Int64=10, _timing_data=TimerOutput()) where {T}
+    function NewtonWrk(v0::T; m_max::Int64 = 10, _timing_data = TimerOutput()) where {T}
         if m_max <= 2
             error("Newton propagation requires m_max > 2")
         end
@@ -60,8 +60,8 @@ mutable struct NewtonWrk{T}
 end
 
 
-lbound(array::OffsetArray, dim=1) = first(axes(array)[dim])
-ubound(array::OffsetArray, dim=1) = last(axes(array)[dim])
+lbound(array::OffsetArray, dim = 1) = first(axes(array)[dim])
+ubound(array::OffsetArray, dim = 1) = last(axes(array)[dim])
 
 
 function leja_radius(z)
@@ -281,9 +281,9 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
                 wrk.v,
                 H,
                 _dt;
-                extended=true,
-                norm_min=norm_min,
-                _timing_data=wrk.timing_data
+                extended = true,
+                norm_min = norm_min,
+                _timing_data = wrk.timing_data
             )
         end
         if m == 1 && s == 0
@@ -294,7 +294,7 @@ function newton!(Ψ, H, dt, wrk; kwargs...)
             break
         end
         @timeit_debug wrk.timing_data "diagonalize_hessenberg_matrix" begin
-            ritz = diagonalize_hessenberg_matrix(Hess, m, accumulate=true)
+            ritz = diagonalize_hessenberg_matrix(Hess, m, accumulate = true)
         end
 
         # In the first iteration, the radius will be determined

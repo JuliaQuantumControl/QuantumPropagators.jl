@@ -29,8 +29,11 @@ LinearAlgebra.ishermitian(op::_SizedOp) = LinearAlgebra.ishermitian(op.A)
 LinearAlgebra.mul!(y, op::_SizedOp, x) = mul!(y, op.A, x)
 
 _ensure_size_dim(A) =
-    hasmethod(size, Tuple{typeof(A), Int}) ? A :
-    (hasmethod(size, Tuple{typeof(A)}) ? _SizedOp(A) : A)
+    if hasmethod(size, Tuple{typeof(A),Int})
+        A
+    else
+        (hasmethod(size, Tuple{typeof(A)}) ? _SizedOp(A) : A)
+    end
 
 
 """Propagator for Krylov expv propagation via ExponentialUtilities (`method=ExponentialUtilities`).
@@ -85,7 +88,7 @@ expv_propagator = init_prop(
 )
 ```
 
-initializes an [`ExpvPropagator`](@ref).
+ initializes an `ExpvPropagator`.
 
 # Method-specific keyword arguments
 
@@ -121,7 +124,7 @@ function init_prop(
     t = tlist[1]
     if backward
         n = length(tlist) - 1
-        t = float(tlist[n + 1])
+        t = float(tlist[n+1])
     end
     GT = typeof(generator)
     OT = typeof(G)
@@ -154,16 +157,18 @@ function prop_step!(propagator::ExpvPropagator)
     @timeit_debug propagator.timing_data "prop_step!" begin
         if nameof(typeof(propagator.state)) == :GradVector &&
            nameof(parentmodule(typeof(propagator.state))) == :QuantumGradientGenerators
-            throw(ArgumentError(
-                "ExponentialUtilities propagation does not support GRAPE `gradient_method=:gradgen`. " *
-                "Use `gradient_method=:taylor` instead."
-            ))
+            throw(
+                ArgumentError(
+                    "ExponentialUtilities propagation does not support GRAPE `gradient_method=:gradgen`. " *
+                    "Use `gradient_method=:taylor` instead."
+                )
+            )
         end
         H = propagator.genop
         n = propagator.n
         tlist = getfield(propagator, :tlist)
         (0 < n < length(tlist)) || return nothing
-        dt = tlist[n + 1] - tlist[n]
+        dt = tlist[n+1] - tlist[n]
         if propagator.backward
             dt = -dt
         end
