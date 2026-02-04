@@ -3,6 +3,7 @@ using Pkg
 using Documenter
 using QuantumPropagators
 using QuantumPropagators: AbstractPropagator, set_t!, set_state!
+import ExponentialUtilities  # ensure ExponentialUtilities extension is loaded
 import OrdinaryDiffEq  # ensure ODE extension is loaded
 using DocumenterCitations
 using DocumenterInterLinks
