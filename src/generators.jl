@@ -256,6 +256,7 @@ Base.size(O::ScaledOperator) = size(O.operator)
 Base.size(O::ScaledOperator, dim::Integer) = size(O.operator, dim)
 Base.eltype(::Type{ScaledOperator{CT,Operator{OOT,OCT}}}) where {CT,OOT,OCT} =
     promote_type(CT, eltype(OOT), OCT)
+Base.eltype(::Type{ScaledOperator{CT,OT}}) where {CT,OT} = promote_type(CT, eltype(OT))
 
 LinearAlgebra.ishermitian(O::ScaledOperator) = (isreal(O.coeff) && ishermitian(O.operator))
 
