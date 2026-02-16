@@ -73,3 +73,15 @@ The project uses a sophisticated development setup:
 
 ### Documentation
 Uses Documenter.jl with comprehensive API documentation and examples. Documentation includes detailed method explanations.
+
+## Docstrings
+
+Each Julia function that is not explicitly private or has a name starting with an underscore must have a docstring. The format for the docstring is to have a "title" / description of the function in the first line, less than 80 characters, followed by a fenced code block (```` ```julia...``` ````; do not use an indented code block). The code block should be valid Julia code that illustrates a default call to the function. If the function returns something, the code block should be an assignment with instructive names for the returned variables. The code block should be readable as the start of an active-voice sentence that continues after the code block. Following the paragraph started by the code block, use section `#Arguments`, `# Keyword Arguments`, `# Returns`, etc, as necessary. Be as concise as possible. For example, if the code block paragraph already fully explains the return type, an explicit `# Returns` section is unnecessary. Use Unicode as much as possible for any math in the docstring.
+
+## General Guidelines
+
+* Make sure to only use explicit imports in Julia code, and that there are no imported functions or constants that are not actually used.
+
+* When adding a new dependency to any `Project.toml` file, run `make distclean`, and then `make test/Manifest.toml`, `make docs/Manifest.toml`, etc. to recreate manifest files as necessary.
+
+* Never commit any changes or ask to commit. I will always create git commits manually.
