@@ -18,23 +18,6 @@ using QuantumPropagators.Interfaces: supports_inplace
 using QuantumPropagators.Generators: ScaledOperator
 import QuantumPropagators: init_prop, prop_step!, set_t!
 
-struct _SizedOp{A}
-    A::A
-end
-
-Base.size(op::_SizedOp) = size(op.A)
-Base.size(op::_SizedOp, dim::Integer) = size(op.A)[dim]
-Base.eltype(op::_SizedOp) = eltype(op.A)
-LinearAlgebra.ishermitian(op::_SizedOp) = LinearAlgebra.ishermitian(op.A)
-LinearAlgebra.mul!(y, op::_SizedOp, x) = mul!(y, op.A, x)
-
-_ensure_size_dim(A) =
-    if hasmethod(size, Tuple{typeof(A),Int})
-        A
-    else
-        (hasmethod(size, Tuple{typeof(A)}) ? _SizedOp(A) : A)
-    end
-
 
 """Propagator for Krylov expv propagation via ExponentialUtilities (`method=ExponentialUtilities`).
 
@@ -182,7 +165,6 @@ function prop_step!(propagator::ExpvPropagator)
             else
                 H = convert(propagator.convert_operator, _pwc_get_genop(propagator, n))
             end
-            H = _ensure_size_dim(H)
             H = ScaledOperator(-1im, H)
             @timeit_debug propagator.timing_data "expv" begin
                 Ψ = ExponentialUtilities.expv(dt_expv, H, Ψ; propagator.expv_kwargs...)
@@ -190,7 +172,6 @@ function prop_step!(propagator::ExpvPropagator)
             copyto!(propagator.state, convert(typeof(propagator.state), Ψ))
         else
             H = convert(propagator.convert_operator, _pwc_get_genop(propagator, n))
-            H = _ensure_size_dim(H)
             H = ScaledOperator(-1im, H)
             @timeit_debug propagator.timing_data "expv" begin
                 Ψ = ExponentialUtilities.expv(dt_expv, H, Ψ; propagator.expv_kwargs...)
