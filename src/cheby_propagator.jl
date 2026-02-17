@@ -345,7 +345,7 @@ function cheby_get_spectral_envelope(generator, tlist, control_ranges, method; k
 end
 
 
-function prop_step!(propagator::ChebyPropagator)
+function prop_step!(propagator::ChebyPropagator{GT,OT,ST}) where {GT,OT,ST}
     @timeit_debug propagator.timing_data "prop_step!" begin
         Ψ = propagator.state
         H = propagator.genop
@@ -357,7 +357,7 @@ function prop_step!(propagator::ChebyPropagator)
         tlist = getfield(propagator, :tlist)
         (0 < n < length(tlist)) || return nothing
         if propagator.inplace
-            if supports_inplace(H)
+            if supports_inplace(OT)
                 H = _pwc_set_genop!(propagator, n)
             else
                 H = _pwc_get_genop(propagator, n)

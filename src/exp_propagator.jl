@@ -141,7 +141,7 @@ init_prop(state, generator, tlist, method::Val{:expprop}; kwargs...) =
     init_prop(state, generator, tlist, Val(:ExpProp); kwargs...)
 
 
-function prop_step!(propagator::ExpPropagator)
+function prop_step!(propagator::ExpPropagator{GT,OT,ST}) where {GT,OT,ST}
     @timeit_debug propagator.timing_data "prop_step!" begin
         H = propagator.genop
         n = propagator.n
@@ -153,7 +153,7 @@ function prop_step!(propagator::ExpPropagator)
         end
         Ψ = convert(propagator.convert_state, propagator.state)
         if propagator.inplace
-            if supports_inplace(propagator.genop)
+            if supports_inplace(OT)
                 _pwc_set_genop!(propagator, n)
                 H = convert(propagator.convert_operator, propagator.genop)
             else

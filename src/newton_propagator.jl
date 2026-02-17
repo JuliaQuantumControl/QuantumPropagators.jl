@@ -117,7 +117,7 @@ init_prop(state, generator, tlist, method::Val{:newton}; kwargs...) =
     init_prop(state, generator, tlist, Val(:Newton); kwargs...)
 
 
-function prop_step!(propagator::NewtonPropagator)
+function prop_step!(propagator::NewtonPropagator{GT,OT,ST}) where {GT,OT,ST}
     @timeit_debug propagator.timing_data "prop_step!" begin
         Ψ = propagator.state
         H = propagator.genop
@@ -129,7 +129,7 @@ function prop_step!(propagator::NewtonPropagator)
             dt = -dt
         end
         if propagator.inplace
-            if supports_inplace(H)
+            if supports_inplace(OT)
                 H = _pwc_set_genop!(propagator, n)
             else
                 H = _pwc_get_genop(propagator, n)
