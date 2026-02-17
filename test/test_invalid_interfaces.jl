@@ -85,7 +85,7 @@ end
     @test captured.value ≡ false
     @test contains(
         captured.output,
-        "The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for `op`"
+        "The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for type"
     )
     @test contains(captured.output, "op must not contain any controls")
     @test contains(captured.output, "`op * state` must be defined")
@@ -135,11 +135,11 @@ end
     @test captured.value ≡ false
     @test contains(
         captured.output,
-        "The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for `state`"
+        "The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for type"
     )
 
     struct InvalidState end
-    QuantumPropagators.Interfaces.supports_inplace(::InvalidState) = true
+    QuantumPropagators.Interfaces.supports_inplace(::Type{InvalidState}) = true
     state = InvalidState()
     captured = IOCapture.capture() do
         check_state(state; normalized = true)
@@ -161,7 +161,7 @@ end
     @test contains(captured.output, "`norm(state)` must be 1")
 
     struct InvalidState2 end
-    QuantumPropagators.Interfaces.supports_inplace(::InvalidState2) = true
+    QuantumPropagators.Interfaces.supports_inplace(::Type{InvalidState2}) = true
     state = InvalidState2()
     Base.similar(::InvalidState2) = InvalidState2()
     captured = IOCapture.capture() do
@@ -171,7 +171,7 @@ end
     @test contains(captured.output, "`copyto!(other, state)` must be defined")
 
     struct InvalidState3 end
-    QuantumPropagators.Interfaces.supports_inplace(::InvalidState3) = true
+    QuantumPropagators.Interfaces.supports_inplace(::Type{InvalidState3}) = true
     state = InvalidState3()
     Base.similar(::InvalidState3) = InvalidState3()
     Base.copyto!(a::InvalidState3, b::InvalidState3) = a
@@ -185,7 +185,7 @@ end
     struct InvalidState4
         Ψ
     end
-    QuantumPropagators.Interfaces.supports_inplace(::InvalidState4) = true
+    QuantumPropagators.Interfaces.supports_inplace(::Type{InvalidState4}) = true
     Base.similar(state::InvalidState4) = InvalidState4(similar(state.Ψ))
     Base.copy(state::InvalidState4) = InvalidState4(copy(state.Ψ))
     Base.copyto!(a::InvalidState4, b::InvalidState4) = copyto!(a.Ψ, b.Ψ)

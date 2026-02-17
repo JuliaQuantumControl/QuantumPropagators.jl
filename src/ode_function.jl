@@ -69,9 +69,9 @@ struct QuantumODEFunction{GT,OT}
     timing_data::TimerOutput
 end
 
-function (f::QuantumODEFunction)(du, u, p, t)
+function (f::QuantumODEFunction{GT,OT})(du, u, p, t) where {GT,OT}
     @timeit_debug f.timing_data "operator evaluation" begin
-        if supports_inplace(f.operator)
+        if supports_inplace(OT)
             H = evaluate!(f.operator, f.generator, t; vals_dict = p)
         else
             H = evaluate(f.generator, t; vals_dict = p)

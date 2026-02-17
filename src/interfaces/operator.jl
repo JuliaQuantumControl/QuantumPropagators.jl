@@ -68,7 +68,7 @@ function check_operator(
         supports_inplace(op)
     catch exc
         quiet || @error(
-            "$(px)The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for `op`.",
+            "$(px)The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for type `$(typeof(op))`.",
             exception = (exc, catch_abbreviated_backtrace())
         )
         success = false

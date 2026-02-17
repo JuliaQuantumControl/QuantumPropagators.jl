@@ -75,7 +75,7 @@ function check_state(
         inplace = supports_inplace(state)
     catch exc
         quiet || @error(
-            "$(px)The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for `state`.",
+            "$(px)The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for type `$(typeof(state))`.",
             exception = (exc, catch_abbreviated_backtrace())
         )
         success = false
