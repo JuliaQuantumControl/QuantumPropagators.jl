@@ -23,7 +23,13 @@ using ExponentialUtilities
         rng = rng
     )
 
-    res = QuantumControl.optimize(problem; method = GRAPE, iter_stop = 1, verbose = false)
+    res = QuantumControl.optimize(
+        problem;
+        method = GRAPE,
+        iter_stop = 10,
+        verbose = false,
+        rethrow_exceptions = true
+    )
 
     @test res.iter >= res.iter_start
     @test isfinite(res.J_T)
