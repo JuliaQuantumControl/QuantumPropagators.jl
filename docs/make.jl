@@ -46,6 +46,7 @@ links = InterLinks(
     "StaticArrays" => "https://juliaarrays.github.io/StaticArrays.jl/stable/",
     "ComponentArrays" => "https://sciml.github.io/ComponentArrays.jl/stable/",
     "RecursiveArrayTools" => "https://docs.sciml.ai/RecursiveArrayTools/stable/",
+    "ExponentialUtilities" => "https://docs.sciml.ai/ExponentialUtilities/stable/",
     "qutip" => "https://qutip.readthedocs.io/en/qutip-5.0.x/",
 )
 

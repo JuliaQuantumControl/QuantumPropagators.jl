@@ -174,7 +174,7 @@ end
         Ψ,
         Ĥ,
         tlist;
-        method = :expv,
+        method = ExponentialUtilities,
         backward = false,
         inplace = false,
         verbose = false

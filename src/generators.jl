@@ -176,6 +176,7 @@ function Base.copyto!(tgt::Operator, src::Operator)
     copyto!(tgt.coeffs, src.coeffs)
 end
 
+# All ops in an Operator must have the same size (they are summed together)
 Base.size(O::Operator) = size(O.ops[1])
 Base.size(O::Operator, dim::Integer) = size(O.ops[1], dim)
 Base.eltype(::Type{Operator{OT,CT}}) where {OT,CT} = promote_type(eltype(OT), CT)

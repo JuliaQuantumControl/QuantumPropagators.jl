@@ -75,61 +75,18 @@ package is loaded
 using ExponentialUtilities
 ```
 
-and then passed as `method=ExponentialUtilities` (or `method=:expv`) to
+and then passed as `method=ExponentialUtilities` to
 [`propagate`](@ref) or [`init_prop`](@ref):
 
-```julia
-init_prop(
-    state,
-    generator,
-    tlist,
-    method::Val{:ExponentialUtilities};
-    kwargs...
-)
+```@docs
+init_prop(state, generator, tlist, method::Val{:ExponentialUtilities}; kwargs...)
 ```
 
-This method evaluates ``\exp(-i \op{H} dt) |Ψ⟩`` via a Krylov expv algorithm
-without explicitly forming the matrix exponential. It is therefore often a
-good fit for larger systems or matrix-free operators where direct matrix
+This method evaluates ``\exp(-i \op{H} dt) |Ψ⟩`` via a Krylov
+[`expv`](@extref ExponentialUtilities :jl:function:`ExponentialUtilities.expv`)
+algorithm without explicitly forming the matrix exponential. It is therefore
+often a good fit for larger systems or matrix-free operators where direct matrix
 exponentiation is too costly.
-
-Example initialization:
-
-```julia
-using ExponentialUtilities
-
-expv_propagator = init_prop(
-    state,
-    generator,
-    tlist;
-    method=ExponentialUtilities,  # or :expv
-    inplace=QuantumPropagators.Interfaces.supports_inplace(state),
-    backward=false,
-    verbose=false,
-    parameters=nothing,
-    expv_kwargs=(; ishermitian=false),  # set for non-Hermitian generators
-    convert_state=typeof(state),
-    convert_operator=Matrix{ComplexF64},
-)
-```
-
-**Method-specific keyword arguments**
-
-* `expv_kwargs`: NamedTuple of keyword arguments forwarded to
-  `ExponentialUtilities.expv`. Use this to set `ishermitian=false` for
-  non-Hermitian generators (e.g., Liouvillians).
-* `convert_state`: Type to which to temporarily convert the state before
-  calling `expv`.
-* `convert_operator`: Type to which to convert the operator before calling
-  `expv`.
-
-**GRAPE note**
-
-* When using `method=:expv` with GRAPE, set `gradient_method=:taylor`.
-  The default `:gradgen` path uses `GradVector`/`GradgenOperator`, which is
-  not currently supported by the ExponentialUtilities Krylov backend.
-* For non-Hermitian generators (e.g., Liouvillians), pass
-  `prop_expv_kwargs=(; ishermitian=false)` to avoid Hermitian-only paths.
 
 **Advantages**
 
@@ -145,15 +102,6 @@ expv_propagator = init_prop(
 **When to use**
 
 * Large, sparse, or matrix-free generators
-* Piecewise-constant GRAPE-style workflows that need expv
-
-**GRAPE note**
-
-* When using `method=:expv` with GRAPE, set `gradient_method=:taylor`.
-  The default `:gradgen` path uses `GradVector`/`GradgenOperator`, which is
-  not currently supported by the ExponentialUtilities Krylov backend.
-* For non-Hermitian generators (e.g., Liouvillians), pass
-  `prop_expv_kwargs=(; ishermitian=false)` to avoid Hermitian-only paths.
 
 
 ## [`Cheby`](@id method_cheby)
