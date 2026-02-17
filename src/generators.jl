@@ -161,7 +161,7 @@ function Base.Array{T}(O::Operator) where {T}
     return A
 end
 
-Base.Array(O::Operator) = Array{ComplexF64}(O)
+Base.Array(O::Operator) = Array{eltype(O)}(O)
 
 
 function Base.copy(O::Operator)
@@ -177,6 +177,8 @@ function Base.copyto!(tgt::Operator, src::Operator)
 end
 
 Base.size(O::Operator) = size(O.ops[1])
+Base.size(O::Operator, dim::Integer) = size(O.ops[1], dim)
+Base.eltype(::Type{Operator{OT,CT}}) where {OT,CT} = promote_type(eltype(OT), CT)
 
 
 function LinearAlgebra.ishermitian(O::Operator{OT,CT}) where {OT,CT}
@@ -247,10 +249,13 @@ end
 
 # fallback (less efficient, but doesn't assume Operator-OT)
 Base.Array{T}(O::ScaledOperator{CT,OT}) where {T,CT,OT} = O.coeff * Array{T}(O.operator)
-Base.Array(O::ScaledOperator) = Array{ComplexF64}(O)
+Base.Array(O::ScaledOperator) = Array{eltype(O)}(O)
 
 
 Base.size(O::ScaledOperator) = size(O.operator)
+Base.size(O::ScaledOperator, dim::Integer) = size(O.operator, dim)
+Base.eltype(::Type{ScaledOperator{CT,Operator{OOT,OCT}}}) where {CT,OOT,OCT} =
+    promote_type(CT, eltype(OOT), OCT)
 
 LinearAlgebra.ishermitian(O::ScaledOperator) = (isreal(O.coeff) && ishermitian(O.operator))
 

@@ -17,6 +17,10 @@ verifies the given `op` relative to `state`. The `state` must pass
 An "operator" is any object that [`evaluate`](@ref) returns when evaluating a
 time-dependent dynamic generator. The specific requirements for `op` are:
 
+* `eltype(op)` must be defined and return a numeric type
+* `size(op)` must be defined and return a tuple of integers
+* `size(op, dim)` must be defined for each dimension and be consistent with
+  `size(op)`
 * `op` must not be time-dependent: [`evaluate(op, tlist, 1) ≡ op`](@ref evaluate)
 * `op` must not contain any controls: [`length(get_controls(op)) == 0`](@ref get_controls)
 * `op * state` must be defined
@@ -65,6 +69,58 @@ function check_operator(
     catch exc
         quiet || @error(
             "$(px)The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for `op`.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
+        success = false
+    end
+
+    try
+        T = eltype(op)
+        if !(T isa Type && T <: Number)
+            quiet || @error "$(px)`eltype(op)` must return a numeric type, not $T"
+            success = false
+        end
+    catch exc
+        quiet || @error(
+            "$(px)`eltype(op)` must be defined.",
+            exception = (exc, catch_abbreviated_backtrace())
+        )
+        success = false
+    end
+
+    try
+        s = size(op)
+        if !(s isa Tuple)
+            quiet || @error "$(px)`size(op)` must return a tuple, not $(typeof(s))"
+            success = false
+        elseif !all(d isa Integer for d in s)
+            quiet || @error "$(px)`size(op)` must return a tuple of integers, not $s"
+            success = false
+        else
+            for (dim, n) in enumerate(s)
+                try
+                    n_dim = size(op, dim)
+                    if !(n_dim isa Integer)
+                        quiet ||
+                            @error "$(px)`size(op, $dim)` must return an integer, not $(typeof(n_dim))"
+                        success = false
+                    elseif n_dim != n
+                        quiet ||
+                            @error "$(px)`size(op, $dim)` must be consistent with `size(op)`: $n_dim ≠ $n"
+                        success = false
+                    end
+                catch exc
+                    quiet || @error(
+                        "$(px)`size(op, $dim)` must be defined.",
+                        exception = (exc, catch_abbreviated_backtrace())
+                    )
+                    success = false
+                end
+            end
+        end
+    catch exc
+        quiet || @error(
+            "$(px)`size(op)` must be defined.",
             exception = (exc, catch_abbreviated_backtrace())
         )
         success = false
