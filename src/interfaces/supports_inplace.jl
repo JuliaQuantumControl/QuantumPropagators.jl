@@ -1,6 +1,7 @@
 import ..Operator
 import ..ScaledOperator
 import LinearAlgebra
+import SparseArrays: SparseMatrixCSC
 
 """Indicate whether a type supports in-place operations.
 
@@ -39,6 +40,7 @@ supports_inplace(::Type{T}) where {T<:AbstractVector} = ismutabletype(T)  # fall
 supports_inplace(::Type{<:Matrix}) = true
 supports_inplace(::Type{<:Operator}) = true
 supports_inplace(::Type{<:LinearAlgebra.Diagonal}) = true
+supports_inplace(::Type{<:SparseMatrixCSC}) = true
 supports_inplace(::Type{<:ScaledOperator{<:Any,OT}}) where {OT} = supports_inplace(OT)
 supports_inplace(::Type{T}) where {T<:AbstractMatrix} = ismutabletype(T)  # fallback
 

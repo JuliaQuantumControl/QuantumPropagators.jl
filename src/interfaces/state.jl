@@ -49,6 +49,34 @@ If `normalized` (not required by default):
 
 * `LinearAlgebra.norm(state)` must be 1
 
+If [`QuantumPropagators.Interfaces.supports_vector_interface(state)`](@ref
+QuantumPropagators.Interfaces.supports_vector_interface) is `true`, the state
+must implement the
+[Abstract Array interface](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array)
+for one-dimensional arrays:
+
+* `eltype(state)` must be defined and return a numeric type
+* `getindex(state, i)` must be defined and return elements matching `eltype`
+* `length(state)` must equal `prod(size(state))`
+* `iterate(state)` must be defined
+* `similar(state)` must be defined and return a mutable vector with the same
+  length and element type.
+* `similar(state, ::Type{S})` must return a mutable vector with the same length
+  and element type `S`
+* `similar(state, dims::Dims)` must return a mutable array with the same
+  element type and the given dimensions
+* `similar(state, ::Type{S}, dims::Dims)` must return a mutable array with the
+  given element type and dimensions
+
+If additionally [`QuantumPropagators.Interfaces.supports_inplace(state)`](@ref
+QuantumPropagators.Interfaces.supports_inplace) is `true` (read-write vector):
+
+* `setindex!(state, v, i)` must be defined
+
+Note: When `supports_inplace(state)` is `true`, `similar(state)` is already
+required to return the *same type* as `state` (see above). The vector interface
+checks are weaker and complementary.
+
 It is strongly recommended to always support immutable operations (also for
 mutable states)
 
@@ -355,6 +383,197 @@ function check_state(
             )
             success = false
         end
+    end
+
+    if supports_vector_interface(state)
+
+        try
+            T = eltype(state)
+            if !(T isa Type && T <: Number)
+                quiet || @error "$(px)`eltype(state)` must return a numeric type, not $T"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`eltype(state)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            s = size(state)
+            if length(s) >= 1 && prod(s) > 0
+                val = state[1]
+                T = eltype(state)
+                if T isa Type && T <: Number && !(val isa T)
+                    quiet ||
+                        @error "$(px)`state[1]` must return a value of type `eltype(state)=$T`, not $(typeof(val))"
+                    success = false
+                end
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`getindex(state, i)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            l = length(state)
+            s = size(state)
+            if l != prod(s)
+                quiet ||
+                    @error "$(px)`length(state)` must equal `prod(size(state))`: $l ≠ $(prod(s))"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`length(state)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            itr = iterate(state)
+            s = size(state)
+            if isnothing(itr) && prod(s) > 0
+                quiet ||
+                    @error "$(px)`iterate(state)` must not return `nothing` for a non-empty state"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`iterate(state)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            st2 = similar(state)
+            if !supports_inplace(st2)
+                quiet ||
+                    @error "$(px)`similar(state)` must return a mutable vector (`supports_inplace` must be `true`), got $(typeof(st2))"
+                success = false
+            end
+            if size(st2) != size(state)
+                quiet ||
+                    @error "$(px)`similar(state)` must return a vector with the same shape: size $(size(st2)) ≠ $(size(state))"
+                success = false
+            end
+            if eltype(st2) != eltype(state)
+                quiet ||
+                    @error "$(px)`similar(state)` must return a vector with the same element type: $(eltype(st2)) ≠ $(eltype(state))"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`similar(state)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            S = (eltype(state) == ComplexF64) ? ComplexF32 : ComplexF64
+            st2 = similar(state, S)
+            if !supports_inplace(st2)
+                quiet ||
+                    @error "$(px)`similar(state, $S)` must return a mutable vector (`supports_inplace` must be `true`), got $(typeof(st2))"
+                success = false
+            end
+            if size(st2) != size(state)
+                quiet ||
+                    @error "$(px)`similar(state, $S)` must return a vector with the same shape: size $(size(st2)) ≠ $(size(state))"
+                success = false
+            end
+            if eltype(st2) != S
+                quiet ||
+                    @error "$(px)`similar(state, $S)` must return a vector with element type $S, got $(eltype(st2))"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`similar(state, ::Type{S})` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            dims = size(state)
+            st2 = similar(state, dims)
+            if !supports_inplace(st2)
+                quiet ||
+                    @error "$(px)`similar(state, dims)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(st2))"
+                success = false
+            end
+            if size(st2) != dims
+                quiet ||
+                    @error "$(px)`similar(state, dims)` must return an array with size $dims, got $(size(st2))"
+                success = false
+            end
+            if eltype(st2) != eltype(state)
+                quiet ||
+                    @error "$(px)`similar(state, dims)` must return an array with the same element type: $(eltype(st2)) ≠ $(eltype(state))"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`similar(state, dims::Dims)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            S = (eltype(state) == ComplexF64) ? ComplexF32 : ComplexF64
+            dims = size(state)
+            st2 = similar(state, S, dims)
+            if !supports_inplace(st2)
+                quiet ||
+                    @error "$(px)`similar(state, $S, dims)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(st2))"
+                success = false
+            end
+            if size(st2) != dims
+                quiet ||
+                    @error "$(px)`similar(state, $S, dims)` must return an array with size $dims, got $(size(st2))"
+                success = false
+            end
+            if eltype(st2) != S
+                quiet ||
+                    @error "$(px)`similar(state, $S, dims)` must return an array with element type $S, got $(eltype(st2))"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`similar(state, ::Type{S}, dims::Dims)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        if supports_inplace(state)
+
+            try
+                s = size(state)
+                if prod(s) > 0
+                    v = state[1]
+                    state[1] = v  # write back the same value
+                end
+            catch exc
+                quiet || @error(
+                    "$(px)`setindex!(state, v, i)` must be defined for an in-place state.",
+                    exception = (exc, catch_abbreviated_backtrace())
+                )
+                success = false
+            end
+
+        end
+
     end
 
     return success

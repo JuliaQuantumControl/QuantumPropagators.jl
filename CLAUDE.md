@@ -5,21 +5,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Testing
+
 - `make test` - Run the full test suite
 - `julia --project=test -e 'include("test/runtests.jl")'` - Run tests directly
 
 ### Development Environment
+
 - `make devrepl` - Start interactive REPL with development environment (recommended for development)
 - `julia -i --banner=no devrepl.jl` - Alternative way to start development REPL
 
 ### Documentation
+
 - `make docs` - Build documentation
 
 ### Code Quality
+
 - `make codestyle` - Apply JuliaFormatter to entire project
 - `julia --project=test -e 'using JuliaFormatter; format(".", verbose=true)'` - Format code directly
 
 ### Cleanup
+
 - `make clean` - Clean build/doc/testing artifacts
 - `make distclean` - Restore to clean checkout state
 
@@ -28,6 +33,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a Julia package for quantum system time propagation within the JuliaQuantumControl ecosystem.
 
 ### Core Structure
+
 - **src/QuantumPropagators.jl** - Main module definition with submodule includes
 - **src/interfaces/** - Interface definitions for operators, states, generators, propagators, etc.
 - **Submodules** organized by functionality:
@@ -43,26 +49,35 @@ This is a Julia package for quantum system time propagation within the JuliaQuan
   - `Generators` (generators.jl) - Hamiltonian/Liouvillian generators
 
 ### Key Propagation Methods
+
 - **Chebyshev propagation** (cheby_propagator.jl) - Polynomial expansion method
 - **Newton propagation** (newton_propagator.jl) - Newton interpolation method
 - **Matrix exponential** (exp_propagator.jl) - Direct exponentiation
 - **ODE integration** (ode_function.jl) - Interface to OrdinaryDiffEq.jl via extensions
 
 ### High-Level Interface
+
 - `propagate()` function for single time evolution
 - `propagate_sequence()` for sequential propagations with different parameters
 
 ### Extensions
+
 The package uses Julia's extension system for optional dependencies:
 - `QuantumPropagatorsODEExt` - OrdinaryDiffEq.jl integration
 - `QuantumPropagatorsRecursiveArrayToolsExt` - RecursiveArrayTools.jl support
 - `QuantumPropagatorsStaticArraysExt` - StaticArrays.jl optimization
 
 ### Testing Framework
+
 Uses SafeTestsets for isolated test execution. Tests are comprehensive and include:
 - Interface validation tests
 - Individual propagator method tests
 - Integration tests for complete propagation workflows
+
+Running `make test` prints out coverage data in a table.
+
+If necessary, detailed line-by-line coverage information can be obtained by running julia --project=test -e 'include("devrepl.jl"); generate_coverage_html()' after `make test`.
+This will produce html files inside the `coverage` subfolder, with `coverage/src` mirroring the structure of the `src` folder of `.jl` files. Lines with `<span class="tlaUNC">` are not covered. Ignore the raw tracefiles in the `.coverage` subfolder.
 
 ### Development Environment
 The project uses a sophisticated development setup:
@@ -72,6 +87,7 @@ The project uses a sophisticated development setup:
 - Code formatting with JuliaFormatter
 
 ### Documentation
+
 Uses Documenter.jl with comprehensive API documentation and examples. Documentation includes detailed method explanations.
 
 ## Docstrings
