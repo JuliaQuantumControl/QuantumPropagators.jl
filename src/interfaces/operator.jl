@@ -17,7 +17,6 @@ verifies the given `op` relative to `state`. The `state` must pass
 An "operator" is any object that [`evaluate`](@ref) returns when evaluating a
 time-dependent dynamic generator. The specific requirements for `op` are:
 
-* `eltype(op)` must be defined and return a numeric type
 * `size(op)` must be defined and return a tuple of integers
 * `size(op, dim)` must be defined for each dimension and be consistent with
   `size(op)`
@@ -26,9 +25,11 @@ time-dependent dynamic generator. The specific requirements for `op` are:
 * `op * state` must be defined
 * The [`QuantumPropagators.Interfaces.supports_inplace`](@ref) method must be
   defined for `op`. If it returns `true`, it must be possible to evaluate a
-  generator in-place into the existing `op`. See [`check_generator`](@ref).
+  generator in-place into the existing `op`. See
+  [`QuantumPropagators.Interfaces.check_generator`](@ref).
 
-If [`QuantumPropagators.Interfaces.supports_inplace(state)`](@ref):
+If [`QuantumPropagators.Interfaces.supports_inplace(state)`](@ref
+QuantumPropagators.Interfaces.supports_inplace):
 
 * The 3-argument `LinearAlgebra.mul!` must apply `op` to the given `state`
 * The 5-argument `LinearAlgebra.mul!` must apply `op` to the given `state`
@@ -39,6 +40,30 @@ If `for_expval` (typically required for optimal control):
 
 * `LinearAlgebra.dot(state, op, state)` must return return a number
 * `dot(state, op, state)` must match `dot(state, op * state)`, if applicable
+
+If [`QuantumPropagators.Interfaces.supports_matrix_interface(op)`](@ref
+QuantumPropagators.Interfaces.supports_matrix_interface) is `true`, the
+operator must implement the
+[Abstract Array interface](https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-array)
+for two-dimensional arrays:
+
+* `eltype(op)` must be defined and return a numeric type
+* `getindex(op, i, j)` must be defined and return elements matching `eltype`
+* `length(op)` must equal `prod(size(op))`
+* `iterate(op)` must be defined
+* `similar(op)` must be defined and return a mutable array with the same shape
+  and element type
+* `similar(op, ::Type{S})` must return a mutable array with the same shape and
+  element type `S`
+* `similar(op, dims::Dims)` must return a mutable array with the same element
+  type and the given dimensions
+* `similar(op, ::Type{S}, dims::Dims)` must return a mutable array with the
+  given element type and dimensions
+
+If additionally [`QuantumPropagators.Interfaces.supports_inplace(op)`](@ref
+QuantumPropagators.Interfaces.supports_inplace) is `true` (read-write matrix):
+
+* `setindex!(op, v, i, j)` must be defined
 
 The function returns `true` for a valid operator and `false` for an invalid
 operator. Unless `quiet=true`, it will log an error to indicate which of the
@@ -69,20 +94,6 @@ function check_operator(
     catch exc
         quiet || @error(
             "$(px)The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for type `$(typeof(op))`.",
-            exception = (exc, catch_abbreviated_backtrace())
-        )
-        success = false
-    end
-
-    try
-        T = eltype(op)
-        if !(T isa Type && T <: Number)
-            quiet || @error "$(px)`eltype(op)` must return a numeric type, not $T"
-            success = false
-        end
-    catch exc
-        quiet || @error(
-            "$(px)`eltype(op)` must be defined.",
             exception = (exc, catch_abbreviated_backtrace())
         )
         success = false
@@ -171,7 +182,6 @@ function check_operator(
         success = false
     end
 
-
     if supports_inplace(state)
 
         try
@@ -250,6 +260,197 @@ function check_operator(
                 exception = (exc, catch_abbreviated_backtrace())
             )
             success = false
+        end
+
+    end
+
+    if supports_matrix_interface(op)
+
+        try
+            T = eltype(op)
+            if !(T isa Type && T <: Number)
+                quiet || @error "$(px)`eltype(op)` must return a numeric type, not $T"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`eltype(op)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            s = size(op)
+            if length(s) == 2 && all(d -> d > 0, s)
+                val = op[1, 1]
+                T = eltype(op)
+                if T isa Type && T <: Number && !(val isa T)
+                    quiet ||
+                        @error "$(px)`op[1, 1]` must return a value of type `eltype(op)=$T`, not $(typeof(val))"
+                    success = false
+                end
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`getindex(op, i, j)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            l = length(op)
+            s = size(op)
+            if l != prod(s)
+                quiet ||
+                    @error "$(px)`length(op)` must equal `prod(size(op))`: $l ≠ $(prod(s))"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`length(op)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            itr = iterate(op)
+            s = size(op)
+            if isnothing(itr) && prod(s) > 0
+                quiet ||
+                    @error "$(px)`iterate(op)` must not return `nothing` for a non-empty operator"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`iterate(op)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            op2 = similar(op)
+            if !supports_inplace(op2)
+                quiet ||
+                    @error "$(px)`similar(op)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(op2))"
+                success = false
+            end
+            if size(op2) != size(op)
+                quiet ||
+                    @error "$(px)`similar(op)` must return an array with the same shape: size $(size(op2)) ≠ $(size(op))"
+                success = false
+            end
+            if eltype(op2) != eltype(op)
+                quiet ||
+                    @error "$(px)`similar(op)` must return an array with the same element type: $(eltype(op2)) ≠ $(eltype(op))"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`similar(op)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            S = (eltype(op) == ComplexF64) ? ComplexF32 : ComplexF64
+            op2 = similar(op, S)
+            if !supports_inplace(op2)
+                quiet ||
+                    @error "$(px)`similar(op, $S)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(op2))"
+                success = false
+            end
+            if size(op2) != size(op)
+                quiet ||
+                    @error "$(px)`similar(op, $S)` must return an array with the same shape: size $(size(op2)) ≠ $(size(op))"
+                success = false
+            end
+            if eltype(op2) != S
+                quiet ||
+                    @error "$(px)`similar(op, $S)` must return an array with element type $S, got $(eltype(op2))"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`similar(op, ::Type{S})` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            dims = size(op)
+            op2 = similar(op, dims)
+            if !supports_inplace(op2)
+                quiet ||
+                    @error "$(px)`similar(op, dims)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(op2))"
+                success = false
+            end
+            if size(op2) != dims
+                quiet ||
+                    @error "$(px)`similar(op, dims)` must return an array with size $dims, got $(size(op2))"
+                success = false
+            end
+            if eltype(op2) != eltype(op)
+                quiet ||
+                    @error "$(px)`similar(op, dims)` must return an array with the same element type: $(eltype(op2)) ≠ $(eltype(op))"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`similar(op, dims::Dims)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            S = (eltype(op) == ComplexF64) ? ComplexF32 : ComplexF64
+            dims = size(op)
+            op2 = similar(op, S, dims)
+            if !supports_inplace(op2)
+                quiet ||
+                    @error "$(px)`similar(op, $S, dims)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(op2))"
+                success = false
+            end
+            if size(op2) != dims
+                quiet ||
+                    @error "$(px)`similar(op, $S, dims)` must return an array with size $dims, got $(size(op2))"
+                success = false
+            end
+            if eltype(op2) != S
+                quiet ||
+                    @error "$(px)`similar(op, $S, dims)` must return an array with element type $S, got $(eltype(op2))"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`similar(op, ::Type{S}, dims::Dims)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        if supports_inplace(op)
+
+            try
+                s = size(op)
+                if length(s) == 2 && all(d -> d > 0, s)
+                    v = op[1, 1]
+                    op[1, 1] = v  # write back the same value
+                end
+            catch exc
+                quiet || @error(
+                    "$(px)`setindex!(op, v, i, j)` must be defined for an in-place operator.",
+                    exception = (exc, catch_abbreviated_backtrace())
+                )
+                success = false
+            end
+
         end
 
     end
