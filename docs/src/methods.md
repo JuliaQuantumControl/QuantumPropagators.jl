@@ -15,6 +15,7 @@ As discussed in the [Overview](@ref overview_approaches), time propagation can b
    We consider this especially in the piecewise-constant case (`pwc=true` in [`propagate`](@ref)/[`init_prop`](@ref)), which is required for the traditional optimization methods [GRAPE](https://juliaquantumcontrol.github.io/GRAPE.jl/stable/) and [Krotov](https://juliaquantumcontrol.github.io/Krotov.jl/stable/). In these propagations, the time-dependent generator ``\op{H}(t)`` is [evaluated](@ref QuantumPropagators.Controls.evaluate) to a constant operator ``\op{H}`` on each interval of the time grid. The analytical solution to the Schrödinger or Liouville equation is well known, and propagation step simply has to evaluate the application of the time evolution operator ``\op{U} = \exp[-i \op{H} dt]`` to the state ``|Ψ⟩``. The following methods are built in to `QuantumPropagators`:
 
    * [`ExpProp`](@ref method_expprop) – constructs ``\op{U}`` explicitly and then applies it to ``|Ψ⟩``
+   * [`ExponentialUtilities`](@ref method_exponentialutilities) – applies ``\op{U} |Ψ⟩`` using Krylov methods without explicitly forming ``\op{U}``
    * [`Cheby`](@ref method_cheby) — expansion of ``\op{U} |Ψ⟩`` into Chebychev polynomials, valid if ``\op{H}`` has real eigenvalues
    * [`Newton`](@ref method_newton) – expansion of ``\op{U} |Ψ⟩`` into Newton polynomials, valid if ``\op{H}`` has complex eigenvalues (non-Hermitian Hamiltonian, Liouvillian)
 
@@ -63,6 +64,44 @@ init_prop(state, generator, tlist, method::Val{:ExpProp}; kwargs...)
 
 * Small Hilbert space dimension (<10)
 * Comparing against another propagator
+
+
+## [`ExponentialUtilities`](@id method_exponentialutilities)
+
+The method requires that the [ExponentialUtilities.jl](https://docs.sciml.ai/ExponentialUtilities/stable/)
+package is loaded
+
+```
+using ExponentialUtilities
+```
+
+and then passed as `method=ExponentialUtilities` to
+[`propagate`](@ref) or [`init_prop`](@ref):
+
+```@docs
+init_prop(state, generator, tlist, method::Val{:ExponentialUtilities}; kwargs...)
+```
+
+This method evaluates ``\exp(-i \op{H} dt) |Ψ⟩`` via a Krylov
+[`expv`](@extref ExponentialUtilities :jl:function:`ExponentialUtilities.expv`)
+algorithm without explicitly forming the matrix exponential. It is therefore
+often a good fit for larger systems or matrix-free operators where direct matrix
+exponentiation is too costly.
+
+**Advantages**
+
+* Avoids explicit construction of ``\op{U}``
+* Works with matrix-free operators that support `mul!`
+* Good scaling for large sparse systems
+
+**Disadvantages**
+
+* Requires ExponentialUtilities.jl
+* Performance depends on Krylov parameters and operator structure
+
+**When to use**
+
+* Large, sparse, or matrix-free generators
 
 
 ## [`Cheby`](@id method_cheby)

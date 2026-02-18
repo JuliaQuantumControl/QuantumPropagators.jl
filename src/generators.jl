@@ -176,6 +176,7 @@ function Base.copyto!(tgt::Operator, src::Operator)
     copyto!(tgt.coeffs, src.coeffs)
 end
 
+# All ops in an Operator must have the same size (they are summed together)
 Base.size(O::Operator) = size(O.ops[1])
 Base.size(O::Operator, dim::Integer) = size(O.ops[1], dim)
 Base.eltype(::Type{Operator{OT,CT}}) where {OT,CT} = promote_type(eltype(OT), CT)
@@ -256,6 +257,7 @@ Base.size(O::ScaledOperator) = size(O.operator)
 Base.size(O::ScaledOperator, dim::Integer) = size(O.operator, dim)
 Base.eltype(::Type{ScaledOperator{CT,Operator{OOT,OCT}}}) where {CT,OOT,OCT} =
     promote_type(CT, eltype(OOT), OCT)
+Base.eltype(::Type{ScaledOperator{CT,OT}}) where {CT,OT} = promote_type(CT, eltype(OT))
 
 LinearAlgebra.ishermitian(O::ScaledOperator) = (isreal(O.coeff) && ishermitian(O.operator))
 
