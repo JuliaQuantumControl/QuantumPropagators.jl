@@ -140,7 +140,6 @@ end
     @test contains(captured.output, "`similar(op, ::Type{S})` must be defined")
     @test contains(captured.output, "`similar(op, dims::Dims)` must be defined")
     @test contains(captured.output, "`similar(op, ::Type{S}, dims::Dims)` must be defined")
-    @test contains(captured.output, "`setindex!(op, v, i, j)` must be defined")
 
 end
 
@@ -159,7 +158,6 @@ end
     Base.size(op::BadSimilarMatrixOp, d::Int) = size(op.data, d)
     Base.eltype(::Type{BadSimilarMatrixOp}) = ComplexF64
     Base.getindex(op::BadSimilarMatrixOp, i, j) = op.data[i, j]
-    Base.setindex!(op::BadSimilarMatrixOp, v, i, j) = (op.data[i, j] = v)
     Base.length(op::BadSimilarMatrixOp) = length(op.data)
     Base.iterate(op::BadSimilarMatrixOp, args...) = iterate(op.data, args...)
     Base.similar(::BadSimilarMatrixOp, args...) = ImmutableResult()

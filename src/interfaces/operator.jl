@@ -60,11 +60,6 @@ for two-dimensional arrays:
 * `similar(op, ::Type{S}, dims::Dims)` must return a mutable array with the
   given element type and dimensions
 
-If additionally [`QuantumPropagators.Interfaces.supports_inplace(op)`](@ref
-QuantumPropagators.Interfaces.supports_inplace) is `true` (read-write matrix):
-
-* `setindex!(op, v, i, j)` must be defined
-
 The function returns `true` for a valid operator and `false` for an invalid
 operator. Unless `quiet=true`, it will log an error to indicate which of the
 conditions failed.
@@ -433,24 +428,6 @@ function check_operator(
                 exception = (exc, catch_abbreviated_backtrace())
             )
             success = false
-        end
-
-        if supports_inplace(op)
-
-            try
-                s = size(op)
-                if length(s) == 2 && all(d -> d > 0, s)
-                    v = op[1, 1]
-                    op[1, 1] = v  # write back the same value
-                end
-            catch exc
-                quiet || @error(
-                    "$(px)`setindex!(op, v, i, j)` must be defined for an in-place operator.",
-                    exception = (exc, catch_abbreviated_backtrace())
-                )
-                success = false
-            end
-
         end
 
     end
