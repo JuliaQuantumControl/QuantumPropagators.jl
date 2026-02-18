@@ -1,10 +1,28 @@
 using Test
 using LinearAlgebra
 using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
-using QuantumPropagators.Interfaces: check_operator
+using QuantumPropagators.Interfaces: check_operator, supports_matrix_interface
+import QuantumPropagators.Interfaces: supports_inplace
+import QuantumPropagators.Controls: get_controls, evaluate
 using StaticArrays: SMatrix, SVector
 
 using QuantumPropagators: Generator, Operator, ScaledOperator
+
+# A minimal operator type that does not subtype AbstractMatrix, to test that
+# supports_matrix_interface propagates correctly through Operator/ScaledOperator.
+struct MatrixFreeOp
+    mat::Matrix{ComplexF64}
+end
+
+Base.size(op::MatrixFreeOp) = size(op.mat)
+Base.size(op::MatrixFreeOp, dim::Integer) = size(op.mat, dim)
+Base.:*(α::Number, op::MatrixFreeOp) = MatrixFreeOp(α * op.mat)
+Base.:*(op::MatrixFreeOp, Ψ::AbstractVector) = op.mat * Ψ
+LinearAlgebra.mul!(ϕ, op::MatrixFreeOp, Ψ, α::Number, β::Number) = mul!(ϕ, op.mat, Ψ, α, β)
+LinearAlgebra.dot(ϕ, op::MatrixFreeOp, Ψ) = dot(ϕ, op.mat, Ψ)
+supports_inplace(::Type{MatrixFreeOp}) = true
+get_controls(::MatrixFreeOp) = ()
+evaluate(op::MatrixFreeOp, args...; kwargs...) = op
 
 
 @testset "Operator mul!" begin
@@ -71,6 +89,7 @@ end
     H₂ = random_matrix(5; hermitian = true)
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
     Ψ = random_state_vector(5)
+    @test supports_matrix_interface(typeof(Op))
     @test check_operator(Op; state = Ψ)
 end
 
@@ -277,5 +296,39 @@ end
     Op = Operator([H₀, H₁, H₂], [2.1, 1.1]) * 0.5
     @test Op isa ScaledOperator
     Ψ = random_state_vector(5)
+    @test supports_matrix_interface(typeof(Op))
     @test check_operator(Op; state = Ψ)
+end
+
+
+@testset "supports_matrix_interface" begin
+
+    H₀ = random_matrix(5; hermitian = true)
+    H₁ = random_matrix(5; hermitian = true)
+    H₂ = random_matrix(5; hermitian = true)
+    Ψ = random_state_vector(5)
+
+    # Operator wrapping standard Matrix → true
+    Op = Operator([H₀, H₁, H₂], [2.1, 1.1])
+    @test supports_matrix_interface(typeof(Op))
+
+    # ScaledOperator wrapping Operator{Matrix} → true
+    SOp = Op * 0.5
+    @test SOp isa ScaledOperator
+    @test supports_matrix_interface(typeof(SOp))
+
+    # Operator wrapping MatrixFreeOp (not AbstractMatrix) → false, but valid operator
+    h₀ = MatrixFreeOp(H₀)
+    h₁ = MatrixFreeOp(H₁)
+    h₂ = MatrixFreeOp(H₂)
+    FreeOp = Operator([h₀, h₁, h₂], [2.1, 1.1])
+    @test !supports_matrix_interface(typeof(FreeOp))
+    @test check_operator(FreeOp; state = Ψ)
+
+    # ScaledOperator wrapping Operator{MatrixFreeOp} → false, but valid operator
+    SFreeOp = FreeOp * 0.5
+    @test SFreeOp isa ScaledOperator
+    @test !supports_matrix_interface(typeof(SFreeOp))
+    @test check_operator(SFreeOp; state = Ψ)
+
 end

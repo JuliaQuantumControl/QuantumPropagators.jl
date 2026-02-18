@@ -180,6 +180,33 @@ Base.size(O::Operator) = size(O.ops[1])
 Base.size(O::Operator, dim::Integer) = size(O.ops[1], dim)
 Base.eltype(::Type{Operator{OT,CT}}) where {OT,CT} = promote_type(eltype(OT), CT)
 
+function Base.getindex(O::Operator, i::Int, j::Int)
+    drift_offset = length(O.ops) - length(O.coeffs)
+    result = (drift_offset == 0 ? O.coeffs[1] : one(eltype(O))) * O.ops[1][i, j]
+    for k = 2:length(O.ops)
+        c = k <= drift_offset ? one(eltype(O)) : O.coeffs[k-drift_offset]
+        result += c * O.ops[k][i, j]
+    end
+    return result
+end
+
+Base.length(O::Operator) = prod(size(O))
+
+function Base.iterate(O::Operator, k = 1)
+    n = length(O)
+    k > n && return nothing
+    n_rows = size(O, 1)
+    i = (k - 1) % n_rows + 1
+    j = (k - 1) ÷ n_rows + 1
+    return (O[i, j], k + 1)
+end
+
+Base.similar(O::Operator) = Array{eltype(O)}(undef, size(O))
+Base.similar(O::Operator, ::Type{S}) where {S} = Array{S}(undef, size(O))
+Base.similar(O::Operator, dims::Tuple{Vararg{Int}}) = Array{eltype(O)}(undef, dims)
+Base.similar(O::Operator, ::Type{S}, dims::Tuple{Vararg{Int}}) where {S} =
+    Array{S}(undef, dims)
+
 
 function LinearAlgebra.ishermitian(O::Operator{OT,CT}) where {OT,CT}
     return all(ishermitian(op) for op in O.ops) && all(isreal(c) for c in O.coeffs)
@@ -254,8 +281,28 @@ Base.Array(O::ScaledOperator) = Array{eltype(O)}(O)
 
 Base.size(O::ScaledOperator) = size(O.operator)
 Base.size(O::ScaledOperator, dim::Integer) = size(O.operator, dim)
-Base.eltype(::Type{ScaledOperator{CT,Operator{OOT,OCT}}}) where {CT,OOT,OCT} =
-    promote_type(CT, eltype(OOT), OCT)
+Base.eltype(::Type{ScaledOperator{CT,OT}}) where {CT,OT} = promote_type(CT, eltype(OT))
+
+function Base.getindex(O::ScaledOperator, i::Int, j::Int)
+    return O.coeff * O.operator[i, j]
+end
+
+Base.length(O::ScaledOperator) = prod(size(O))
+
+function Base.iterate(O::ScaledOperator, k = 1)
+    n = length(O)
+    k > n && return nothing
+    n_rows = size(O, 1)
+    i = (k - 1) % n_rows + 1
+    j = (k - 1) ÷ n_rows + 1
+    return (O[i, j], k + 1)
+end
+
+Base.similar(O::ScaledOperator) = Array{eltype(O)}(undef, size(O))
+Base.similar(O::ScaledOperator, ::Type{S}) where {S} = Array{S}(undef, size(O))
+Base.similar(O::ScaledOperator, dims::Tuple{Vararg{Int}}) = Array{eltype(O)}(undef, dims)
+Base.similar(O::ScaledOperator, ::Type{S}, dims::Tuple{Vararg{Int}}) where {S} =
+    Array{S}(undef, dims)
 
 LinearAlgebra.ishermitian(O::ScaledOperator) = (isreal(O.coeff) && ishermitian(O.operator))
 
