@@ -201,6 +201,13 @@ function Base.iterate(O::Operator, k = 1)
     return (O[i, j], k + 1)
 end
 
+
+# We define `similar` to return a standard `Array` because `Operator` does not
+# implement `setindex!`. So it it questionable to what extent returning an
+# `Operator` would create an "uninitialized _mutable_ array". It would be
+# possible to apply `similar` recursively and get something that at least we
+# can `copyto!`. However, there is currently nothing in the JuliaQuantumControl
+# codebase that would require this, so we're leaving that for a later time.
 Base.similar(O::Operator) = Array{eltype(O)}(undef, size(O))
 Base.similar(O::Operator, ::Type{S}) where {S} = Array{S}(undef, size(O))
 Base.similar(O::Operator, dims::Tuple{Vararg{Int}}) = Array{eltype(O)}(undef, dims)
