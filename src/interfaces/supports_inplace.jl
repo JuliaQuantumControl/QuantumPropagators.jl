@@ -32,7 +32,7 @@ similar "traits": When using [custom structs](@extref Julia
 operators, even if those structs are not defined as `mutable`, they may still
 define the in-place interface (typically because their *components* are
 mutable). Conversely, even types that are "mutable" may want to opt out
-`evaluate!` for performance reasons.
+of `evaluate!` for performance reasons.
 
 Mutable abstract arrays ([`ArrayInterface.ismutable`](@extref)) without
 considerable performance issues
@@ -40,18 +40,16 @@ considerable performance issues
 should support in-place operations.
 """
 supports_inplace(::Type{<:Vector{ComplexF64}}) = true
-supports_inplace(::Type{T}) where {T<:AbstractVector} = ismutabletype(T)  # fallback
-# The fallback doesn't actually guarantee that the required interface implied
-# by `supports_inplace` is fulfilled, but it's a reasonable expectation to
-# have, and the `check_state` function will test it.
 
 supports_inplace(::Type{<:Matrix}) = true
 supports_inplace(::Type{<:Operator}) = true
 supports_inplace(::Type{<:LinearAlgebra.Diagonal}) = true
 supports_inplace(::Type{<:SparseMatrixCSC}) = true  # XXX is this a good idea?
 supports_inplace(::Type{<:ScaledOperator{<:Any,OT}}) where {OT} = supports_inplace(OT)
+
+# Fallback (both for operators and states)
 supports_inplace(::Type{T}) where {T<:AbstractArray} =
-    ArrayInterface.ismutable(T) && ArrayInterface.fast_scalar_indexing(T) # fallback
+    ArrayInterface.ismutable(T) && ArrayInterface.fast_scalar_indexing(T)
 
 # Generic catch-all for types without a specific method (prevents StackOverflow
 # from the value→type fallback below)
