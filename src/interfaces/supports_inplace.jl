@@ -2,6 +2,7 @@ import ..Operator
 import ..ScaledOperator
 import LinearAlgebra
 import SparseArrays: SparseMatrixCSC
+import ArrayInterface
 
 """Indicate whether a type supports in-place operations.
 
@@ -22,14 +23,21 @@ see [`QuantumPropagators.Interfaces.check_operator`](@ref).
 
 For operators, a `true` result indicates that the operator can be evaluated
 in-place with [`evaluate!`](@ref), see
-[`QuantumPropagators.Interfaces.check_generator`](@ref).
-
-Note that `supports_inplace` is not quite the same as
-[`Base.ismutabletype`](@extref) and/or [`Base.ismutable`](@extref): When using
-[custom structs](@extref Julia :label:`Mutable-Composite-Types`) for states or
+[`QuantumPropagators.Interfaces.check_generator`](@ref). Again, this is
+intended only as an indicator for what assumptions can be made in the
+implementation of a particular propagator: `supports_inplace` is semantically
+separate from [`Base.ismutabletype`](@extref), [`Base.ismutable`](@extref), or
+similar "traits": When using [custom structs](@extref Julia
+:label:`Mutable-Composite-Types`) for states or
 operators, even if those structs are not defined as `mutable`, they may still
 define the in-place interface (typically because their *components* are
-mutable).
+mutable). Conversely, even types that are "mutable" may want to opt out
+`evaluate!` for performance reasons.
+
+Mutable abstract arrays ([`ArrayInterface.ismutable`](@extref)) without
+considerable performance issues
+([`ArrayInterface.fast_scalar_indexing`](@extref))
+should support in-place operations.
 """
 supports_inplace(::Type{<:Vector{ComplexF64}}) = true
 supports_inplace(::Type{T}) where {T<:AbstractVector} = ismutabletype(T)  # fallback
@@ -40,9 +48,10 @@ supports_inplace(::Type{T}) where {T<:AbstractVector} = ismutabletype(T)  # fall
 supports_inplace(::Type{<:Matrix}) = true
 supports_inplace(::Type{<:Operator}) = true
 supports_inplace(::Type{<:LinearAlgebra.Diagonal}) = true
-supports_inplace(::Type{<:SparseMatrixCSC}) = true
+supports_inplace(::Type{<:SparseMatrixCSC}) = true  # XXX is this a good idea?
 supports_inplace(::Type{<:ScaledOperator{<:Any,OT}}) where {OT} = supports_inplace(OT)
-supports_inplace(::Type{T}) where {T<:AbstractMatrix} = ismutabletype(T)  # fallback
+supports_inplace(::Type{T}) where {T<:AbstractArray} =
+    ArrayInterface.ismutable(T) && ArrayInterface.fast_scalar_indexing(T) # fallback
 
 # Generic catch-all for types without a specific method (prevents StackOverflow
 # from the value→type fallback below)

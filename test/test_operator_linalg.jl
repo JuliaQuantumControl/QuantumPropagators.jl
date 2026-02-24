@@ -351,7 +351,7 @@ end
     op = evaluate(generator, tlist, 1)
     T = Hermitian{ComplexF64,Matrix{ComplexF64}}
     @test op isa T
-    @test_broken supports_inplace(T)
+    @test supports_inplace(T)
     op2 = similar(op)
     @test op2 isa T
     @test ArrayInterface.ismutable(T)
