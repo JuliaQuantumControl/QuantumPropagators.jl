@@ -5,6 +5,7 @@ using QuantumPropagators.Interfaces:
     check_operator, check_generator, supports_matrix_interface
 import QuantumPropagators.Interfaces: supports_inplace
 import QuantumPropagators.Controls: get_controls, evaluate
+import ArrayInterface
 using StaticArrays: SMatrix, SVector
 
 using QuantumPropagators: Generator, Operator, ScaledOperator
@@ -350,7 +351,10 @@ end
     op = evaluate(generator, tlist, 1)
     T = Hermitian{ComplexF64,Matrix{ComplexF64}}
     @test op isa T
-    @test supports_inplace(T)
+    @test_broken supports_inplace(T)
+    op2 = similar(op)
+    @test op2 isa T
+    @test ArrayInterface.ismutable(T)
     @test check_generator(generator; state = Ψ0, tlist)
 
 end

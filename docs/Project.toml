@@ -1,4 +1,5 @@
 [deps]
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 DisplayAs = "0b91fe84-8a4c-11e9-3e1d-67c38462b6d6"
 DocInventories = "43dc2714-ed3b-44b5-b226-857eda1aa7de"

@@ -179,10 +179,7 @@ end
     end
     @test captured.value ≡ false
     # similar(op): wrong mutability, shape, and eltype
-    @test contains(
-        captured.output,
-        "`similar(op)` must return a mutable array (`supports_inplace` must be `true`)"
-    )
+    @test contains(captured.output, "`similar(op)` must return a mutable array")
     @test contains(
         captured.output,
         "`similar(op)` must return an array with the same shape"
@@ -627,10 +624,7 @@ end
     end
     @test captured.value ≡ false
     # similar(state): wrong mutability, shape, and eltype
-    @test contains(
-        captured.output,
-        "`similar(state)` must return a mutable vector (`supports_inplace` must be `true`)"
-    )
+    @test contains(captured.output, "`similar(state)` must return a mutable vector")
     @test contains(
         captured.output,
         "`similar(state)` must return a vector with the same shape"
