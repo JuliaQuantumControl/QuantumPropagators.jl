@@ -1,5 +1,6 @@
 using Test
 
+import ArrayInterface
 using LinearAlgebra
 
 
@@ -36,8 +37,8 @@ Any `state` must support the following not-in-place operations:
 If `supports_inplace(state)` is `true`, the `state` must also support the
 following:
 
-* `similar(state)` must be defined and return a valid state of the same type a
-  `state`
+* `similar(state)` must be defined and return a valid state of the same type as
+  the original `state`
 * `copyto!(other, state)` must be defined
 * `fill!(state, c)` must be defined
 * `LinearAlgebra.lmul!(c, state)` for a scalar `c` must be defined
@@ -60,7 +61,8 @@ for one-dimensional arrays:
 * `length(state)` must equal `prod(size(state))`
 * `iterate(state)` must be defined
 * `similar(state)` must be defined and return a mutable vector with the same
-  length and element type.
+  length and element type. "Mutability" is determined by
+  [`ArrayInterface.ismutable`](@extref).
 * `similar(state, ::Type{S})` must return a mutable vector with the same length
   and element type `S`
 * `similar(state, dims::Dims)` must return a mutable array with the same
@@ -454,9 +456,9 @@ function check_state(
 
         try
             st2 = similar(state)
-            if !supports_inplace(st2)
+            if !ArrayInterface.ismutable(st2)
                 quiet ||
-                    @error "$(px)`similar(state)` must return a mutable vector (`supports_inplace` must be `true`), got $(typeof(st2))"
+                    @error "$(px)`similar(state)` must return a mutable vector (`ArrayInterface.ismutable` must be `true`), got $(typeof(st2))"
                 success = false
             end
             if size(st2) != size(state)
@@ -480,9 +482,9 @@ function check_state(
         try
             S = (eltype(state) == ComplexF64) ? ComplexF32 : ComplexF64
             st2 = similar(state, S)
-            if !supports_inplace(st2)
+            if !ArrayInterface.ismutable(st2)
                 quiet ||
-                    @error "$(px)`similar(state, $S)` must return a mutable vector (`supports_inplace` must be `true`), got $(typeof(st2))"
+                    @error "$(px)`similar(state, $S)` must return a mutable vector (`ArrayInterface.ismutable` must be `true`), got $(typeof(st2))"
                 success = false
             end
             if size(st2) != size(state)
@@ -506,9 +508,9 @@ function check_state(
         try
             dims = size(state)
             st2 = similar(state, dims)
-            if !supports_inplace(st2)
+            if !ArrayInterface.ismutable(st2)
                 quiet ||
-                    @error "$(px)`similar(state, dims)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(st2))"
+                    @error "$(px)`similar(state, dims)` must return a mutable array (`ArrayInterface.ismutable` must be `true`), got $(typeof(st2))"
                 success = false
             end
             if size(st2) != dims
@@ -533,9 +535,9 @@ function check_state(
             S = (eltype(state) == ComplexF64) ? ComplexF32 : ComplexF64
             dims = size(state)
             st2 = similar(state, S, dims)
-            if !supports_inplace(st2)
+            if !ArrayInterface.ismutable(st2)
                 quiet ||
-                    @error "$(px)`similar(state, $S, dims)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(st2))"
+                    @error "$(px)`similar(state, $S, dims)` must return a mutable array (`ArrayInterface.ismutable` must be `true`), got $(typeof(st2))"
                 success = false
             end
             if size(st2) != dims

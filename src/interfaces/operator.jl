@@ -1,6 +1,7 @@
 using Test
 
 using LinearAlgebra
+import ArrayInterface
 using ..Controls: get_controls, evaluate
 
 
@@ -52,13 +53,17 @@ for two-dimensional arrays:
 * `length(op)` must equal `prod(size(op))`
 * `iterate(op)` must be defined
 * `similar(op)` must be defined and return a mutable array with the same shape
-  and element type
+  and element type. "Mutability" is determined by
+  [`ArrayInterface.ismutable`](@extref).
 * `similar(op, ::Type{S})` must return a mutable array with the same shape and
   element type `S`
 * `similar(op, dims::Dims)` must return a mutable array with the same element
   type and the given dimensions
 * `similar(op, ::Type{S}, dims::Dims)` must return a mutable array with the
   given element type and dimensions
+
+The read-write method `setindex!` is not a requirement for
+`supports_matrix_interface`.
 
 The function returns `true` for a valid operator and `false` for an invalid
 operator. Unless `quiet=true`, it will log an error to indicate which of the
@@ -328,9 +333,9 @@ function check_operator(
 
         try
             op2 = similar(op)
-            if !supports_inplace(op2)
+            if !ArrayInterface.ismutable(op2)
                 quiet ||
-                    @error "$(px)`similar(op)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(op2))"
+                    @error "$(px)`similar(op)` must return a mutable array (`ArrayInterface.ismutable` must be `true`), got $(typeof(op2))"
                 success = false
             end
             if size(op2) != size(op)
@@ -354,9 +359,9 @@ function check_operator(
         try
             S = (eltype(op) == ComplexF64) ? ComplexF32 : ComplexF64
             op2 = similar(op, S)
-            if !supports_inplace(op2)
+            if !ArrayInterface.ismutable(op2)
                 quiet ||
-                    @error "$(px)`similar(op, $S)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(op2))"
+                    @error "$(px)`similar(op, $S)` must return a mutable array (`ArrayInterface.ismutable` must be `true`), got $(typeof(op2))"
                 success = false
             end
             if size(op2) != size(op)
@@ -380,9 +385,9 @@ function check_operator(
         try
             dims = size(op)
             op2 = similar(op, dims)
-            if !supports_inplace(op2)
+            if !ArrayInterface.ismutable(op2)
                 quiet ||
-                    @error "$(px)`similar(op, dims)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(op2))"
+                    @error "$(px)`similar(op, dims)` must return a mutable array (`ArrayInterface.ismutable` must be `true`), got $(typeof(op2))"
                 success = false
             end
             if size(op2) != dims
@@ -407,9 +412,9 @@ function check_operator(
             S = (eltype(op) == ComplexF64) ? ComplexF32 : ComplexF64
             dims = size(op)
             op2 = similar(op, S, dims)
-            if !supports_inplace(op2)
+            if !ArrayInterface.ismutable(op2)
                 quiet ||
-                    @error "$(px)`similar(op, $S, dims)` must return a mutable array (`supports_inplace` must be `true`), got $(typeof(op2))"
+                    @error "$(px)`similar(op, $S, dims)` must return a mutable array (`ArrayInterface.ismutable` must be `true`), got $(typeof(op2))"
                 success = false
             end
             if size(op2) != dims

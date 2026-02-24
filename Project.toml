@@ -4,6 +4,7 @@ authors = ["Michael Goerz <mail@michaelgoerz.net>"]
 version = "0.8.5+dev"
 
 [deps]
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -25,6 +26,7 @@ QuantumPropagatorsRecursiveArrayToolsExt = "RecursiveArrayTools"
 QuantumPropagatorsStaticArraysExt = "StaticArrays"
 
 [compat]
+ArrayInterface = "7.0"
 OffsetArrays = "1"
 OrdinaryDiffEq = "6.59"
 ProgressMeter = "1"

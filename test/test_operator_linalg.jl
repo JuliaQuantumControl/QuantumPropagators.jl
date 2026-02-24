@@ -1,9 +1,11 @@
 using Test
 using LinearAlgebra
 using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
-using QuantumPropagators.Interfaces: check_operator, supports_matrix_interface
+using QuantumPropagators.Interfaces:
+    check_operator, check_generator, supports_matrix_interface
 import QuantumPropagators.Interfaces: supports_inplace
 import QuantumPropagators.Controls: get_controls, evaluate
+import ArrayInterface
 using StaticArrays: SMatrix, SVector
 
 using QuantumPropagators: Generator, Operator, ScaledOperator
@@ -330,5 +332,29 @@ end
     @test SFreeOp isa ScaledOperator
     @test !supports_matrix_interface(typeof(SFreeOp))
     @test check_operator(SFreeOp; state = Ψ)
+
+end
+
+
+@testset "Hermitian matrix supports in-place operations" begin
+
+    # Test the resolution of
+    # https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/102
+
+    Ψ0 = ComplexF64[1, 0]
+    Ĥ = ComplexF64[
+         0   0.5
+        0.5   0
+    ]
+    tlist = collect(range(0.0, 1.0, length = 101))
+    generator = (Hermitian(Ĥ),)
+    op = evaluate(generator, tlist, 1)
+    T = Hermitian{ComplexF64,Matrix{ComplexF64}}
+    @test op isa T
+    @test supports_inplace(T)
+    op2 = similar(op)
+    @test op2 isa T
+    @test ArrayInterface.ismutable(T)
+    @test check_generator(generator; state = Ψ0, tlist)
 
 end

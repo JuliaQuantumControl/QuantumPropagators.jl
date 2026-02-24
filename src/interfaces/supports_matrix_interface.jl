@@ -9,7 +9,12 @@ returns `true` if `T` implements the
 for two-dimensional arrays. This is `true` for all subtypes of
 `AbstractMatrix`, but may also be `true` for types that implement an array
 interface (`size`, `getindex`, etc.) without declaring themselves subtypes
-of `AbstractMatrix`. Calling `supports_matrix_interface` on an instance
+of `AbstractMatrix`.
+
+A `setindex!` method is not a requirement for `supports_matrix_interface`. That
+is, only the read-interface for matrices is enforced.
+
+Calling `supports_matrix_interface` on an instance
 `x` also works via a convenience fallback that forwards to
 `supports_matrix_interface(typeof(x))`.
 

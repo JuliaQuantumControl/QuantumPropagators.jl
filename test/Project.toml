@@ -1,4 +1,5 @@
 [deps]
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
