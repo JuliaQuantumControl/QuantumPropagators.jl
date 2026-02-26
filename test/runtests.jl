@@ -78,6 +78,11 @@ using SafeTestsets
         include("test_expprop.jl")
     end
 
+    println("\n* ExponentialUtilities (test_exponential_utilities.jl):")
+    @time @safetestset "ExponentialUtilities" begin
+        include("test_exponential_utilities.jl")
+    end
+
     println("\n* Propagator Interfaces (test_prop_interfaces.jl):")
     @time @safetestset "Propagator Interfaces" begin
         include("test_prop_interfaces.jl")

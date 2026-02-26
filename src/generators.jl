@@ -256,7 +256,7 @@ function Base.show(io::IO, O::ScaledOperator{CT,OT}) where {CT,OT}
     print(io, "ScaledOperator($(O.coeff), $(O.operator))")
 end
 
-function Base.show(io::IO, ::MIME"text/plain", O::ScaledOperator{CT,OT}) where {CT,OT}
+function Base.show(io::IO, ::MIME"text/plain", O::ScaledOperator{CT,<:Operator}) where {CT}
     Base.summary(io, O)
     println(io, "\n operator.ops::$(typeof(O.operator.ops)):")
     for op in O.operator.ops
