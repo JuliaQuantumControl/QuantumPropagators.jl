@@ -22,7 +22,7 @@ import QuantumPropagators: init_prop, prop_step!, set_t!
 
 This is a [`PWCPropagator`](@ref).
 """
-mutable struct ExpvPropagator{GT,OT,ST} <: PWCPropagator
+mutable struct ExpvPropagator{GT,OT,ST,KST,CT} <: PWCPropagator
     const generator::GT
     state::ST
     t::Float64  # time at which current `state` is defined
@@ -31,6 +31,8 @@ mutable struct ExpvPropagator{GT,OT,ST} <: PWCPropagator
     parameters::AbstractDict
     controls
     genop::OT
+    Ks::KST
+    cache::CT
     backward::Bool
     inplace::Bool
     expv_kwargs::NamedTuple
@@ -91,10 +93,29 @@ function init_prop(
         n = length(tlist) - 1
         t = float(tlist[n+1])
     end
+
+    if inplace
+        A₀ = QuantumPropagators.Controls.evaluate(generator, tlist, n)
+        Ks = ExponentialUtilities.arnoldi(A₀, state; expv_kwargs...)
+        if haskey(expv_kwargs, :mode) && expv_kwargs[:mode] == :error_estimate
+            cache = ExponentialUtilities.get_subspace_cache(Ks)
+        else
+            T = promote_type(eltype(A₀), eltype(state))
+            cache_type = ishermitian(A₀) ? real(T) : T
+            cache = ExponentialUtilities.ExpvCache{cache_type}(Ks.m)
+        end
+    else
+        Ks = nothing
+        cache = nothing
+    end
+
     GT = typeof(generator)
     OT = typeof(G)
     ST = typeof(state)
-    return ExpvPropagator{GT,OT,ST}(
+    KST = typeof(Ks)
+    CT = typeof(cache)
+
+    return ExpvPropagator{GT,OT,ST,KST,CT}(
         generator,
         inplace ? copy(state) : state,
         t,
@@ -103,6 +124,8 @@ function init_prop(
         parameters,
         controls,
         G,
+        Ks,
+        cache,
         backward,
         inplace,
         expv_kwargs,
@@ -129,14 +152,32 @@ function prop_step!(propagator::ExpvPropagator)
                 H = _pwc_get_genop(propagator, n)
             end
             @timeit_debug propagator.timing_data "expv" begin
-                Ψ = ExponentialUtilities.expv(
-                    -1im * dt,
-                    H,
-                    propagator.state;
-                    propagator.expv_kwargs...
-                )
+                if haskey(propagator.expv_kwargs, :mode) &&
+                   propagator.expv_kwargs[:mode] == :error_estimate
+                    ExponentialUtilities.expv!(
+                        propagator.state,
+                        -1im * dt,
+                        H,
+                        propagator.state,
+                        propagator.Ks,
+                        propagator.cache;
+                        propagator.expv_kwargs...,
+                    )
+                else
+                    ExponentialUtilities.arnoldi!(
+                        propagator.Ks,
+                        H,
+                        propagator.state;
+                        propagator.expv_kwargs...,
+                    )
+                    ExponentialUtilities.expv!(
+                        propagator.state,
+                        -1im * dt,
+                        propagator.Ks;
+                        cache = propagator.cache,
+                    )
+                end
             end
-            copyto!(propagator.state, Ψ)
         else
             H = _pwc_get_genop(propagator, n)
             @timeit_debug propagator.timing_data "expv" begin
