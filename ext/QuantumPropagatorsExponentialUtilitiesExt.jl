@@ -101,7 +101,8 @@ function init_prop(
             cache = ExponentialUtilities.get_subspace_cache(Ks)
         else
             T = promote_type(eltype(A₀), eltype(state))
-            cache_type = ishermitian(A₀) ? real(T) : T
+            is_herm = get(expv_kwargs, :ishermitian, ishermitian(A₀))
+            cache_type = is_herm ? real(T) : T
             cache = ExponentialUtilities.ExpvCache{cache_type}(Ks.m)
         end
     else
