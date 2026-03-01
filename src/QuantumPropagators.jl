@@ -58,6 +58,7 @@ end
 #! format: on
 
 include("pwc_utils.jl")
+include("exponential_utilities_propagator.jl")
 include("cheby_propagator.jl")
 include("newton_propagator.jl")
 include("exp_propagator.jl")
