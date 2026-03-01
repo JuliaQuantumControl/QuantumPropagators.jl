@@ -78,6 +78,11 @@ using SafeTestsets
         include("test_expprop.jl")
     end
 
+    println("\n* ExponentialUtilities (test_exponential_utilities.jl):")
+    @time @safetestset "ExponentialUtilities" begin
+        include("test_exponential_utilities.jl")
+    end
+
     println("\n* Propagator Interfaces (test_prop_interfaces.jl):")
     @time @safetestset "Propagator Interfaces" begin
         include("test_prop_interfaces.jl")
@@ -91,6 +96,11 @@ using SafeTestsets
     println("\n* Propagate Sequence (test_propagate_sequence.jl):")
     @time @safetestset "Propagate Sequence" begin
         include("test_propagate_sequence.jl")
+    end
+
+    println("\n* ExponentialUtilities propagation (test_exputils.jl):")
+    @time @safetestset "ExponentialUtilities" begin
+        include("test_exputils.jl")
     end
 
     println("\n* Time-dependent observables (test_timedependent_observables.jl):")

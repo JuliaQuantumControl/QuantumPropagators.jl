@@ -3,6 +3,7 @@ using Pkg
 using Documenter
 using QuantumPropagators
 using QuantumPropagators: AbstractPropagator, set_t!, set_state!
+import ExponentialUtilities  # ensure ExponentialUtilities extension is loaded
 import OrdinaryDiffEq  # ensure ODE extension is loaded
 using DocumenterCitations
 using DocumenterInterLinks
@@ -46,6 +47,7 @@ links = InterLinks(
     "ComponentArrays" => "https://sciml.github.io/ComponentArrays.jl/stable/",
     "RecursiveArrayTools" => "https://docs.sciml.ai/RecursiveArrayTools/stable/",
     "ArrayInterface" => "https://docs.sciml.ai/ArrayInterface/stable/",
+    "ExponentialUtilities" => "https://docs.sciml.ai/ExponentialUtilities/stable/",
     "qutip" => "https://qutip.readthedocs.io/en/qutip-5.0.x/",
 )
 

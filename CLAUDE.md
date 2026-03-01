@@ -76,11 +76,20 @@ Uses SafeTestsets for isolated test execution. Tests are comprehensive and inclu
 
 Running `make test` prints out coverage data in a table.
 
+Tips for writing tests:
+
+- Use functions like `random_state_vector`, `random_dynamic_generator`, `random_matrix` from `QuantumControlTestUtils.RandomObjects` to generate random objects. These should always be given an explicit `StableRNG` as `rng`, with a unique seed
+
+- When a new seed is required, obtain one with `julia --project=test -e 'using QuantumControlTestUtils.RandomObjects: randseed; print(randseed())'`
+
+
 If necessary, detailed line-by-line coverage information can be obtained by running julia --project=test -e 'include("devrepl.jl"); generate_coverage_html()' after `make test`.
 This will produce html files inside the `coverage` subfolder, with `coverage/src` mirroring the structure of the `src` folder of `.jl` files. Lines with `<span class="tlaUNC">` are not covered. Ignore the raw tracefiles in the `.coverage` subfolder.
 
 ### Development Environment
+
 The project uses a sophisticated development setup:
+
 - Development REPL (devrepl.jl) with Revise.jl for hot reloading
 - Automatic dependency management via installorg.jl script
 - Integrated documentation building and serving
@@ -99,5 +108,7 @@ Each Julia function that is not explicitly private or has a name starting with a
 * Make sure to only use explicit imports in Julia code, and that there are no imported functions or constants that are not actually used.
 
 * When adding a new dependency to any `Project.toml` file, run `make distclean`, and then `make test/Manifest.toml`, `make docs/Manifest.toml`, etc. to recreate manifest files as necessary.
+
+* In order to get the documentation (docstring) of any function, e.g., `some_func`, in any package in the test environment, e.g., `SomeLib`, run `julia --project=. -e 'using REPL; using SomeLib; print(Base.doc(SomeLib.some_func))'`
 
 * Never commit any changes or ask to commit. I will always create git commits manually.
