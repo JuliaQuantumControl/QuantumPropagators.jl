@@ -1,7 +1,7 @@
 using Test
 
 using QuantumControlTestUtils.RandomObjects: random_state_vector, random_dynamic_generator
-using QuantumPropagators: QuantumPropagators, init_prop
+using QuantumPropagators: QuantumPropagators, ExponentialUtilitiesPropagator, init_prop
 using QuantumPropagators.Interfaces: check_propagator
 using StableRNGs: StableRNG
 using ExponentialUtilities
@@ -168,6 +168,7 @@ end
         verbose = false
     )
 
+    @test propagator isa ExponentialUtilitiesPropagator
     @test check_propagator(propagator)
 
     propagator = init_prop(

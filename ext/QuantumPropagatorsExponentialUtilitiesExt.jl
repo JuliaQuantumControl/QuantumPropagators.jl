@@ -6,41 +6,15 @@ using ExponentialUtilities
 
 using QuantumPropagators:
     QuantumPropagators,
-    PWCPropagator,
+    ExponentialUtilitiesPropagator,
     _pwc_get_max_genop,
     _pwc_get_genop,
     _pwc_set_genop!,
-    _pwc_set_t!,
     _pwc_advance_time!,
     _pwc_process_parameters
 using QuantumPropagators.Controls: get_controls
 using QuantumPropagators.Interfaces: supports_inplace
-import QuantumPropagators: init_prop, prop_step!, set_t!
-
-
-"""Propagator for Krylov expv propagation via ExponentialUtilities (`method=ExponentialUtilities`).
-
-This is a [`PWCPropagator`](@ref).
-"""
-mutable struct ExpvPropagator{GT,OT,ST,KST,CT} <: PWCPropagator
-    const generator::GT
-    state::ST
-    t::Float64  # time at which current `state` is defined
-    n::Int64 # index of next interval to propagate
-    const tlist::Vector{Float64}
-    parameters::AbstractDict
-    controls
-    genop::OT
-    Ks::KST
-    cache::CT
-    backward::Bool
-    inplace::Bool
-    expv_kwargs::NamedTuple
-    const timing_data::TimerOutput
-end
-
-
-set_t!(propagator::ExpvPropagator, t) = _pwc_set_t!(propagator, t)
+import QuantumPropagators: init_prop, prop_step!
 
 
 """
@@ -61,7 +35,7 @@ expv_propagator = init_prop(
 )
 ```
 
- initializes an `ExpvPropagator`.
+ initializes an [`ExponentialUtilitiesPropagator`](@ref).
 
 # Method-specific keyword arguments
 
@@ -116,7 +90,7 @@ function init_prop(
     KST = typeof(Ks)
     CT = typeof(cache)
 
-    return ExpvPropagator{GT,OT,ST,KST,CT}(
+    return ExponentialUtilitiesPropagator{GT,OT,ST,KST,CT}(
         generator,
         inplace ? copy(state) : state,
         t,
@@ -135,7 +109,7 @@ function init_prop(
 end
 
 
-function prop_step!(propagator::ExpvPropagator)
+function prop_step!(propagator::ExponentialUtilitiesPropagator)
     @timeit_debug propagator.timing_data "prop_step!" begin
         n = propagator.n
         tlist = getfield(propagator, :tlist)
