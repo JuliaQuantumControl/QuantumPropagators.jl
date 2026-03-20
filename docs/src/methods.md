@@ -84,24 +84,36 @@ init_prop(state, generator, tlist, method::Val{:ExponentialUtilities}; kwargs...
 
 This method evaluates ``\exp(-i \op{H} dt) |Ψ⟩`` via a Krylov
 [`expv`](@extref ExponentialUtilities :jl:function:`ExponentialUtilities.expv`)
-algorithm without explicitly forming the matrix exponential. It is therefore
-often a good fit for larger systems or matrix-free operators where direct matrix
-exponentiation is too costly.
+algorithm without explicitly forming the matrix exponential. It builds a
+Krylov subspace (via Arnoldi or Lanczos iteration) and then computes the
+action of the matrix exponential on the state within that subspace.
+This is often a good fit for larger systems or matrix-free operators where
+direct matrix exponentiation is too costly.
+
+The propagator requires that states and operators satisfy the `AbstractArray`
+interface (specifically,
+[`supports_vector_interface`](@ref QuantumPropagators.Interfaces.supports_vector_interface)
+for states and
+[`supports_matrix_interface`](@ref QuantumPropagators.Interfaces.supports_matrix_interface)
+for operators).
 
 **Advantages**
 
 * Avoids explicit construction of ``\op{U}``
 * Works with matrix-free operators that support `mul!`
 * Good scaling for large sparse systems
+* Supports both Hermitian (Lanczos) and non-Hermitian (Arnoldi) generators
 
 **Disadvantages**
 
 * Requires ExponentialUtilities.jl
-* Performance depends on Krylov parameters and operator structure
+* Performance depends on Krylov subspace dimension and operator structure
+* Requires operators and states to implement the `AbstractArray` interface
 
 **When to use**
 
 * Large, sparse, or matrix-free generators
+* Systems where ``\op{U}`` is too expensive to form explicitly
 
 
 ## [`Cheby`](@id method_cheby)
