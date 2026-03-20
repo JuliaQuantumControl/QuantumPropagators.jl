@@ -35,12 +35,41 @@ expv_propagator = init_prop(
 )
 ```
 
- initializes an [`ExponentialUtilitiesPropagator`](@ref).
+initializes an [`ExponentialUtilitiesPropagator`](@ref).
 
 # Method-specific keyword arguments
 
-* `expv_kwargs`: NamedTuple of keyword arguments forwarded to
-  `ExponentialUtilities.expv`.
+* `expv_kwargs`: NamedTuple of keyword arguments forwarded to the underlying
+  [`ExponentialUtilities`](https://docs.sciml.ai/ExponentialUtilities/stable/)
+  routines. For in-place propagation, these are passed to both `arnoldi!`
+  (Krylov subspace construction) and `expv!` (exponentiation). For
+  out-of-place propagation, they are passed to `expv`, which forwards them
+  internally to `arnoldi`. The most useful keyword arguments are:
+
+  * `m::Int`: Maximum Krylov subspace dimension. Defaults to
+    `min(30, size(A, 1))`. Larger values improve accuracy but increase memory
+    and computation cost per step.
+  * `ishermitian::Bool`: Whether the operator is Hermitian. Defaults to
+    `LinearAlgebra.ishermitian(A)`. When `true`, the cheaper Lanczos iteration
+    is used instead of the full Arnoldi process. Note that the propagator
+    passes `-𝕚 dt` as the time argument, so a Hermitian generator ``Ĥ`` still
+    results in a non-Hermitian product ``-𝕚 Ĥ dt``; however,
+    `ExponentialUtilities` handles the complex time scaling internally.
+  * `tol::Real`: Tolerance for happy breakdown. Defaults to `1e-7`. The
+    Arnoldi iteration stops early when the norm of the next Krylov vector
+    drops below `tol * opnorm`.
+  * `opnorm`: Operator norm of `A`. By default, this is computed
+    automatically. Supplying it avoids redundant norm computations.
+  * `iop::Int`: Incomplete orthogonalization procedure length. Defaults to `0`
+    (full orthogonalization). A positive value limits the number of previous
+    Krylov vectors used for orthogonalization, reducing cost at the expense of
+    numerical stability.
+  * `mode::Symbol`: Termination strategy for `expv`. Either
+    `:happy_breakdown` (default) or `:error_estimate`. In `:happy_breakdown`
+    mode, the iteration relies on early termination when the Krylov subspace
+    captures the relevant dynamics. In `:error_estimate` mode, an adaptive
+    step-size strategy is used with additional tolerance parameters `rtol`
+    (relative tolerance, defaults to `√tol`).
 """
 function init_prop(
     state,
@@ -70,12 +99,21 @@ function init_prop(
 
     if inplace
         A₀ = QuantumPropagators.Controls.evaluate(generator, tlist, n)
+        is_herm = get(expv_kwargs, :ishermitian, ishermitian(A₀))
+        if haskey(expv_kwargs, :mode) && expv_kwargs[:mode] == :error_estimate && !is_herm
+            throw(
+                ArgumentError(
+                    "`mode=:error_estimate` in `expv_kwargs` requires a " *
+                    "Hermitian generator. Use the default " *
+                    "`mode=:happy_breakdown` for non-Hermitian generators."
+                )
+            )
+        end
         Ks = ExponentialUtilities.arnoldi(A₀, state; expv_kwargs...)
         if haskey(expv_kwargs, :mode) && expv_kwargs[:mode] == :error_estimate
             cache = ExponentialUtilities.get_subspace_cache(Ks)
         else
             T = promote_type(eltype(A₀), eltype(state))
-            is_herm = get(expv_kwargs, :ishermitian, ishermitian(A₀))
             cache_type = is_herm ? real(T) : T
             cache = ExponentialUtilities.ExpvCache{cache_type}(Ks.m)
         end
@@ -163,7 +201,7 @@ function prop_step!(propagator::ExponentialUtilitiesPropagator)
                     propagator.expv_kwargs...
                 )
             end
-            setfield!(propagator, :state, Ψ)
+            setfield!(propagator, :state, convert(typeof(propagator.state), Ψ))
         end
 
         _pwc_advance_time!(propagator)

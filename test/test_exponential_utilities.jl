@@ -600,6 +600,37 @@ end
 end
 
 
+@testset "expv return type with real state and complex time" begin
+
+    # When the state vector has real eltype but t is complex, expv returns a
+    # complex vector due to promote_type(typeof(t), eltype(A), eltype(b)).
+    # This verifies the type promotion behavior that motivates the convert()
+    # call in the non-inplace propagator path.
+    N = 10
+    rng = StableRNG(2296342638)
+    A = random_matrix(N; rng, complex = false, hermitian = true)
+    b_real = real.(random_state_vector(N; rng))
+    @test eltype(b_real) == Float64
+    dt = 0.1
+    t = -1im * dt
+
+    # expv with complex t and real b returns Vector{ComplexF64}
+    w = ExponentialUtilities.expv(t, A, b_real)
+    @test eltype(w) == ComplexF64
+    @test typeof(w) != typeof(b_real)
+    w_expected = exp(t * A) * b_real
+    @test norm(w - w_expected) < 1e-12
+
+    # expv with complex t and complex b returns the same type as the input
+    b_complex = complex.(b_real)
+    w2 = ExponentialUtilities.expv(t, A, b_complex)
+    @test eltype(w2) == ComplexF64
+    @test typeof(w2) == typeof(b_complex)
+    @test norm(w2 - w_expected) < 1e-12
+
+end
+
+
 @testset "expv with OffsetArray state vector (broken)" begin
 
     # expv does not support OffsetVector as state vector b: arnoldi builds
