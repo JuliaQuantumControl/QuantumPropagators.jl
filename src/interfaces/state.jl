@@ -77,7 +77,10 @@ QuantumPropagators.Interfaces.supports_inplace) is `true` (read-write vector):
 
 Note: When `supports_inplace(state)` is `true`, `similar(state)` is already
 required to return the *same type* as `state` (see above). The vector interface
-checks are weaker and complementary.
+checks are weaker and complementary. However, in all cases:
+
+* `convert(typeof(state), mutable_state)` for `mutable_state = similar(state)`
+  must be defined.
 
 It is strongly recommended to always support immutable operations (also for
 mutable states)
@@ -553,6 +556,22 @@ function check_state(
         catch exc
             quiet || @error(
                 "$(px)`similar(state, ::Type{S}, dims::Dims)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            mutable_state = similar(state)
+            converted = convert(typeof(state), mutable_state)
+            if !(converted isa typeof(state))
+                quiet ||
+                    @error "$(px)`convert($(typeof(state)), similar(state))` must return a `$(typeof(state))`, not $(typeof(converted))"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`convert(typeof(state), mutable_state)` for `mutable_state = similar(state)` must be defined.",
                 exception = (exc, catch_abbreviated_backtrace())
             )
             success = false
