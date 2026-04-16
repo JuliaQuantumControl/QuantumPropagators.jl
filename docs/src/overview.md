@@ -77,7 +77,7 @@ This form differs from most textbooks by a factor of ``i``, but has the benefit 
 
 There are two fundamental approaches to solving the Schrödinger equation (or any equation of motion):
 
-1. We can analytically solve the Schrödinger equation and then numerically evaluate the solution. Mathematically, this is the application of the time evolution operator ``\op{H}`` as ``|Ψ(t+dt)⟩ = \op{U}(t) |Ψ(t)⟩``. For a piecewise-constant ``\op{H}(t)``where there is a time-independent ``\op{H}`` in the interval ``[t, t+dt]``, the time evolution operator is well-known to be
+1. We can analytically solve the Schrödinger equation and then numerically evaluate the solution. Mathematically, this is the application of the time evolution operator ``\op{U}`` as ``|Ψ(t+dt)⟩ = \op{U}(t) |Ψ(t)⟩``. For a piecewise-constant ``\op{H}(t)``where there is a time-independent ``\op{H}`` in the interval ``[t, t+dt]``, the time evolution operator is well-known to be
 
    ```math
    \op{U} = \exp[-i \op{H} dt]\,.
@@ -112,7 +112,7 @@ Furthermore, as a fallback for very small system or for debugging,
 
 * `method=ExpProp`: Explicitly construct the time evolution operator by matrix exponentiation and apply it to the state.
 
-If the [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl) or (equivalently) th [DifferentialEquations.jl](https://docs.sciml.ai/DiffEqDocs/stable/) package is loaded, `QuantumPropagators` can delegate to it:
+If the [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl) or (equivalently) the [DifferentialEquations.jl](https://docs.sciml.ai/DiffEqDocs/stable/) package is loaded, `QuantumPropagators` can delegate to it:
 
 ```julia
 using OrdinaryDiffEq
@@ -122,7 +122,11 @@ allows to pass
 
 * `method=OrdinaryDiffEq`: Use [OrdinaryDiffEq.jl](https://github.com/SciML/OrdinaryDiffEq.jl) as a backend with any of the [algorithms available for ODEs in DifferentialEquations.jl](https://docs.sciml.ai/DiffEqDocs/stable/solvers/ode_solve/), `alg=Tsit5()` by default.
 
-Unlike any of the built-in methods, `OrdinaryDiffEq` is able to propagate for time-continuous generators. This is the default for that propagator (`pwc=false`). By setting `pwc=true` or `piecewise=true`) the ODE solvers can also be used for piecewise-constant Hamiltonians or Liouvillians, providing an alternative to the built-in `method=Cheby` and `method=Newton`.
+Unlike any of the built-in methods, `OrdinaryDiffEq` is able to propagate for time-continuous generators. This is the default for that propagator (`pwc=false`). By setting `pwc=true` or `piecewise=true`, the ODE solvers can also be used for piecewise-constant Hamiltonians or Liouvillians, providing an alternative to the built-in `method=Cheby` and `method=Newton`.
+
+If the [ExponentialUtilities.jl](https://docs.sciml.ai/ExponentialUtilities/stable/expv/) package is loaded, this enables
+
+* `method=ExponentialUtilities`: Evaluate the application of the piecewise-constant time evolution operator via [`ExponentialUtilities.expv`](@extref).
 
 See the more extended discussion of [Propagation Methods](@ref) for more details.
 
@@ -182,7 +186,7 @@ Most propagators support both an in-place and a not-in-place mode. These modes c
 
 In-place operations can be dramatically more efficient for large Hilbert space dimensions. On the other hand, not-in-place operations can be more efficient for small Hilbert spaces, in particular when a [static vector](@extref StaticArrays `SVector`) can be used to represent the state. Moreover, frameworks for automatic differentiation such as [Zygote](https://fluxml.ai/Zygote.jl/stable/) do not support in-place operations.
 
-When using custom structs for states, operators, or generators, the struct itself not not need to be mutable (according to [`Base.ismutable`](@extref Julia)) in order to support `inplace=true`. It only must support the in-place operations defined in the [formal interface](@ref QuantumPropagatorsInterfacesAPI) and indicate that support by defining [`QuantumPropagators.Interfaces.supports_inplace`](@ref).
+When using custom structs for states, operators, or generators, the struct itself does not need to be mutable (according to [`Base.ismutable`](@extref Julia)) in order to support `inplace=true`. It only must support the in-place operations defined in the [formal interface](@ref QuantumPropagatorsInterfacesAPI) and indicate that support by defining [`QuantumPropagators.Interfaces.supports_inplace`](@ref).
 Typically, in-place operations on immutable custom structs involve mutating the mutable properties of that struct.
 
 

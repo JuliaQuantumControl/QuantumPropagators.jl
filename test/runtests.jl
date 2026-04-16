@@ -78,7 +78,7 @@ using SafeTestsets
         include("test_expprop.jl")
     end
 
-    println("\n* ExponentialUtilities (baseline) (test_exponential_utilities.jl):")
+    println("\n* ExponentialUtilities baseline (test_exponential_utilities.jl):")
     @time @safetestset "ExponentialUtilities (baseline)" begin
         include("test_exponential_utilities.jl")
     end
@@ -98,7 +98,7 @@ using SafeTestsets
         include("test_propagate_sequence.jl")
     end
 
-    println("\n* ExponentialUtilities (propagation) (test_exputils.jl):")
+    println("\n* ExponentialUtilities propagation (test_exputils.jl):")
     @time @safetestset "ExponentialUtilities (propagation)" begin
         include("test_exputils.jl")
     end

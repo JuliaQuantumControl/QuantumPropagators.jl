@@ -15,13 +15,16 @@ As discussed in the [Overview](@ref overview_approaches), time propagation can b
    We consider this especially in the piecewise-constant case (`pwc=true` in [`propagate`](@ref)/[`init_prop`](@ref)), which is required for the traditional optimization methods [GRAPE](https://juliaquantumcontrol.github.io/GRAPE.jl/stable/) and [Krotov](https://juliaquantumcontrol.github.io/Krotov.jl/stable/). In these propagations, the time-dependent generator ``\op{H}(t)`` is [evaluated](@ref QuantumPropagators.Controls.evaluate) to a constant operator ``\op{H}`` on each interval of the time grid. The analytical solution to the Schrödinger or Liouville equation is well known, and propagation step simply has to evaluate the application of the time evolution operator ``\op{U} = \exp[-i \op{H} dt]`` to the state ``|Ψ⟩``. The following methods are built in to `QuantumPropagators`:
 
    * [`ExpProp`](@ref method_expprop) – constructs ``\op{U}`` explicitly and then applies it to ``|Ψ⟩``
-   * [`ExponentialUtilities`](@ref method_exponentialutilities) – applies ``\op{U} |Ψ⟩`` using Krylov methods without explicitly forming ``\op{U}``
    * [`Cheby`](@ref method_cheby) — expansion of ``\op{U} |Ψ⟩`` into Chebychev polynomials, valid if ``\op{H}`` has real eigenvalues
    * [`Newton`](@ref method_newton) – expansion of ``\op{U} |Ψ⟩`` into Newton polynomials, valid if ``\op{H}`` has complex eigenvalues (non-Hermitian Hamiltonian, Liouvillian)
 
-   The `ExpProp` method is generally not numerically efficient, but works well for small system for for debugging. The two "core" methods based on a polynomials series expansions are more suitable for bigger systems and provide both efficiency and high precision (in general, the is truncated as soon as some desired precision is reached, which is machine precision by default).
+   The `ExpProp` method is generally not numerically efficient, but works well for small system for for debugging. The two "core" methods based on a polynomial series expansions are more suitable for bigger systems and provide both efficiency and high precision (in general, the series is truncated as soon as some desired precision is reached, which is machine precision by default).
 
    Note that this high precision is *within the piecewise-constant approximation*. The discretization itself may introduce a non-negligible error compared to the time-continuous dynamics. There is tradeoff: A smaller `dt` decreases the discretization error, but the polynomial expansions are more effective with larger time steps.
+
+   There is also support for _external_ packages to efficiently evaluate the application of the piecewise-constant time evolution operator:
+
+   * [`ExponentialUtilities`](@ref method_exponentialutilities) – applies ``\op{U} |Ψ⟩`` using Krylov methods without explicitly forming ``\op{U}``
 
 2. By solving the equation of motion explicitly with an ODE solver.
 
@@ -66,6 +69,38 @@ init_prop(state, generator, tlist, method::Val{:ExpProp}; kwargs...)
 * Comparing against another propagator
 
 
+## [`Cheby`](@id method_cheby)
+
+The method should be loaded with
+
+```
+using QuantumPropagators: Cheby
+```
+
+and then passed as `method=Cheby` to [`propagate`](@ref) or [`init_prop`](@ref):
+
+```@docs
+init_prop(state, generator, tlist, method::Val{:Cheby}; kwargs...)
+```
+
+The time evolution operator of the piecewise-constant Schrödinger equation ``|Ψ(t)⟩ = e^{-i Ĥ dt} |Ψ(0)⟩`` is evaluated by an expansion into Chebychev polynomials [Tal-EzerJCP1984, KosloffJCP1988](@cite). This requires ``Ĥ`` to be Hermitian (have real eigenvalues) and to have a known spectral range, so that it can be normalized to the domain ``[-1, 1]`` on which the Chebychev polynomials are defined.
+
+See [GoerzPhd2015; Chapter 3.2.1](@cite) for a detailed description of the method.
+
+**Advantages**
+
+* Very efficient for high precision and moderately large time steps
+
+**Disadvantages**
+
+* Only valid for Hermitian operators
+* Must be able to estimate the spectral envelope
+
+**When to use**
+
+* Closed quantum systems with piecewise constant dynamics
+
+
 ## [`ExponentialUtilities`](@id method_exponentialutilities)
 
 The method requires that the [ExponentialUtilities.jl](https://docs.sciml.ai/ExponentialUtilities/stable/)
@@ -108,44 +143,14 @@ for operators).
 
 * Requires ExponentialUtilities.jl
 * Performance depends on Krylov subspace dimension and operator structure
-* Requires operators and states to implement the `AbstractArray` interface
+* Requires operators and states to implement an array interface, see
+  [`QuantumPropagators.Interfaces.supports_matrix_interface`](@ref) and
+  [`QuantumPropagators.Interfaces.supports_vector_interface`](@ref), respectively
 
 **When to use**
 
 * Large, sparse, or matrix-free generators
 * Systems where ``\op{U}`` is too expensive to form explicitly
-
-
-## [`Cheby`](@id method_cheby)
-
-The method should be loaded with
-
-```
-using QuantumPropagators: Cheby
-```
-
-and then passed as `method=Cheby` to [`propagate`](@ref) or [`init_prop`](@ref):
-
-```@docs
-init_prop(state, generator, tlist, method::Val{:Cheby}; kwargs...)
-```
-
-The time evolution operator of the piecewise-constant Schrödinger equation ``|Ψ(t)⟩ = e^{-i Ĥ dt} |Ψ(0)⟩`` is evaluated by an expansion into Chebychev polynomials [Tal-EzerJCP1984, KosloffJCP1988](@cite). This requires ``Ĥ`` to be Hermitian (have real eigenvalues) and to have a known spectral range, so that it can be normalized to the domain ``[-1, 1]`` on which the Chebychev polynomials are defined.
-
-See [GoerzPhd2015; Chapter 3.2.1](@cite) for a detailed description of the method.
-
-**Advantages**
-
-* Very efficient for high precision and moderately large time steps
-
-**Disadvantages**
-
-* Only valid for Hermitian operators
-* Must be able to estimate the spectral envelope
-
-**When to use**
-
-* Closed quantum systems with piecewise constant dynamics
 
 
 ## [`Newton`](@id method_newton)
