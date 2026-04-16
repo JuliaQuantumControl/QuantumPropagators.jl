@@ -3,7 +3,9 @@ using LinearAlgebra
 using SparseArrays
 using QuantumPropagators
 using QuantumPropagators.Generators: liouvillian
+using QuantumPropagators: Cheby
 using ExponentialUtilities
+using QuantumGradientGenerators: GradGenerator, GradVector
 using StableRNGs: StableRNG
 
 
@@ -143,4 +145,28 @@ end
     @test norm(Ψ_out_expv - Ψ_out_exp) < 1e-9
 end
 
-# TODO: test a GradGen propagation
+@testset "GradGen propagation" begin
+    Ψ₀ = ComplexF64[1, 0]
+    H₀ = ComplexF64[0 0; 0 1]
+    H₁ = ComplexF64[0 1; 1 0]
+
+    tlist = collect(range(0, 10.0, length = 201))
+    ϵ = 0.2 * ones(length(tlist))
+
+    generator = hamiltonian(H₀, (H₁, ϵ))
+    G̃ = GradGenerator(generator)
+    Ψ̃₀ = GradVector(Ψ₀, 1)
+
+    Ψ̃_out = propagate(
+        Ψ̃₀,
+        G̃,
+        tlist;
+        method = ExponentialUtilities,
+        inplace = false,
+        expv_kwargs = (; ishermitian = false, tol = 1e-12)
+    )
+    Ψ_cheby = propagate(Ψ₀, generator, tlist; method = Cheby)
+
+    @test norm(Ψ̃_out.state - Ψ_cheby) < 1e-7
+    @test norm(Ψ̃_out.grad_states[1]) > 0
+end
