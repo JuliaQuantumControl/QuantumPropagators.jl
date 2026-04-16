@@ -18,9 +18,13 @@ As discussed in the [Overview](@ref overview_approaches), time propagation can b
    * [`Cheby`](@ref method_cheby) — expansion of ``\op{U} |Ψ⟩`` into Chebychev polynomials, valid if ``\op{H}`` has real eigenvalues
    * [`Newton`](@ref method_newton) – expansion of ``\op{U} |Ψ⟩`` into Newton polynomials, valid if ``\op{H}`` has complex eigenvalues (non-Hermitian Hamiltonian, Liouvillian)
 
-   The `ExpProp` method is generally not numerically efficient, but works well for small system for for debugging. The two "core" methods based on a polynomials series expansions are more suitable for bigger systems and provide both efficiency and high precision (in general, the is truncated as soon as some desired precision is reached, which is machine precision by default).
+   The `ExpProp` method is generally not numerically efficient, but works well for small system for for debugging. The two "core" methods based on a polynomial series expansions are more suitable for bigger systems and provide both efficiency and high precision (in general, the series is truncated as soon as some desired precision is reached, which is machine precision by default).
 
    Note that this high precision is *within the piecewise-constant approximation*. The discretization itself may introduce a non-negligible error compared to the time-continuous dynamics. There is tradeoff: A smaller `dt` decreases the discretization error, but the polynomial expansions are more effective with larger time steps.
+
+   There is also support for _external_ packages to efficiently evaluate the application of the piecewise-constant time evolution operator:
+
+   * [`ExponentialUtilities`](@ref method_exponentialutilities) – applies ``\op{U} |Ψ⟩`` using Krylov methods without explicitly forming ``\op{U}``
 
 2. By solving the equation of motion explicitly with an ODE solver.
 
@@ -95,6 +99,58 @@ See [GoerzPhd2015; Chapter 3.2.1](@cite) for a detailed description of the metho
 **When to use**
 
 * Closed quantum systems with piecewise constant dynamics
+
+
+## [`ExponentialUtilities`](@id method_exponentialutilities)
+
+The method requires that the [ExponentialUtilities.jl](https://docs.sciml.ai/ExponentialUtilities/stable/)
+package is loaded
+
+```
+using ExponentialUtilities
+```
+
+and then passed as `method=ExponentialUtilities` to
+[`propagate`](@ref) or [`init_prop`](@ref):
+
+```@docs
+init_prop(state, generator, tlist, method::Val{:ExponentialUtilities}; kwargs...)
+```
+
+This method evaluates ``\exp(-i \op{H} dt) |Ψ⟩`` via a Krylov
+[`expv`](@extref ExponentialUtilities :jl:function:`ExponentialUtilities.expv`)
+algorithm without explicitly forming the matrix exponential. It builds a
+Krylov subspace (via Arnoldi or Lanczos iteration) and then computes the
+action of the matrix exponential on the state within that subspace.
+This is often a good fit for larger systems or matrix-free operators where
+direct matrix exponentiation is too costly.
+
+The propagator requires that states and operators satisfy the `AbstractArray`
+interface (specifically,
+[`supports_vector_interface`](@ref QuantumPropagators.Interfaces.supports_vector_interface)
+for states and
+[`supports_matrix_interface`](@ref QuantumPropagators.Interfaces.supports_matrix_interface)
+for operators).
+
+**Advantages**
+
+* Avoids explicit construction of ``\op{U}``
+* Works with matrix-free operators that support `mul!`
+* Good scaling for large sparse systems
+* Supports both Hermitian (Lanczos) and non-Hermitian (Arnoldi) generators
+
+**Disadvantages**
+
+* Requires ExponentialUtilities.jl
+* Performance depends on Krylov subspace dimension and operator structure
+* Requires operators and states to implement an array interface, see
+  [`QuantumPropagators.Interfaces.supports_matrix_interface`](@ref) and
+  [`QuantumPropagators.Interfaces.supports_vector_interface`](@ref), respectively
+
+**When to use**
+
+* Large, sparse, or matrix-free generators
+* Systems where ``\op{U}`` is too expensive to form explicitly
 
 
 ## [`Newton`](@id method_newton)
