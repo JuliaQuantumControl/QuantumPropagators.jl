@@ -45,14 +45,6 @@ jobs:
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
-      - name: Save Julia depot cache on cancel or failure
-        id: julia-cache-save
-        if: cancelled() || failure()
-        uses: actions/cache/save@v5
-        with:
-          path: |
-            ${{ steps.julia-cache.outputs.cache-paths }}
-          key: ${{ steps.julia-cache.outputs.cache-key }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest
@@ -69,6 +61,8 @@ jobs:
       - name: "Instantiate build environment"
         run: |
           wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/scripts/installorg.jl
+          install -m 600 -D /dev/null ~/.ssh/known_hosts
+          ssh-keyscan -H github.com > ~/.ssh/known_hosts
           julia --project=docs installorg.jl
       - name: "Build documentation"
         run: julia --project=docs docs/make.jl
@@ -86,14 +80,6 @@ jobs:
           path: |
             README.md
             ./docs.zip
-      - name: Save Julia depot cache on cancel or failure
-        id: julia-cache-save
-        if: cancelled() || failure()
-        uses: actions/cache/save@v5
-        with:
-          path: |
-            ${{ steps.julia-cache.outputs.cache-paths }}
-          key: ${{ steps.julia-cache.outputs.cache-key }}
   codestyle:
     name: Codestyle
     runs-on: ubuntu-latest
