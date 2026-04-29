@@ -46,14 +46,16 @@ function specrange(H, method::Val{:auto}; kwargs...)
     if haskey(kwargs, :E_min) && haskey(kwargs, :E_max)
         return specrange(H, Val(:manual); kwargs...)
     end
-    if hasmethod(size, (typeof(H),)) && hasmethod(Array, (typeof(H),))
+    if hasmethod(size, (typeof(H),))
         if size(H)[1] <= 32
             # TODO: benchmark what a good cross-over point from exact
             # diagonalization to Arnoldi is
-            return specrange(H, Val(:diag); kwargs...)
+            if hasmethod(Array, (typeof(H),))
+                return specrange(H, Val(:diag); kwargs...)
+            end
         end
     else
-        @warn "`size(H)` and `Array(H)` are not implemented for $(typeof(H))"
+        @warn "`size(H)` not implemented for $(typeof(H))"
     end
     return specrange(H, Val(:arnoldi); kwargs...)
 end
