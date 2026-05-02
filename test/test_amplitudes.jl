@@ -1,4 +1,5 @@
 using Test
+using IOCapture: IOCapture
 using QuantumPropagators.Interfaces: check_amplitude, check_control
 using QuantumPropagators.Shapes: flattop
 using QuantumPropagators.Amplitudes: LockedAmplitude, ShapedAmplitude
@@ -25,7 +26,11 @@ using QuantumPropagators.Controls: discretize_on_midpoints
     @test length(get_controls(ampl)) == 0
     t = t_mid(tlist, 20)
     @test evaluate(ampl, tlist, 20) ≈ S(t)
-    @test_throws Exception evaluate(ampl, t)
+    captured = IOCapture.capture(rethrow = Union{}) do
+        evaluate(ampl, t)
+    end
+    @test captured.error
+    @test contains(captured.value.msg, "can only be evaluated with (tlist, n)")
 
 end
 
@@ -49,7 +54,6 @@ end
     t = t_mid(tlist, 20)
     @test evaluate(ampl, tlist, 20) ≈ ϵ(t) * S(t)
 
-
     ampl = ShapedAmplitude(ϵ, tlist; shape = S)
     @test startswith("$ampl", "ShapedAmplitude(")
     controls = get_controls(ampl)
@@ -58,7 +62,14 @@ end
     @test check_amplitude(ampl; tlist)
     t = t_mid(tlist, 20)
     @test evaluate(ampl, tlist, 20) ≈ ϵ(t) * S(t)
-    @test_throws Exception evaluate(ampl, t)
+    captured = IOCapture.capture(rethrow = Union{}) do
+        evaluate(ampl, t)
+    end
+    @test captured.error
+    @test contains(
+        captured.value.msg,
+        "vector control and shape can only be evaluated with (tlist, n)"
+    )
 
 end
 
@@ -116,7 +127,11 @@ end
     @test check_amplitude(ampl; tlist)
     t = t_mid(tlist, 20)
     @test evaluate(ampl, tlist, 20) ≈ ϵ(t) * S(t)
-    @test_throws Exception evaluate(ampl, t)
+    captured = IOCapture.capture(rethrow = Union{}) do
+        evaluate(ampl, t)
+    end
+    @test captured.error
+    @test contains(captured.value.msg, "vector shape can only be evaluated with (tlist, n)")
 
     # vector control, callable shape
     ampl = ShapedAmplitude(ϵ_vec; shape = S)
@@ -126,7 +141,14 @@ end
     @test check_amplitude(ampl; tlist)
     t = t_mid(tlist, 20)
     @test evaluate(ampl, tlist, 20) ≈ ϵ(t) * S(t)
-    @test_throws Exception evaluate(ampl, t)
+    captured = IOCapture.capture(rethrow = Union{}) do
+        evaluate(ampl, t)
+    end
+    @test captured.error
+    @test contains(
+        captured.value.msg,
+        "vector control can only be evaluated with (tlist, n)"
+    )
 
 end
 
@@ -144,6 +166,13 @@ end
     @test check_amplitude(ampl2; tlist)
     t = t_mid(tlist, 20)
     @test evaluate(ampl2, tlist, 20) ≈ ϵ(t) * S(t)
-    @test_throws Exception evaluate(ampl2, t)
+    captured = IOCapture.capture(rethrow = Union{}) do
+        evaluate(ampl2, t)
+    end
+    @test captured.error
+    @test contains(
+        captured.value.msg,
+        "vector control can only be evaluated with (tlist, n)"
+    )
 
 end
