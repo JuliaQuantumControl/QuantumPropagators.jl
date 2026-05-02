@@ -153,6 +153,85 @@ end
 end
 
 
+@testset "Invalid constructions" begin
+    tlist = collect(range(0, 10, length = 101))
+    S(t) = flattop(t, T = 10, t_rise = 2, func = :blackman)
+    ϵ(t) = 1.0
+    n = length(tlist) - 1
+
+    # LockedAmplitude: complex vector is not convertible to Vector{Float64}
+    captured = IOCapture.capture(rethrow = Union{}) do
+        LockedAmplitude(fill(1.0 + 1.0im, n))
+    end
+    @test captured.error
+    @test contains(
+        captured.value.msg,
+        "shape that is a vector must be convertible to Vector{Float64}"
+    )
+
+    # LockedAmplitude: non-vector, non-callable shape
+    captured = IOCapture.capture(rethrow = Union{}) do
+        LockedAmplitude(42)
+    end
+    @test captured.error
+    @test contains(
+        captured.value.msg,
+        "shape must either be a Vector{Float64} or a callable"
+    )
+
+    # ShapedAmplitude: complex vector control
+    captured = IOCapture.capture(rethrow = Union{}) do
+        ShapedAmplitude(fill(1.0 + 1.0im, n); shape = S)
+    end
+    @test captured.error
+    @test contains(
+        captured.value.msg,
+        "control that is a vector must be convertible to Vector{Float64}"
+    )
+
+    # ShapedAmplitude: complex vector shape
+    captured = IOCapture.capture(rethrow = Union{}) do
+        ShapedAmplitude(ϵ; shape = fill(1.0 + 1.0im, n))
+    end
+    @test captured.error
+    @test contains(
+        captured.value.msg,
+        "shape that is a vector must be convertible to Vector{Float64}"
+    )
+
+    # ShapedAmplitude: non-vector, non-callable control
+    captured = IOCapture.capture(rethrow = Union{}) do
+        ShapedAmplitude(42; shape = S)
+    end
+    @test captured.error
+    @test contains(
+        captured.value.msg,
+        "control must either be a Vector{Float64} or a callable"
+    )
+
+    # ShapedAmplitude: non-vector, non-callable shape
+    captured = IOCapture.capture(rethrow = Union{}) do
+        ShapedAmplitude(ϵ; shape = 42)
+    end
+    @test captured.error
+    @test contains(
+        captured.value.msg,
+        "shape must either be a Vector{Float64} or a callable"
+    )
+
+    # ShapedAmplitude: control and shape vectors of different lengths
+    captured = IOCapture.capture(rethrow = Union{}) do
+        ShapedAmplitude(ones(n); shape = ones(n - 1))
+    end
+    @test captured.error
+    @test contains(
+        captured.value.msg,
+        "control and shape vectors must have the same length"
+    )
+
+end
+
+
 @testset "ShapedAmplitude substitute" begin
     tlist = collect(range(0, 10, length = 101))
     S(t) = flattop(t, T = 10, t_rise = 2, func = :blackman)
