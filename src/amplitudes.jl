@@ -28,15 +28,27 @@ struct LockedAmplitude{ST}
     shape::ST
 
     function LockedAmplitude(shape::ST; check = true) where {ST}
-        if check && !(shape isa Vector{Float64})
-            try
-                shape(0.0)
-            catch
-                msg = "A LockedAmplitude shape must either be a Vector{Float64} or a callable"
-                error(msg)
+        if shape isa AbstractVector
+            if !(shape isa Vector{Float64})
+                try
+                    shape = Vector{Float64}(shape)
+                catch
+                    msg = "A LockedAmplitude shape that is a vector must be convertible to Vector{Float64}"
+                    error(msg)
+                end
             end
+            return new{Vector{Float64}}(shape)
+        else
+            if check
+                try
+                    shape(0.0)
+                catch
+                    msg = "A LockedAmplitude shape must either be a Vector{Float64} or a callable"
+                    error(msg)
+                end
+            end
+            return new{ST}(shape)
         end
-        return new{ST}(shape)
     end
 end
 
@@ -123,6 +135,22 @@ end
 
 
 function ShapedAmplitude(control; shape, check = true)
+    if control isa AbstractVector && !(control isa Vector{Float64})
+        try
+            control = Vector{Float64}(control)
+        catch
+            msg = "A ShapedAmplitude control that is a vector must be convertible to Vector{Float64}"
+            error(msg)
+        end
+    end
+    if shape isa AbstractVector && !(shape isa Vector{Float64})
+        try
+            shape = Vector{Float64}(shape)
+        catch
+            msg = "A ShapedAmplitude shape that is a vector must be convertible to Vector{Float64}"
+            error(msg)
+        end
+    end
     if check
         if !(control isa Vector{Float64})
             try
@@ -159,7 +187,7 @@ end
 function ShapedAmplitude(control, tlist::Vector{Float64}; shape)
     control = discretize_on_midpoints(control, tlist)
     shape = discretize_on_midpoints(shape, tlist)
-    return ShapedAmplitude{typeof(control),typeof(shape)}(control, shape)
+    return ShapedAmplitude{Vector{Float64},Vector{Float64}}(control, shape)
 end
 
 

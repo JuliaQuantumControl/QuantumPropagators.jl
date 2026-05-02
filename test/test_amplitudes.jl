@@ -63,6 +63,44 @@ end
 end
 
 
+@testset "Vector{Float64} conversion" begin
+    tlist = collect(range(0, 10, length = 101))
+    S(t) = flattop(t, T = 10, t_rise = 2, func = :blackman)
+    ϵ(t) = 1.0
+
+    # LockedAmplitude: callable returning Int is discretized to Vector{Float64}
+    ampl = LockedAmplitude(t -> 1, tlist)
+    @test ampl.shape isa Vector{Float64}
+    @test check_amplitude(ampl; tlist)
+
+    # LockedAmplitude: Vector{Int} is converted to Vector{Float64}
+    S_int = ones(Int, length(tlist) - 1)
+    ampl = LockedAmplitude(S_int)
+    @test ampl.shape isa Vector{Float64}
+    @test check_amplitude(ampl; tlist)
+
+    # ShapedAmplitude: callable shape returning Int
+    ampl = ShapedAmplitude(ϵ; shape = t -> 1)
+    @test check_amplitude(ampl; tlist)
+    t = t_mid(tlist, 20)
+    @test evaluate(ampl, tlist, 20) ≈ ϵ(t) * 1
+
+    # ShapedAmplitude: Vector{Int} control and shape are converted
+    ϵ_int = ones(Int, length(tlist) - 1)
+    S_int = ones(Int, length(tlist) - 1)
+    ampl = ShapedAmplitude(ϵ_int; shape = S_int)
+    @test ampl.control isa Vector{Float64}
+    @test ampl.shape isa Vector{Float64}
+    @test check_amplitude(ampl; tlist)
+
+    # ShapedAmplitude tlist constructor: callable returning Int is discretized to Vector{Float64}
+    ampl = ShapedAmplitude(t -> 1, tlist; shape = t -> 1)
+    @test ampl.control isa Vector{Float64}
+    @test ampl.shape isa Vector{Float64}
+
+end
+
+
 @testset "ShapedAmplitude mixed" begin
     tlist = collect(range(0, 10, length = 101))
     S(t) = flattop(t, T = 10, t_rise = 2, func = :blackman)
