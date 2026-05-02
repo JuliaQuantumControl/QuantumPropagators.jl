@@ -45,17 +45,17 @@ function discretize(control::Function, tlist; via_midpoints = true)
         vals_on_midpoints = discretize_on_midpoints(control, tlist)
         return discretize(vals_on_midpoints, tlist)
     else
-        return [control(t) for t in tlist]
+        return Float64[control(t) for t in tlist]
     end
 end
 
 function discretize(control::Vector, tlist)
     if length(control) == length(tlist)
-        return copy(control)
+        return Vector{Float64}(control)
     elseif length(control) == length(tlist) - 1
         # convert `control` on intervals to values on `tlist`
         # cf. pulse_onto_tlist in Python krotov package
-        vals = zeros(eltype(control), length(control) + 1)
+        vals = zeros(Float64, length(control) + 1)
         vals[1] = control[1]
         vals[end] = control[end]
         for i = 2:(length(vals)-1)
@@ -193,9 +193,9 @@ end
 
 function discretize_on_midpoints(control::Vector, tlist)
     if length(control) == length(tlist) - 1
-        return copy(control)
+        return Vector{Float64}(control)
     elseif length(control) == length(tlist)
-        vals = Vector{eltype(control)}(undef, length(tlist) - 1)
+        vals = Vector{Float64}(undef, length(tlist) - 1)
         vals[1] = control[1]
         vals[end] = control[end]
         for i = 2:(length(vals)-1)
