@@ -2,8 +2,8 @@ using Test
 using QuantumPropagators.Interfaces: check_amplitude, check_control
 using QuantumPropagators.Shapes: flattop
 using QuantumPropagators.Amplitudes: LockedAmplitude, ShapedAmplitude
-using QuantumPropagators.Controls: evaluate, get_controls, t_mid
-using QuantumPropagators.Controls: discretize_on_midpoints # DEBUG
+using QuantumPropagators.Controls: evaluate, get_controls, substitute, t_mid
+using QuantumPropagators.Controls: discretize_on_midpoints
 
 @testset "LockedAmplitude" begin
 
@@ -25,6 +25,7 @@ using QuantumPropagators.Controls: discretize_on_midpoints # DEBUG
     @test length(get_controls(ampl)) == 0
     t = t_mid(tlist, 20)
     @test evaluate(ampl, tlist, 20) ≈ S(t)
+    @test_throws Exception evaluate(ampl, t)
 
 end
 
@@ -57,5 +58,54 @@ end
     @test check_amplitude(ampl; tlist)
     t = t_mid(tlist, 20)
     @test evaluate(ampl, tlist, 20) ≈ ϵ(t) * S(t)
+    @test_throws Exception evaluate(ampl, t)
+
+end
+
+
+@testset "ShapedAmplitude mixed" begin
+    tlist = collect(range(0, 10, length = 101))
+    S(t) = flattop(t, T = 10, t_rise = 2, func = :blackman)
+    ϵ(t) = 1.0
+    S_vec = discretize_on_midpoints(S, tlist)
+    ϵ_vec = discretize_on_midpoints(ϵ, tlist)
+
+    # callable control, vector shape
+    ampl = ShapedAmplitude(ϵ; shape = S_vec)
+    @test startswith("$ampl", "ShapedAmplitude(")
+    controls = get_controls(ampl)
+    @test length(controls) == 1
+    @test check_amplitude(ampl; tlist)
+    t = t_mid(tlist, 20)
+    @test evaluate(ampl, tlist, 20) ≈ ϵ(t) * S(t)
+    @test_throws Exception evaluate(ampl, t)
+
+    # vector control, callable shape
+    ampl = ShapedAmplitude(ϵ_vec; shape = S)
+    @test startswith("$ampl", "ShapedAmplitude(")
+    controls = get_controls(ampl)
+    @test length(controls) == 1
+    @test check_amplitude(ampl; tlist)
+    t = t_mid(tlist, 20)
+    @test evaluate(ampl, tlist, 20) ≈ ϵ(t) * S(t)
+    @test_throws Exception evaluate(ampl, t)
+
+end
+
+
+@testset "ShapedAmplitude substitute" begin
+    tlist = collect(range(0, 10, length = 101))
+    S(t) = flattop(t, T = 10, t_rise = 2, func = :blackman)
+    ϵ(t) = 1.0
+    ϵ_vec = discretize_on_midpoints(ϵ, tlist)
+
+    ampl = ShapedAmplitude(ϵ; shape = S)
+    ampl2 = substitute(ampl, IdDict(ϵ => ϵ_vec))
+    @test ampl2 isa ShapedAmplitude
+    @test get_controls(ampl2)[1] === ϵ_vec
+    @test check_amplitude(ampl2; tlist)
+    t = t_mid(tlist, 20)
+    @test evaluate(ampl2, tlist, 20) ≈ ϵ(t) * S(t)
+    @test_throws Exception evaluate(ampl2, t)
 
 end
