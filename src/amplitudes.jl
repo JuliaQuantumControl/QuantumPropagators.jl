@@ -1,6 +1,6 @@
 module Amplitudes
 
-export LockedAmplitude, ShapedAmplitude
+export LockedAmplitude, ShapedAmplitude, GuidedAmplitude
 
 import ..Controls: get_controls, evaluate, substitute, discretize_on_midpoints
 using ..Controls: t_mid
@@ -255,6 +255,230 @@ function evaluate(ampl::ShapedAmplitude, args...; vals_dict = IdDict())
     S_t = evaluate(ampl.shape, args...; vals_dict)
     ϵ_t = evaluate(ampl.control, args...; vals_dict)
     return S_t * ϵ_t
+end
+
+
+#### GuidedAmplitude ##########################################################
+
+
+"""A shaped control relative to an existing guide.
+
+```julia
+ampl = GuidedAmplitude(control; guide=guide, shape=shape)
+```
+
+produces an amplitude ``a(t) = G(t) + S(t) ϵ(t)``, where ``G(t)`` corresponds
+to `guide`, ``S(t)`` to `shape`, and ``ϵ(t)`` to `control`. Each of `control`,
+`shape`, and `guide` must be either a `Vector{Float64}` of values defined on the
+midpoints of a time grid or a callable. Any two that are vectors must have the
+same length. If all three are callables, `ampl` will also be callable. The
+`guide` may also be a `Number`, which is converted to a vector of constant
+values if `control` is a vector, or to a constant function if `control` is a
+callable.
+
+```julia
+ampl = GuidedAmplitude(control, tlist; guide=guide, shape=shape)
+```
+
+discretizes `control`, `shape`, and `guide` to the midpoints of `tlist`.
+"""
+struct GuidedAmplitude{CT,ST,GT} <: ControlAmplitude
+    control::CT
+    shape::ST
+    guide::GT
+end
+
+
+function GuidedAmplitude(control; shape, guide, check = true)
+    if control isa AbstractVector && !(control isa Vector{Float64})
+        try
+            control = Vector{Float64}(control)
+        catch
+            msg = "A GuidedAmplitude control that is a vector must be convertible to Vector{Float64}"
+            error(msg)
+        end
+    end
+    if shape isa AbstractVector && !(shape isa Vector{Float64})
+        try
+            shape = Vector{Float64}(shape)
+        catch
+            msg = "A GuidedAmplitude shape that is a vector must be convertible to Vector{Float64}"
+            error(msg)
+        end
+    end
+    if guide isa Number
+        guide_val = Float64(guide)
+        if control isa Vector{Float64}
+            guide = fill(guide_val, length(control))
+        else
+            guide = t -> guide_val
+        end
+    elseif guide isa AbstractVector && !(guide isa Vector{Float64})
+        try
+            guide = Vector{Float64}(guide)
+        catch
+            msg = "A GuidedAmplitude guide that is a vector must be convertible to Vector{Float64}"
+            error(msg)
+        end
+    end
+    if check
+        if !(control isa Vector{Float64})
+            try
+                control(0.0)
+            catch
+                msg = "A GuidedAmplitude control must either be a Vector{Float64} or a callable"
+                error(msg)
+            end
+        end
+        if !(shape isa Vector{Float64})
+            try
+                shape(0.0)
+            catch
+                msg = "A GuidedAmplitude shape must either be a Vector{Float64} or a callable"
+                error(msg)
+            end
+        end
+        if !(guide isa Vector{Float64})
+            try
+                guide(0.0)
+            catch
+                msg = "A GuidedAmplitude guide must either be a Vector{Float64} or a callable"
+                error(msg)
+            end
+        end
+        lengths = Int[]
+        (control isa Vector{Float64}) && push!(lengths, length(control))
+        (shape isa Vector{Float64}) && push!(lengths, length(shape))
+        (guide isa Vector{Float64}) && push!(lengths, length(guide))
+        if length(lengths) > 1 && !all(==(lengths[1]), lengths)
+            msg = "GuidedAmplitude control, shape, and guide vectors must all have the same length"
+            error(msg)
+        end
+    end
+    return GuidedAmplitude{typeof(control),typeof(shape),typeof(guide)}(
+        control,
+        shape,
+        guide
+    )
+end
+
+
+function GuidedAmplitude(control, tlist::Vector{Float64}; shape, guide)
+    control = discretize_on_midpoints(control, tlist)
+    shape = discretize_on_midpoints(shape, tlist)
+    if guide isa Number
+        guide = fill(Float64(guide), length(tlist) - 1)
+    else
+        guide = discretize_on_midpoints(guide, tlist)
+    end
+    return GuidedAmplitude{Vector{Float64},Vector{Float64},Vector{Float64}}(
+        control,
+        shape,
+        guide
+    )
+end
+
+
+function Base.show(io::IO, ampl::GuidedAmplitude)
+    print(
+        io,
+        "GuidedAmplitude(::$(typeof(ampl.control)); guide::$(typeof(ampl.guide)), shape::$(typeof(ampl.shape)))"
+    )
+end
+
+
+function substitute(ampl::GuidedAmplitude, replacements)
+    ampl in keys(replacements) && return replacements[ampl]
+    control = substitute(ampl.control, replacements)
+    return GuidedAmplitude(control; shape = ampl.shape, guide = ampl.guide, check = true)
+end
+
+
+Base.Array(ampl::GuidedAmplitude{Vector{Float64},Vector{Float64},Vector{Float64}}) =
+    ampl.guide .+ ampl.control .* ampl.shape
+
+(ampl::GuidedAmplitude)(t::Float64) = ampl.guide(t) + ampl.shape(t) * ampl.control(t)
+
+
+# Vector shape, vector guide
+function evaluate(
+    ampl::GuidedAmplitude{CT,Vector{Float64},Vector{Float64}},
+    tlist::Vector{Float64},
+    n::Int;
+    vals_dict = IdDict()
+) where {CT}
+    G_t = ampl.guide[n]
+    S_t = ampl.shape[n]
+    ϵ_t = evaluate(ampl.control, tlist, n; vals_dict)
+    return G_t + S_t * ϵ_t
+end
+
+# Callable shape, vector guide
+function evaluate(
+    ampl::GuidedAmplitude{CT,ST,Vector{Float64}},
+    tlist::Vector{Float64},
+    n::Int;
+    vals_dict = IdDict()
+) where {CT,ST}
+    G_t = ampl.guide[n]
+    S_t = ampl.shape(t_mid(tlist, n))
+    ϵ_t = evaluate(ampl.control, tlist, n; vals_dict)
+    return G_t + S_t * ϵ_t
+end
+
+# Vector shape, callable guide
+function evaluate(
+    ampl::GuidedAmplitude{CT,Vector{Float64},GT},
+    tlist::Vector{Float64},
+    n::Int;
+    vals_dict = IdDict()
+) where {CT,GT}
+    G_t = ampl.guide(t_mid(tlist, n))
+    S_t = ampl.shape[n]
+    ϵ_t = evaluate(ampl.control, tlist, n; vals_dict)
+    return G_t + S_t * ϵ_t
+end
+
+# Callable shape, callable guide
+function evaluate(
+    ampl::GuidedAmplitude,
+    tlist::Vector{Float64},
+    n::Int;
+    vals_dict = IdDict()
+)
+    t = t_mid(tlist, n)
+    G_t = ampl.guide(t)
+    S_t = ampl.shape(t)
+    ϵ_t = evaluate(ampl.control, tlist, n; vals_dict)
+    return G_t + S_t * ϵ_t
+end
+
+function evaluate(
+    ampl::GuidedAmplitude{CT,ST,GT},
+    t::Float64;
+    vals_dict = IdDict()
+) where {CT<:Function,ST<:Function,GT<:Function}
+    G_t = ampl.guide(t)
+    S_t = ampl.shape(t)
+    ϵ_t = evaluate(ampl.control, t; vals_dict)
+    return G_t + S_t * ϵ_t
+end
+
+function evaluate(ampl::GuidedAmplitude, t::Float64; vals_dict = IdDict())
+    if ampl.control isa Vector{Float64}
+        msg = "A GuidedAmplitude with a vector control can only be evaluated with (tlist, n)."
+        error(msg)
+    elseif ampl.shape isa Vector{Float64}
+        msg = "A GuidedAmplitude with a vector shape can only be evaluated with (tlist, n)."
+        error(msg)
+    elseif ampl.guide isa Vector{Float64}
+        msg = "A GuidedAmplitude with a vector guide can only be evaluated with (tlist, n)."
+        error(msg)
+    end
+    G_t = ampl.guide(t)
+    S_t = ampl.shape(t)
+    ϵ_t = evaluate(ampl.control, t; vals_dict)
+    return G_t + S_t * ϵ_t
 end
 
 
