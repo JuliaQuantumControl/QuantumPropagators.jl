@@ -103,6 +103,17 @@ Uses Documenter.jl with comprehensive API documentation and examples. Documentat
 
 Each Julia function that is not explicitly private or has a name starting with an underscore must have a docstring. The format for the docstring is to have a "title" / description of the function in the first line, less than 80 characters, followed by a fenced code block (```` ```julia...``` ````; do not use an indented code block). The code block should be valid Julia code that illustrates a default call to the function. If the function returns something, the code block should be an assignment with instructive names for the returned variables. The code block should be readable as the start of an active-voice sentence that continues after the code block. Following the paragraph started by the code block, use section `#Arguments`, `# Keyword Arguments`, `# Returns`, etc, as necessary. Be as concise as possible. For example, if the code block paragraph already fully explains the return type, an explicit `# Returns` section is unnecessary. Use Unicode as much as possible for any math in the docstring.
 
+## Changelog
+
+`CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) / [SemVer](https://semver.org/). Non-obvious conventions:
+
+* Record user-facing changes under `## [Unreleased]` as bullets with an inline category prefix (`Added:`/`Changed:`/`Deprecated:`/`Removed:`/`Fixed:`/`Security:`), not `###` subsections; link issues/PRs as `[[#123]]`, issue before its resolving PR (`[[#91], [#93]]`). Exclude CI, dependency bumps, formatting, and internal-only changes — a leading underscore (e.g. `_check_amplitudes`) marks a name as internal.
+* Pre-1.0, Julia treats every `v0.x.0` as breaking, so non-breaking changes go into a `v0.x.y` bugfix release.
+* Version links point to the release page (`[vX.Y.Z]: …/releases/tag/vX.Y.Z`); only `[Unreleased]` uses a compare link (`…/compare/v<latest>..HEAD`).
+* `pull/` vs `issues/` can't be verified by loading the URL (GitHub redirects between them); confirm the category with `gh api repos/JuliaQuantumControl/QuantumPropagators.jl/issues/<N> --jq 'if has("pull_request") then "pull" else "issue" end'`.
+* Releasing on a `release-*` branch: rename `## [Unreleased]` to `## [vX.Y.Z] — YYYY-MM-DD` and point `[Unreleased]` at `…/compare/vX.Y.Z..HEAD`, but do **not** add a fresh `## [Unreleased]` heading — re-add it when merging back to `master`.
+* `make check-changelog` validates links (textual, no network; also run in CI via `make codestyle`); `make changelog` additionally fills in missing `[#N]` targets, so you can just write `[[#123]]`. Neither verifies that links resolve — check that, and the issue/PR category, manually.
+
 ## General Guidelines
 
 * Make sure to only use explicit imports in Julia code, and that there are no imported functions or constants that are not actually used.
