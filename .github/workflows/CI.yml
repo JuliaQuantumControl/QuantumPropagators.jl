@@ -127,7 +127,7 @@ jobs:
         shell: julia {0}
         run: |
           using Pkg
-          Pkg.add(PackageSpec(name="JuliaFormatter"))
+          Pkg.add(PackageSpec(name="JuliaFormatter", version="2.3.0"))
           using JuliaFormatter
           format(".", verbose=true)
       - name: Format Check

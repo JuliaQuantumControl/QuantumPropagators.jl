@@ -45,4 +45,5 @@ QuantumPropagators = {path = ".."}
 
 [compat]
 Documenter = "1.4"
+JuliaFormatter = "=2.3.0"
 julia = "1.9"
