@@ -2,31 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Development Commands
+## Contributor Workflow
 
-### Testing
+This package follows the contributor workflow in @CONTRIBUTING.md (running tests, building docs, formatting, the changelog, and the release process). Act in line with how a human contributor would. Key commands:
 
-- `make test` - Run the full test suite
-- `julia --project=test -e 'include("test/runtests.jl")'` - Run tests directly
-
-### Development Environment
-
-- `make devrepl` - Start interactive REPL with development environment (recommended for development)
-- `julia -i --banner=no devrepl.jl` - Alternative way to start development REPL
-
-### Documentation
-
-- `make docs` - Build documentation
-
-### Code Quality
-
-- `make codestyle` - Apply JuliaFormatter to entire project
-- `julia --project=test -e 'using JuliaFormatter; format(".", verbose=true)'` - Format code directly
-
-### Cleanup
-
-- `make clean` - Clean build/doc/testing artifacts
-- `make distclean` - Restore to clean checkout state
+- `make test` — run the full test suite (or `julia --project=test -e 'include("test/runtests.jl")'`)
+- `make devrepl` — start the development REPL (Revise, JuliaFormatter, coverage helpers); alternatively `julia -i --banner=no devrepl.jl`
+- `make docs` — build the documentation
+- `make codestyle` — apply JuliaFormatter (version pinned in `test/Project.toml`) and validate the changelog
+- `make clean` / `make distclean` — remove build/test artifacts
 
 ## Project Architecture
 
@@ -85,19 +69,6 @@ Tips for writing tests:
 
 If necessary, detailed line-by-line coverage information can be obtained by running julia --project=test -e 'include("devrepl.jl"); generate_coverage_html()' after `make test`.
 This will produce html files inside the `coverage` subfolder, with `coverage/src` mirroring the structure of the `src` folder of `.jl` files. Lines with `<span class="tlaUNC">` are not covered. Ignore the raw tracefiles in the `.coverage` subfolder.
-
-### Development Environment
-
-The project uses a sophisticated development setup:
-
-- Development REPL (devrepl.jl) with Revise.jl for hot reloading
-- Automatic dependency management via installorg.jl script
-- Integrated documentation building and serving
-- Code formatting with JuliaFormatter
-
-### Documentation
-
-Uses Documenter.jl with comprehensive API documentation and examples. Documentation includes detailed method explanations.
 
 ## Docstrings
 

@@ -1,9 +1,3 @@
-<!--
-SPDX-FileCopyrightText: © 2025 Michael Goerz <mail@michaelgoerz.net>
-
-SPDX-License-Identifier: CC-BY-4.0
--->
-
 # Release Notes
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
