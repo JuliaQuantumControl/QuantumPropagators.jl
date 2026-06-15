@@ -10,7 +10,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Contributor Workflow
 
-This package follows the contributor workflow in @CONTRIBUTING.md (running tests, building docs, formatting, the changelog, and the release process). Act in line with how a human contributor would. Key commands:
+This package follows the organization-wide contributor workflow (running tests, building docs, formatting, the changelog, and the release process). Read these shared guidelines and act in line with how a human contributor would:
+
+@../.github/CONTRIBUTING.md
+
+If the `@`-reference above did not load its contents (the org-wide `.github` checkout is not present), fetch the guidelines from <https://raw.githubusercontent.com/JuliaQuantumControl/.github/master/CONTRIBUTING.md> instead.
+
+Key commands:
 
 - `make test` — run the full test suite (or `julia --project=test -e 'include("test/runtests.jl")'`)
 - `make devrepl` — start the development REPL (Revise, JuliaFormatter, coverage helpers); alternatively `julia -i --banner=no devrepl.jl`
@@ -90,6 +96,10 @@ Each Julia function that is not explicitly private or has a name starting with a
 * `pull/` vs `issues/` can't be verified by loading the URL (GitHub redirects between them); confirm the category with `gh api repos/JuliaQuantumControl/QuantumPropagators.jl/issues/<N> --jq 'if has("pull_request") then "pull" else "issue" end'`.
 * Releasing on a `release-*` branch: rename `## [Unreleased]` to `## [vX.Y.Z] — YYYY-MM-DD` and point `[Unreleased]` at `…/compare/vX.Y.Z..HEAD`, but do **not** add a fresh `## [Unreleased]` heading — re-add it when merging back to `master`.
 * `make check-changelog` validates links (textual, no network; also run in CI via `make codestyle`); `make changelog` additionally fills in missing `[#N]` targets, so you can just write `[[#123]]`. Neither verifies that links resolve — check that, and the issue/PR category, manually.
+
+## Licensing
+
+This package is REUSE-compliant: every file declares its copyright and license via SPDX tags, enforced by CI (verify locally with `make reuse`).
 
 ## General Guidelines
 
