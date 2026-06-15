@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases).
 
-## [Unreleased]
+## [v0.9.0] — 2026-06-15
 
 * Added: `ExponentialUtilitiesPropagator`, a propagator based on `expv` from [ExponentialUtilities.jl](https://github.com/SciML/ExponentialUtilities.jl), with Krylov-subspace caching for in-place propagation [[#97]]
 * Added: `GuidedAmplitude`, a control amplitude defined relative to an existing reference amplitude [[#111]]
@@ -181,7 +181,8 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 
 Initial public release
 
-[Unreleased]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/compare/v0.8.5..HEAD
+[Unreleased]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/compare/v0.9.0..HEAD
+[v0.9.0]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.9.0
 [v0.8.5]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.8.5
 [v0.8.4]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.8.4
 [v0.8.3]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.8.3
