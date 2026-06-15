@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+#
+# SPDX-License-Identifier: MIT
+
 using .Controls: get_controls
 using .Interfaces: supports_inplace
 using TimerOutputs: reset_timer!, @timeit_debug, TimerOutput

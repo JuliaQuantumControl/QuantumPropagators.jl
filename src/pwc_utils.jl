@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+#
+# SPDX-License-Identifier: MIT
+
 # Internal utility functions for PiecewisePropagators
 #
 # These allow to eliminate code duplication between the various sub-types of

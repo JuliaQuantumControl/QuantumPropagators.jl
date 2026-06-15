@@ -1,3 +1,8 @@
+```@meta
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+# SPDX-License-Identifier: MIT OR CC-BY-4.0
+```
+
 # Expectation Values
 
 The [`propagate`](@ref) routine allows the storage of data for every point of the time grid.  This is done by passing it a `storage` object created with [`QuantumPropagators.Storage.init_storage`](@ref), or simply `storage=true` in order to create the appropriate storage automatically.

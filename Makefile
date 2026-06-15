@@ -1,4 +1,8 @@
-.PHONY: help test docs clean distclean devrepl codestyle check-changelog changelog servedocs
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+#
+# SPDX-License-Identifier: MIT OR CC0-1.0
+
+.PHONY: help test docs clean distclean devrepl codestyle check-changelog changelog servedocs reuse
 .DEFAULT_GOAL := help
 
 JULIA ?= julia
@@ -85,6 +89,19 @@ check-changelog: ## Validate the links in CHANGELOG.md
 
 changelog: ## Validate CHANGELOG.md and add any missing issue/PR link targets
 	$(JULIA) test/check_changelog.jl --fix
+
+
+reuse: ## Check REUSE/SPDX licensing compliance (requires uv or pipx)
+	@if command -v reuse >/dev/null 2>&1; then \
+	    reuse lint; \
+	elif command -v uvx >/dev/null 2>&1; then \
+	    uvx reuse lint; \
+	elif command -v pipx >/dev/null 2>&1; then \
+	    pipx run reuse lint; \
+	else \
+	    echo "Please install 'reuse' (https://reuse.software), or 'uv'/'pipx'"; \
+	    exit 1; \
+	fi
 
 
 distclean: clean ## Restore to a clean checkout state

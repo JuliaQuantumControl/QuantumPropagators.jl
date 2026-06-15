@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+#
+# SPDX-License-Identifier: MIT
+
 using Test
 
 using ..Controls: discretize, discretize_on_midpoints, get_parameters, ParameterizedFunction

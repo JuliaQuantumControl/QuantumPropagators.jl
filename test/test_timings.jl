@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+#
+# SPDX-License-Identifier: MIT
+
 using Test
 using QuantumPropagators
 using QuantumControlTestUtils.RandomObjects: random_state_vector, random_dynamic_generator

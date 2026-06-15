@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+#
+# SPDX-License-Identifier: MIT
+
 using TimerOutputs: enable_debug_timings, disable_debug_timings
 
 """Enable the collection of `TimerOutputs` data.

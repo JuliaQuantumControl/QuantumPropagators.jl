@@ -1,3 +1,8 @@
+```@meta
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+# SPDX-License-Identifier: MIT OR CC-BY-4.0
+```
+
 # Profiling Howto
 
 To choose an appropriate propagation method and parameters for a given problem, it is essential to benchmark and profile the propagation.

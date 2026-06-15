@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+
+SPDX-License-Identifier: MIT OR CC0-1.0
+-->
+
 # Release Notes
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -18,6 +24,7 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Changed: `check_state` now requires that `convert(typeof(state), similar(state))` is defined [[#108]]
 * Changed: Automatic spectral-range estimation now silently falls back to Arnoldi for operators that are not `Array`, instead of emitting a warning
 * Fixed: The fallback for `supports_inplace` on `AbstractArray`/`AbstractVector` was obsolete and inconsistent [[#103]]
+* Added: Per-file copyright and licensing information following the [REUSE specification](https://reuse.software). Source code remains under the MIT License; documentation is additionally available under `CC-BY-4.0`, and trivial files under `CC0-1.0`.
 
 ## [v0.8.5] — 2025-10-30
 

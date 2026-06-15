@@ -1,3 +1,8 @@
+```@meta
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+# SPDX-License-Identifier: MIT OR CC-BY-4.0
+```
+
 # Dynamical Generators
 
 The [`propagate`](@ref QuantumPropagators.propagate) routine simulates the dynamics of a state ``|Ψ⟩`` or ``ρ̂`` under the assumption that the dynamics are described by a `generator` object. The exact equation of motion is implicit in the [`Propagator`](@ref QuantumPropagators.AbstractPropagator), but all propagators implemented in the `QuantumPropagators` package assume that the generator is the time-dependent Hamiltonian ``Ĥ(t)`` in the Schrödinger equation (``ħ=1``)

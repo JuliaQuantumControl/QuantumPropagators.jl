@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+#
+# SPDX-License-Identifier: MIT
+
 using QuantumPropagators.Controls: get_controls
 using QuantumPropagators: PWCPropagator, _pwc_process_parameters, _pwc_advance_time!
 using QuantumControlTestUtils.RandomObjects: random_state_vector
