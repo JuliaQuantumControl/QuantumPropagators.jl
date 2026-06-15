@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+#
+# SPDX-License-Identifier: MIT
+
 using Test
 using IOCapture: IOCapture
 using QuantumPropagators.Interfaces: check_amplitude, check_control

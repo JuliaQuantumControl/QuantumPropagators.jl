@@ -1,0 +1,23 @@
+version = 1
+
+# Package metadata files are managed by Julia's Pkg and cannot reliably carry
+# SPDX comment headers.
+[[annotations]]
+path = [
+    "**/Project.toml",
+    "**/Manifest.toml",
+]
+SPDX-FileCopyrightText = "© 2021 Michael Goerz <mail@michaelgoerz.net>"
+SPDX-License-Identifier = "MIT OR CC0-1.0"
+
+# Auto-generated documentation inventories (DocInventories).
+[[annotations]]
+path = "docs/src/inventories/*"
+SPDX-FileCopyrightText = "© 2021 Michael Goerz <mail@michaelgoerz.net>"
+SPDX-License-Identifier = "MIT OR CC0-1.0"
+
+# Bibliography data.
+[[annotations]]
+path = "docs/src/refs.bib"
+SPDX-FileCopyrightText = "© 2021 Michael Goerz <mail@michaelgoerz.net>"
+SPDX-License-Identifier = "MIT OR CC0-1.0"

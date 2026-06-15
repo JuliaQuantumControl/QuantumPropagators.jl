@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+#
+# SPDX-License-Identifier: MIT
+
 # https://discourse.julialang.org/t/106649
 function catch_abbreviated_backtrace()
     bt_caught = catch_backtrace()

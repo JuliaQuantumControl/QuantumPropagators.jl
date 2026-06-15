@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: © 2021 Michael Goerz <mail@michaelgoerz.net>
+
+SPDX-License-Identifier: MIT OR CC0-1.0
+-->
+
 # Contributing
 
 Everyone is welcome to contribute! You can contribute via simply opening Issues reporting bugs or requesting features.
@@ -60,6 +66,18 @@ Run `make clean` or `make distclean` to remove the documentation build, see `mak
 
 For any user-facing change (a new feature, a change in behavior, a bug fix, a deprecation, etc.), add a bullet to the `## [Unreleased]` section of `CHANGELOG.md`, following the format of the existing entries. Reference the relevant issue or pull request as `[[#123]]`. Run `make changelog` to fill in the link targets and `make check-changelog` to validate the links; the latter also runs as part of the continuous integration. Purely internal changes (refactoring, tests, CI, dependency bumps) do not need a changelog entry.
 
+
+## Licensing
+
+This project is [REUSE-compliant](https://reuse.software): every file declares its copyright and license via SPDX tags. CI enforces this (the `REUSE` workflow); verify locally with `make reuse`. Key points when adding new files:
+
+* Always add an SPDX header to any new file (or a sidecar `*.license` file when the format has no comment syntax). The copyright is `© <year> Michael Goerz <mail@michaelgoerz.net>` where `<year>` is the year of file creation
+* Choose the license by category:
+  - Source code (`src/`, `ext/`, `test/`, other code) → `MIT`
+  - Prose/documentation (`README`, `CHANGELOG`, `docs/src/*.md`) → `MIT OR CC-BY-4.0`
+  - Trivial config/tooling (`Makefile`, `docs/make.jl`, `.gitignore`, CI YAML, `Project.toml`, …) → `MIT OR CC0-1.0`
+* Header style by file type: `#`-comment block for Julia/Python/Make/YAML/`.gitignore`; HTML comment (`<!-- … -->`) for top-level Markdown; a `@meta` block for `docs/src/*.md` (Documenter strips it); `REUSE.toml` only as a last resort for tooling-managed files (`Project.toml`, generated data).
+* Any license used must have its text in `LICENSES/`.
 
 ## Maintainer Notes
 
