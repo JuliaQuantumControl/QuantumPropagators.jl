@@ -9,7 +9,7 @@ SPDX-License-Identifier: MIT OR CC-BY-4.0
 [![version](https://juliahub.com/docs/General/QuantumPropagators/stable/version.svg)](https://juliahub.com/ui/Packages/General/QuantumPropagators)
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaquantumcontrol.github.io/QuantumPropagators.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliaquantumcontrol.github.io/QuantumPropagators.jl/dev)
-[![Build Status](https://github.com/JuliaQuantumControl/QuantumPropagators.jl/workflows/CI/badge.svg)](https://github.com/JuliaQuantumControl/QuantumPropagators.jl/actions)
+[![Build Status](https://github.com/JuliaQuantumControl/QuantumPropagators.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/JuliaQuantumControl/QuantumPropagators.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 [![REUSE](https://github.com/JuliaQuantumControl/QuantumPropagators.jl/actions/workflows/REUSE.yml/badge.svg)](https://github.com/JuliaQuantumControl/QuantumPropagators.jl/actions/workflows/REUSE.yml)
 [![Coverage](https://codecov.io/gh/JuliaQuantumControl/QuantumPropagators.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaQuantumControl/QuantumPropagators.jl)
 
