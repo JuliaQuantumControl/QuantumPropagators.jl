@@ -92,6 +92,11 @@ using SafeTestsets
         include("test_prop_interfaces.jl")
     end
 
+    println("\n* Storage (test_storage.jl):")
+    @time @safetestset "Storage" begin
+        include("test_storage.jl")
+    end
+
     println("\n* Propagate (test_propagate.jl):")
     @time @safetestset "Propagate" begin
         include("test_propagate.jl")

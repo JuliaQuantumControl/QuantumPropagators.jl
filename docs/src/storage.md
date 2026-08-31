@@ -22,12 +22,12 @@ After each propagation step, with a propagated state at time slot `i`,
 1. [`data = QuantumPropagators.Storage.map_observables(observables, tlist, i, state)`](@ref QuantumPropagators.Storage.map_observables) generates `data` from the propagated state
 2. [`QuantumPropagators.Storage.write_to_storage!(storage, i, data)`](@ref QuantumPropagators.Storage.write_to_storage!) places that `data` into `storage` for time slot `i`
 
-After [`propagate`](@ref) returns, the [`QuantumPropagators.Storage.get_from_storage!`](@ref) routine can be used to extract data from any time slot. This interface hides the internal memory organization of `storage`, which is set up by [`init_storage`](@ref QuantumPropagators.Storage.init_storage) based on the type of `state` and the given `observables`. This system can be extended with multiple dispatch, allowing to optimize the `storage` for custom data types. Obviously, [`init_storage`](@ref QuantumPropagators.Storage.init_storage), [`map_observables`](@ref QuantumPropagators.Storage.map_observables), [`write_to_storage!`](@ref QuantumPropagators.Storage.write_to_storage!), and [`get_from_storage!`](@ref QuantumPropagators.Storage.get_from_storage!) must all be consistent.
+After [`propagate`](@ref) returns, the [`QuantumPropagators.Storage.get_from_storage!`](@ref) routine can be used to extract data from any time slot. This interface hides the internal memory organization of `storage`, which is set up by [`init_storage`](@ref QuantumPropagators.Storage.init_storage) based on the type of `state` and the given `observables`. This system can be extended with multiple dispatch, allowing to optimize the `storage` for custom data types. Obviously, [`init_storage`](@ref QuantumPropagators.Storage.init_storage), [`map_observables`](@ref QuantumPropagators.Storage.map_observables), [`write_to_storage!`](@ref QuantumPropagators.Storage.write_to_storage!), and [`get_from_storage!`](@ref QuantumPropagators.Storage.get_from_storage!) must all be consistent, see [the storage contract](@ref storage-contract).
 
 The default implementation of these routine uses either a standard Vector or a Matrix as `storage`.
 
-Roughly speaking, when storing states, if the state of some arbitrary type,
-the storage will be a Vector where the i'th entry points to a copy of the propagated state at the i'th time slot. If the state is a Vector, the storage will be a Matrix containing the state for the i'th time slot in the i'th column.
+Roughly speaking, when storing states, if the state is of some arbitrary type,
+the storage will be a Vector where the i'th entry holds a copy of the propagated state at the i'th time slot. If the state is a Vector, the storage will be a Matrix containing the state for the i'th time slot in the i'th column.
 
 When a tuple of `observables` is passed to [`propagate`](@ref), if [`map_observables`](@ref QuantumPropagators.Storage.map_observables) returns data of the same type for each observable, `storage` will be a Matrix containing the values from the different observables for the i'th time slot in the i'th column. This would be typical for the storage of expectation values, e.g. with
 
@@ -62,8 +62,21 @@ observables=(state->dot(state, Ô₁, state), state->count_poplevels(state))
 where `count_poplevels` is a function that counts the number of levels with
 non-zero population, the resulting `storage` would be a `Vector{Tuple{Float64, Int64}}`.
 
-If there is a single observable that yields a vector, that vector is stored in the i'th column of a `storage` matrix. This is in fact what happens when storing the propagated states (`observables=(Ψ->copy(Ψ), )`) if `Ψ` is a Vector, but there are other use cases, such as calculating the population in all levels in one go, with
+If there is a single observable that yields a vector, that vector is stored in the i'th column of a `storage` matrix. This is in fact what happens when storing the propagated states (`observables=(Ψ->Ψ, )`) if `Ψ` is a Vector, but there are other use cases, such as calculating the population in all levels in one go, with
 `observables=(Ψ -> abs.(Ψ).^2, )`.
 
-If there is a single variable that yields a non-vector object, `storage` will be a Vector where the i'th entry points to the object. This is in fact what happens by default when storing states  that are e.g. instances of
+If there is a single observable that yields a non-vector object, `storage` will be a Vector where the i'th entry holds a copy of the object. This is in fact what happens by default when storing states  that are e.g. instances of
 `QuantumOptics.Ket`. In such a case, it might be advisable to add new methods for [`QuantumPropagators.Storage.init_storage`](@ref) and [`QuantumPropagators.Storage.write_to_storage!`](@ref) that implement a more efficient in-place storage.
+
+
+## [The storage contract](@id storage-contract)
+
+A `storage` object is created by [`init_storage`](@ref QuantumPropagators.Storage.init_storage), written to by [`write_to_storage!`](@ref QuantumPropagators.Storage.write_to_storage!), and read back by [`get_from_storage`](@ref QuantumPropagators.Storage.get_from_storage) or [`get_from_storage!`](@ref QuantumPropagators.Storage.get_from_storage!). Together, these four functions guarantee the following, for any `storage = init_storage(data, nt)` and any slot `i` in `1:nt`:
+
+1. What you put in is what you get out. After `write_to_storage!(storage, i, data)`, both `get_from_storage(storage, i)` and `get_from_storage!(buffer, storage, i)` reproduce the value that `data` had at the time of the write.
+
+2. The storage owns its data. Modifying `data` after the write does not change what is stored, and writing to one slot does not change any other slot. This holds even when the caller passes the same object on every write, which is the normal situation when storing the states of an in-place propagation: [`prop_step!`](@ref) returns the same buffer at every time step.
+
+3. The result of [`get_from_storage`](@ref QuantumPropagators.Storage.get_from_storage) is read-only. It may alias the internals of `storage`, so mutating it may corrupt the storage. Use [`get_from_storage!`](@ref QuantumPropagators.Storage.get_from_storage!) to obtain data the caller may modify.
+
+Custom [`init_storage`](@ref QuantumPropagators.Storage.init_storage), [`write_to_storage!`](@ref QuantumPropagators.Storage.write_to_storage!), and [`get_from_storage!`](@ref QuantumPropagators.Storage.get_from_storage!) methods must be mutually consistent, and must uphold the guarantees above. Use [`check_storage`](@ref QuantumPropagators.Interfaces.check_storage) to verify them.
