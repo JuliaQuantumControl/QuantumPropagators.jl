@@ -44,6 +44,7 @@ export init_prop, reinit_prop!, prop_step!
 module Interfaces
     export supports_inplace, supports_vector_interface, supports_matrix_interface
     export check_operator, check_state, check_tlist, check_amplitude
+    export check_storage
     export check_control, check_generator, check_propagator
     export check_parameterized_function, check_parameterized
     include("interfaces/supports_inplace.jl")
@@ -51,6 +52,7 @@ module Interfaces
     include("interfaces/supports_matrix_interface.jl")
     include("interfaces/utils.jl")
     include("interfaces/state.jl")
+    include("interfaces/storage.jl")
     include("interfaces/tlist.jl")
     include("interfaces/operator.jl")
     include("interfaces/amplitude.jl")

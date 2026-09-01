@@ -13,6 +13,9 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 
 ## [Unreleased]
 
+* Added: `QuantumPropagators.Interfaces.check_storage`, which verifies that a storage implementation fulfills the storage contract [[#119], [#120]]
+* Fixed: `write_to_storage!` now stores a copy of any mutable data, so that the storage owns its data. Previously, storing the state of an in-place propagation at every time step could leave all slots aliasing a single buffer [[#119], [#120]]
+
 ## [v0.9.0] — 2026-06-15
 
 * Added: `ExponentialUtilitiesPropagator`, a propagator based on `expv` from [ExponentialUtilities.jl](https://github.com/SciML/ExponentialUtilities.jl), with Krylov-subspace caching for in-place propagation [[#97]]
@@ -233,3 +236,5 @@ Initial public release
 [#108]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/108
 [#110]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/110
 [#111]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/111
+[#119]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/119
+[#120]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/120

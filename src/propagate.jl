@@ -15,8 +15,9 @@ using .Interfaces: check_state, check_generator, check_tlist, supports_inplace
 # this private: It doesn't combine with other observables and depends on
 # internals of the default init_storage.
 struct _StoreState end
-map_observables(::_StoreState, tlist, i, state) = copy(state)
-map_observables(::_StoreState, tlist, i, state::Vector) = state
+# No copy here: `write_to_storage!` takes ownership of the data it is given,
+# see the storage contract in the `QuantumPropagators.Storage` documentation.
+map_observables(::_StoreState, tlist, i, state) = state
 
 
 # Work around https://github.com/timholy/ProgressMeter.jl/issues/214

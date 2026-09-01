@@ -9,6 +9,7 @@ using LinearAlgebra
 export init_storage, map_observables, map_observable, write_to_storage!
 export get_from_storage!, get_from_storage
 
+
 """Create a `storage` array for propagation.
 
 ```julia
@@ -33,6 +34,10 @@ creates a storage arrays suitable for storing `data` nt times, where
 `nt=length(tlist)`. By default, this will be a vector of `typeof(data)` and
 length `nt`, or a `n × nt` Matrix with the same `eltype` as `data` if `data` is
 a Vector of length `n`.
+
+Together with [`write_to_storage!`](@ref), [`get_from_storage`](@ref), and
+[`get_from_storage!`](@ref), the resulting `storage` fulfills the
+[storage contract](@ref storage-contract).
 """
 function init_storage(state, tlist::AbstractVector)
     nt = length(tlist)
@@ -127,30 +132,67 @@ function map_observable(observable::AbstractMatrix, tlist, i, state::AbstractVec
 end
 
 
+# Take ownership of `data` for storing it: return `data` itself if it is an
+# immutable value (`isbits`), which is provably safe to store by reference, and
+# an independent copy otherwise. The branch is resolved at compile time.
+#
+# Note that `ismutable` would be the *wrong* criterion here: an immutable
+# wrapper around a mutable array is not `isbits`, and storing it by reference
+# would expose the caller's buffer.
+#
+# This copies one level deep, via the type's own `copy`, and deliberately not
+# via `deepcopy`. A `copy` that leaves its result aliased to the original is a
+# broken `copy`, and `deepcopy` would be the wrong remedy: it also duplicates
+# whatever a state legitimately shares (a basis, a lookup table, a cached
+# operator), which is both wasteful at every time step and semantically wrong.
+# `copy` is also what `Interfaces.check_state` requires of a state, so relying
+# on anything stronger here would make types storable only by accident.
+_own(data) = isbits(data) ? data : copy(data)
+_own(data::Tuple) = map(_own, data)
+_own(data::NamedTuple) = map(_own, data)
+
+
 """Place data into `storage` for time slot `i`.
 
 ```julia
 write_to_storage!(storage, i, data)
 ```
 
-for a `storage` array created by [`init_storage`](@ref) stores the `data`
-obtained from [`map_observables`](@ref) at time slot `i`.
+stores the `data` obtained from [`map_observables`](@ref) in the `storage`
+array created by [`init_storage`](@ref), for the time slot `i`, and returns the
+modified `storage`.
 
 Conceptually, this corresponds roughly to `storage[i] = data`, but `storage`
 may have its own idea on how to store data for a specific time slot. For
-example, with the default [`init_storage`](@ref) Vector data will be stored in
+example, with the default [`init_storage`](@ref), Vector data will be stored in
 a matrix, and `write_to_storage!` will in this case write data to the i'th
 column of the matrix.
 
+The `storage` takes *ownership* of the written data: after the write, the
+`data` object belongs to the caller alone, and any subsequent modification of
+`data` must leave the stored value unchanged. The default implementation
+guarantees this by storing `copy(data)` for any `data` that is not an immutable
+value (`isbits`); a specialization may store `data` by reference only if its
+type proves that the caller cannot mutate it. See
+[the storage contract](@ref storage-contract).
+
 For a given type of `storage` and `data`, it is the developer's responsibility
-that [`init_storage`](@ref) and `write_to_storage!` are compatible.
+that [`init_storage`](@ref) and `write_to_storage!` are compatible. Use
+[`QuantumPropagators.Interfaces.check_storage`](@ref) to verify a custom
+implementation.
 """
 function write_to_storage!(storage::AbstractVector, i::Integer, data)
-    storage[i] = data
+    storage[i] = _own(data)
+    return storage
 end
 
 function write_to_storage!(storage::Matrix{T}, i::Integer, data::Vector{T}) where {T}
-    storage[:, i] .= data
+    # The column assignment copies the container, but for a mutable `T` it would
+    # store references to the elements, so those are owned individually. For a
+    # bits `T` (the common case), `_own` is the identity and this is a plain
+    # column assignment.
+    storage[:, i] .= _own.(data)
+    return storage
 end
 
 
@@ -160,14 +202,18 @@ end
 get_from_storage!(data, storage, i)
 ```
 
-extracts data from the `storage` for the i'th time slot. Inverse of
-[`write_to_storage!`](@ref). This modifies `data` in-place. If
-`get_from_storage!` is implemented for arbitrary `observables`, it is the
-developer's responsibility
-that [`init_storage`](@ref),  [`write_to_storage!`](@ref), and
-`get_from_storage!` are compatible.
+extracts data from the `storage` for the i'th time slot and copies it into the
+pre-allocated `data`, which is returned. Inverse of
+[`write_to_storage!`](@ref). The resulting `data` is owned by the caller:
+modifying it must not affect the `storage`.
 
-To extract immutable `data`, the non-in-place version
+If `get_from_storage!` is implemented for arbitrary `observables`, it is the
+developer's responsibility that [`init_storage`](@ref),
+[`write_to_storage!`](@ref), and `get_from_storage!` are compatible. Use
+[`QuantumPropagators.Interfaces.check_storage`](@ref) to verify a custom
+implementation.
+
+To extract data for read-only use, the non-in-place version
 
 ```julia
 data = get_from_storage(storage, i)
@@ -179,13 +225,18 @@ get_from_storage!(data, storage::AbstractVector, i) = copyto!(data, storage[i])
 get_from_storage!(data, storage::Matrix, i) = copyto!(data, storage[:, i])
 
 
-"""Obtain immutable data from storage.
+"""Obtain read-only data from storage.
 
 ```julia
 data = get_from_storage(storage, i)
 ```
 
-See [`get_from_storage!`](@ref).
+extracts the data that was written to the i'th time slot with
+[`write_to_storage!`](@ref).
+
+The returned `data` may alias the internals of `storage` and must be treated as
+read-only: mutating it may corrupt the `storage`. Use
+[`get_from_storage!`](@ref) to obtain data that the caller may modify.
 """
 get_from_storage(storage::AbstractVector, i) = storage[i]
 get_from_storage(storage::Matrix, i) = storage[:, i]
