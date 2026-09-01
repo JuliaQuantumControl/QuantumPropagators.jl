@@ -73,7 +73,7 @@ If there is a single observable that yields a non-vector object, `storage` will 
 
 A `storage` object is created by [`init_storage`](@ref QuantumPropagators.Storage.init_storage), written to by [`write_to_storage!`](@ref QuantumPropagators.Storage.write_to_storage!), and read back by [`get_from_storage`](@ref QuantumPropagators.Storage.get_from_storage) or [`get_from_storage!`](@ref QuantumPropagators.Storage.get_from_storage!). Together, these four functions guarantee the following, for any `storage = init_storage(data, nt)` and any slot `i` in `1:nt`:
 
-1. What you put in is what you get out. After `write_to_storage!(storage, i, data)`, both `get_from_storage(storage, i)` and `get_from_storage!(buffer, storage, i)` reproduce the value that `data` had at the time of the write.
+1. What you put in is what you get out. After `write_to_storage!(storage, i, data)`, `get_from_storage(storage, i)` reproduces the value that `data` had at the time of the write, and so does `get_from_storage!(buffer, storage, i)` for data that supports in-place extraction.
 
 2. The storage owns its data. Modifying `data` after the write does not change what is stored, and writing to one slot does not change any other slot. This holds even when the caller passes the same object on every write, which is the normal situation when storing the states of an in-place propagation: [`prop_step!`](@ref) returns the same buffer at every time step.
 

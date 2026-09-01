@@ -139,6 +139,14 @@ end
 # Note that `ismutable` would be the *wrong* criterion here: an immutable
 # wrapper around a mutable array is not `isbits`, and storing it by reference
 # would expose the caller's buffer.
+#
+# This copies one level deep, via the type's own `copy`, and deliberately not
+# via `deepcopy`. A `copy` that leaves its result aliased to the original is a
+# broken `copy`, and `deepcopy` would be the wrong remedy: it also duplicates
+# whatever a state legitimately shares (a basis, a lookup table, a cached
+# operator), which is both wasteful at every time step and semantically wrong.
+# `copy` is also what `Interfaces.check_state` requires of a state, so relying
+# on anything stronger here would make types storable only by accident.
 _own(data) = isbits(data) ? data : copy(data)
 _own(data::Tuple) = map(_own, data)
 _own(data::NamedTuple) = map(_own, data)
@@ -179,7 +187,11 @@ function write_to_storage!(storage::AbstractVector, i::Integer, data)
 end
 
 function write_to_storage!(storage::Matrix{T}, i::Integer, data::Vector{T}) where {T}
-    storage[:, i] .= data  # copies, and thus takes ownership
+    # The column assignment copies the container, but for a mutable `T` it would
+    # store references to the elements, so those are owned individually. For a
+    # bits `T` (the common case), `_own` is the identity and this is a plain
+    # column assignment.
+    storage[:, i] .= _own.(data)
     return storage
 end
 

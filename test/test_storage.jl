@@ -18,19 +18,26 @@ import QuantumPropagators.Interfaces: supports_inplace
 import QuantumPropagators.Storage
 
 
-# A state that wraps a `Matrix`, to exercise the generic `Vector`-of-states
-# storage path with a type that is not an `AbstractArray`.
-struct GateState
+# States that wrap a `Matrix`, to exercise the generic `Vector`-of-states
+# storage path with a type that is not an `AbstractArray`. The two concrete
+# types select the two broken storages defined below.
+abstract type AbstractGateState end
+
+struct GateState <: AbstractGateState
     U::Matrix{ComplexF64}
 end
 
-supports_inplace(::Type{GateState}) = true
-Base.copy(Ψ::GateState) = GateState(copy(Ψ.U))
-Base.similar(Ψ::GateState) = GateState(similar(Ψ.U))
-Base.copyto!(Ψ::GateState, ϕ::GateState) = (copyto!(Ψ.U, ϕ.U); Ψ)
-Base.:*(c::Number, Ψ::GateState) = GateState(c * Ψ.U)
-Base.:-(Ψ::GateState, ϕ::GateState) = GateState(Ψ.U - ϕ.U)
-LinearAlgebra.norm(Ψ::GateState) = norm(Ψ.U)
+struct LastSlotState <: AbstractGateState
+    U::Matrix{ComplexF64}
+end
+
+supports_inplace(::Type{<:AbstractGateState}) = true
+Base.copy(Ψ::T) where {T<:AbstractGateState} = T(copy(Ψ.U))
+Base.similar(Ψ::T) where {T<:AbstractGateState} = T(similar(Ψ.U))
+Base.copyto!(Ψ::AbstractGateState, ϕ::AbstractGateState) = (copyto!(Ψ.U, ϕ.U); Ψ)
+Base.:*(c::Number, Ψ::T) where {T<:AbstractGateState} = T(c * Ψ.U)
+Base.:-(Ψ::T, ϕ::AbstractGateState) where {T<:AbstractGateState} = T(Ψ.U - ϕ.U)
+LinearAlgebra.norm(Ψ::AbstractGateState) = norm(Ψ.U)
 
 
 # An immutable state that is not a `StaticArray`: `supports_inplace` is
@@ -47,16 +54,25 @@ Base.:-(Ψ::FrozenState, ϕ::FrozenState) = FrozenState(Ψ.v - ϕ.v)
 LinearAlgebra.norm(Ψ::FrozenState) = norm(Ψ.v)
 
 
-# A deliberately broken storage: it keeps a *reference* to the written data.
-# This is the bug that `check_storage` must detect.
+# Deliberately broken storages that keep a *reference* to the written data,
+# either in every slot or only in the last one. These are the bugs that
+# `check_storage` must detect.
 struct AliasingStorage{T}
     data::Vector{T}
+    last_slot_only::Bool
 end
 
 Storage.init_storage(Ψ::GateState, nt::Integer) =
-    AliasingStorage(Vector{GateState}(undef, nt))
-Storage.write_to_storage!(storage::AliasingStorage, i::Integer, data) =
-    (storage.data[i] = data; storage)  # BUG: no copy
+    AliasingStorage(Vector{GateState}(undef, nt), false)
+Storage.init_storage(Ψ::LastSlotState, nt::Integer) =
+    AliasingStorage(Vector{LastSlotState}(undef, nt), true)
+
+function Storage.write_to_storage!(storage::AliasingStorage, i::Integer, data)
+    aliased = storage.last_slot_only ? (i == length(storage.data)) : true
+    storage.data[i] = aliased ? data : copy(data)  # BUG: no copy
+    return storage
+end
+
 Storage.get_from_storage(storage::AliasingStorage, i) = storage.data[i]
 Storage.get_from_storage!(data, storage::AliasingStorage, i) =
     copyto!(data, storage.data[i])
@@ -71,12 +87,12 @@ quiet_check(args...; kwargs...) =
 @testset "Ownership of stored data" begin
 
     # The contract violation from #119, in isolation
-    Û = ComplexF64[1 0; 0 1]
-    storage = init_storage(Û, 3)
-    write_to_storage!(storage, 1, Û)
-    lmul!(2.0, Û)
+    U = ComplexF64[1 0; 0 1]
+    storage = init_storage(U, 3)
+    write_to_storage!(storage, 1, U)
+    lmul!(2.0, U)
     @test get_from_storage(storage, 1) == ComplexF64[1 0; 0 1]
-    @test get_from_storage(storage, 1) ≢ Û
+    @test get_from_storage(storage, 1) ≢ U
 
     # A `Vector` state goes into a `Matrix` storage, which always copies
     Ψ = ComplexF64[1, 0]
@@ -99,16 +115,30 @@ quiet_check(args...; kwargs...) =
     @test get_from_storage(storage, 1).v == Ψ.v
 
     # Writing to one slot must not disturb another
-    Û = ComplexF64[1 0; 0 1]
-    storage = init_storage(Û, 3)
-    write_to_storage!(storage, 1, Û)
-    lmul!(2.0, Û)
-    write_to_storage!(storage, 2, Û)
+    U = ComplexF64[1 0; 0 1]
+    storage = init_storage(U, 3)
+    write_to_storage!(storage, 1, U)
+    lmul!(2.0, U)
+    write_to_storage!(storage, 2, U)
     @test get_from_storage(storage, 1) == ComplexF64[1 0; 0 1]
     @test get_from_storage(storage, 2) == ComplexF64[2 0; 0 2]
 
+    # `Matrix` storage with a mutable element type must own the elements, not
+    # just the column. `data` here is what several uniform observables produce.
+    buf = [1.0, 2.0]
+    data = [buf, [3.0, 4.0]]
+    storage = init_storage(data, 3)
+    @test storage isa Matrix{Vector{Float64}}
+    write_to_storage!(storage, 1, data)
+    buf[1] = 99.0
+    write_to_storage!(storage, 2, data)
+    @test get_from_storage(storage, 1)[1] == [1.0, 2.0]
+    @test get_from_storage(storage, 2)[1] == [99.0, 2.0]
+    @test get_from_storage(storage, 1)[1] ≢ get_from_storage(storage, 2)[1]
+
     # `write_to_storage!` returns the storage
-    @test write_to_storage!(storage, 3, Û) ≡ storage
+    storage = init_storage(U, 3)
+    @test write_to_storage!(storage, 1, U) ≡ storage
     storage = init_storage(ComplexF64[1, 0], 3)
     @test write_to_storage!(storage, 1, ComplexF64[1, 0]) ≡ storage
 
@@ -122,18 +152,18 @@ end
     Ψ = random_state_vector(4; rng = StableRNG(2821563937))
     @test check_storage(Ψ, tlist; rng = StableRNG(610341865))
 
-    Û = random_matrix(4; rng = StableRNG(1671185571))
-    @test check_storage(Û, tlist; rng = StableRNG(1321808964))
+    U = random_matrix(4; rng = StableRNG(1671185571))
+    @test check_storage(U, tlist; rng = StableRNG(1321808964))
 
     @test check_storage(SVector{4}(Ψ), tlist; rng = StableRNG(3722552871))
-    @test check_storage(SMatrix{4,4}(Û), tlist; rng = StableRNG(2428674146))
+    @test check_storage(SMatrix{4,4}(U), tlist; rng = StableRNG(2428674146))
 
     @test check_storage(FrozenState(Ψ), tlist; rng = StableRNG(3139269722))
 
     # `nt` must not matter: with a long time grid, no slot may drift below
     # `atol` and thus become effectively unchecked
     @test check_storage(
-        Û,
+        U,
         collect(range(0, 10; length = 1000));
         rng = StableRNG(3688239531)
     )
@@ -156,6 +186,10 @@ end
     @test c.value ≡ false
     @test contains(c.output, "the storage must own its data")
 
+    # A storage that aliases only the *final* slot must be rejected as well
+    Ψ = LastSlotState(random_matrix(4; rng = StableRNG(1671185571)))
+    @test !quiet_check(Ψ, tlist; rng = StableRNG(1321808964))
+
 end
 
 
@@ -163,23 +197,36 @@ end
 
     tlist = collect(range(0, 10; length = 10))
     Ψ = random_state_vector(4; rng = StableRNG(2821563937))
-    Ô₁ = random_matrix(4; hermitian = true, rng = StableRNG(610341865))
-    Ô₂ = random_matrix(4; hermitian = true, rng = StableRNG(1671185571))
+    O₁ = random_matrix(4; hermitian = true, rng = StableRNG(610341865))
+    O₂ = random_matrix(4; hermitian = true, rng = StableRNG(1671185571))
 
     # a number
-    @test check_storage(Ψ, tlist, (Ψ -> dot(Ψ, Ô₁, Ψ),); rng = StableRNG(1321808964))
+    @test check_storage(Ψ, tlist, (Ψ -> dot(Ψ, O₁, Ψ),); rng = StableRNG(1321808964))
     # a matrix observable (expectation value via three-argument `dot`)
-    @test check_storage(Ψ, tlist, (Ô₁,); rng = StableRNG(3722552871))
+    @test check_storage(Ψ, tlist, (O₁,); rng = StableRNG(3722552871))
     # a vector (e.g., populations)
     @test check_storage(Ψ, tlist, (Ψ -> abs.(Ψ) .^ 2,); rng = StableRNG(2428674146))
     # uniform multiple observables (stored as the columns of a matrix)
-    @test check_storage(Ψ, tlist, (Ô₁, Ô₂); rng = StableRNG(3139269722))
+    @test check_storage(Ψ, tlist, (O₁, O₂); rng = StableRNG(3139269722))
     # non-uniform multiple observables (stored as a vector of tuples)
-    observables = (Ψ -> real(dot(Ψ, Ô₁, Ψ)), Ψ -> count(abs.(Ψ) .^ 2 .> 0.1))
+    observables = (Ψ -> real(dot(Ψ, O₁, Ψ)), Ψ -> count(abs.(Ψ) .^ 2 .> 0.1))
     @test check_storage(Ψ, tlist, observables; rng = StableRNG(3688239531))
     # a tuple containing mutable data
     observables = (Ψ -> abs.(Ψ) .^ 2, Ψ -> count(abs.(Ψ) .^ 2 .> 0.1))
     @test check_storage(Ψ, tlist, observables; rng = StableRNG(2821563937))
+    # uniform observables that reuse a preallocated buffer: these land in a
+    # `Matrix{Vector{Float64}}` storage, whose elements must be owned
+    buf1 = zeros(Float64, 4)
+    buf2 = zeros(Float64, 4)
+    observables = (Ψ -> (buf1 .= abs.(Ψ) .^ 2; buf1), Ψ -> (buf2 .= real.(Ψ); buf2))
+    @test check_storage(Ψ, tlist, observables; rng = StableRNG(610341865))
+    storage = init_storage(Ψ, tlist, observables)
+    @test storage isa Matrix{Vector{Float64}}
+    for (n, c) in enumerate([1.0, 2.0, 3.0])
+        write_to_storage!(storage, n, map_observables(observables, tlist, n, c * Ψ))
+    end
+    @test get_from_storage(storage, 1)[1] ≢ get_from_storage(storage, 3)[1]
+    @test get_from_storage(storage, 1)[1] ≈ abs.(Ψ) .^ 2
 
     # the state itself: the `_StoreState` path used by `propagate`
     @test check_storage(
@@ -188,9 +235,9 @@ end
         QuantumPropagators._StoreState();
         rng = StableRNG(610341865)
     )
-    Û = random_matrix(4; rng = StableRNG(1671185571))
+    U = random_matrix(4; rng = StableRNG(1671185571))
     @test check_storage(
-        Û,
+        U,
         tlist,
         QuantumPropagators._StoreState();
         rng = StableRNG(1321808964)
@@ -221,14 +268,14 @@ end
     MHz = 0.001GHz
     ns = 1.0
 
-    Û₀ = Matrix{ComplexF64}(I(4)) / 2
+    U₀ = Matrix{ComplexF64}(I(4)) / 2
 
-    Ĥ = let δ₁ = 100MHz, δ₂ = -100MHz, J = 3MHz, Ω₀ = 35MHz
+    H = let δ₁ = 100MHz, δ₂ = -100MHz, J = 3MHz, Ω₀ = 35MHz
         Matrix{ComplexF64}([
-                0 Ω₀/2 Ω₀/2 0
-                Ω₀/2 δ₂ J Ω₀/2
-                Ω₀/2 J δ₁ Ω₀/2
-                0 Ω₀/2 Ω₀/2 δ₁+δ₂
+                  0    Ω₀/2    Ω₀/2     0
+                Ω₀/2    δ₂      J     Ω₀/2
+                Ω₀/2    J       δ₁    Ω₀/2
+                  0    Ω₀/2    Ω₀/2   δ₁+δ₂
             ])
     end
 
@@ -236,10 +283,10 @@ end
     tlist = collect(range(0, T, step = 0.1ns))
     nt = length(tlist)
 
-    propagator = init_prop(Û₀, Ĥ, tlist; method = Cheby)
-    storage = init_storage(Û₀, tlist)
-    expected = [copy(Û₀)]
-    write_to_storage!(storage, 1, Û₀)
+    propagator = init_prop(U₀, H, tlist; method = Cheby)
+    storage = init_storage(U₀, tlist)
+    expected = [copy(U₀)]
+    write_to_storage!(storage, 1, U₀)
     for n = 1:(nt-1)
         state = prop_step!(propagator)
         write_to_storage!(storage, n + 1, state)
@@ -252,10 +299,10 @@ end
     @test get_from_storage(storage, nt) ≢ get_from_storage(storage, nt - 1)
     @test norm(get_from_storage(storage, nt) - get_from_storage(storage, nt - 1)) > 1e-3
     @test norm(get_from_storage(storage, nt) - get_from_storage(storage, 1)) > 0.1
-    @test get_from_storage(storage, 1) ≈ Û₀
+    @test get_from_storage(storage, 1) ≈ U₀
 
     # The same via `propagate`
-    storage = propagate(Û₀, Ĥ, tlist; method = Cheby, storage = true)
+    storage = propagate(U₀, H, tlist; method = Cheby, storage = true)
     @test size(storage) == (nt,)
     @test all(storage[n] ≈ expected[n] for n = 1:nt)
     @test storage[nt] ≢ storage[nt-1]

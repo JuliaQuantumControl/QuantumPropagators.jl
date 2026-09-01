@@ -110,14 +110,14 @@ function check_storage(
 
     success = true
     nt = length(tlist)
-    state₀ = state
+    state_initial = state
 
     inplace = false
     try
-        inplace = supports_inplace(state₀)
+        inplace = supports_inplace(state_initial)
     catch exc
         quiet || @error(
-            "check_storage: The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for type `$(typeof(state₀))`.",
+            "check_storage: The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for type `$(typeof(state_initial))`.",
             exception = (exc, catch_abbreviated_backtrace())
         )
         return false
@@ -130,13 +130,13 @@ function check_storage(
     # Cumulative rescaling would make the norm drift below `atol` after a few
     # dozen slots, leaving late slots effectively unchecked.
     try
-        storage = init_storage(state₀, tlist)
-        expected = Any[state₀]
-        write_to_storage!(storage, 1, state₀)
+        storage = init_storage(state_initial, tlist)
+        expected = Any[state_initial]
+        write_to_storage!(storage, 1, state_initial)
         for n = 2:nt
-            Ψ = (0.5 + rand(rng)) * state₀  # fresh object; `c * state`
-            write_to_storage!(storage, n, Ψ)
-            push!(expected, Ψ)
+            state = (0.5 + rand(rng)) * state_initial  # fresh object; `c * state`
+            write_to_storage!(storage, n, state)
+            push!(expected, state)
         end
         success &= _check_storage_roundtrip(
             storage,
@@ -160,15 +160,19 @@ function check_storage(
         expected = Any[]
         storage = nothing
         try
-            storage = init_storage(state₀, tlist)
-            Ψ = copy(state₀)
-            expected = Any[copy(Ψ)]  # the records must be copies!
-            write_to_storage!(storage, 1, Ψ)
+            storage = init_storage(state_initial, tlist)
+            state = copy(state_initial)
+            expected = Any[copy(state)]  # the records must be copies!
+            write_to_storage!(storage, 1, state)
             for n = 2:nt
-                copyto!(Ψ, (0.5 + rand(rng)) * state₀)  # in-place mutation
-                write_to_storage!(storage, n, Ψ)
-                push!(expected, copy(Ψ))
+                copyto!(state, (0.5 + rand(rng)) * state_initial)  # in-place mutation
+                write_to_storage!(storage, n, state)
+                push!(expected, copy(state))
             end
+            # One more mutation, with no write following it: without this,
+            # the final slot still agrees with `state`, and a storage that
+            # aliases only that slot would pass.
+            copyto!(state, (0.5 + rand(rng)) * state_initial)
             ok = _check_storage_roundtrip(
                 storage,
                 expected,
@@ -186,10 +190,10 @@ function check_storage(
         end
         if ok  # also check in-place extraction
             try
-                Ψ = similar(state₀)
+                state = similar(state_initial)
                 for n = 1:nt
-                    get_from_storage!(Ψ, storage, n)
-                    delta = _storage_mismatch(Ψ, expected[n])
+                    get_from_storage!(state, storage, n)
+                    delta = _storage_mismatch(state, expected[n])
                     if !(delta <= atol)
                         quiet ||
                             @error "check_storage: `get_from_storage!` at slot $n does not match the written data" delta atol
@@ -223,27 +227,27 @@ function check_storage(
 
     success = true
     nt = length(tlist)
-    state₀ = state
+    state_initial = state
 
     inplace = false
     try
-        inplace = supports_inplace(state₀)
+        inplace = supports_inplace(state_initial)
     catch exc
         quiet || @error(
-            "check_storage: The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for type `$(typeof(state₀))`.",
+            "check_storage: The `QuantumPropagators.Interfaces.supports_inplace` method must be defined for type `$(typeof(state_initial))`.",
             exception = (exc, catch_abbreviated_backtrace())
         )
         return false
     end
 
     try
-        storage = init_storage(state₀, tlist, observables)
-        data = map_observables(observables, tlist, 1, state₀)
+        storage = init_storage(state_initial, tlist, observables)
+        data = map_observables(observables, tlist, 1, state_initial)
         expected = Any[deepcopy(data)]
         write_to_storage!(storage, 1, data)
         for n = 2:nt
-            Ψ = (0.5 + rand(rng)) * state₀
-            data = map_observables(observables, tlist, n, Ψ)
+            state = (0.5 + rand(rng)) * state_initial
+            data = map_observables(observables, tlist, n, state)
             write_to_storage!(storage, n, data)
             push!(expected, deepcopy(data))
         end
@@ -264,17 +268,22 @@ function check_storage(
 
     if inplace
         try
-            storage = init_storage(state₀, tlist, observables)
-            Ψ = copy(state₀)
-            data = map_observables(observables, tlist, 1, Ψ)
+            storage = init_storage(state_initial, tlist, observables)
+            state = copy(state_initial)
+            data = map_observables(observables, tlist, 1, state)
             expected = Any[deepcopy(data)]
             write_to_storage!(storage, 1, data)
             for n = 2:nt
-                copyto!(Ψ, (0.5 + rand(rng)) * state₀)
-                data = map_observables(observables, tlist, n, Ψ)
+                copyto!(state, (0.5 + rand(rng)) * state_initial)
+                data = map_observables(observables, tlist, n, state)
                 write_to_storage!(storage, n, data)
                 push!(expected, deepcopy(data))
             end
+            # Mutate once more without writing, so that observables holding
+            # on to `state` or to a reused buffer expose an alias in the final
+            # slot as well.
+            copyto!(state, (0.5 + rand(rng)) * state_initial)
+            map_observables(observables, tlist, nt, state)
             success &= _check_storage_roundtrip(
                 storage,
                 expected,
@@ -313,6 +322,9 @@ function check_storage(
             write_to_storage!(storage, n, data)
             push!(expected, deepcopy(data))
         end
+        # One more transform, with no write following it: for an in-place
+        # `transform`, this exposes a storage that aliases only the final slot.
+        transform(data)
         return _check_storage_roundtrip(
             storage,
             expected,
