@@ -190,7 +190,11 @@ function check_storage(
         end
         if ok  # also check in-place extraction
             try
-                state = similar(state_initial)
+                # A zeroed state (instead of the uninitialized
+                # `similar(state_initial)`) ensures that a
+                # `get_from_storage!` which fails to write is detected: every
+                # `expected` value is a non-zero multiple of `state_initial`
+                state = 0.0 * state_initial
                 for n = 1:nt
                     get_from_storage!(state, storage, n)
                     delta = _storage_mismatch(state, expected[n])

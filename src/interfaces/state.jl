@@ -43,7 +43,8 @@ following:
 
 * `similar(state)` must be defined and return a valid state of the same type as
   the original `state`
-* `copyto!(other, state)` must be defined
+* `copyto!(other, state)` must be defined and must overwrite the data of
+  `other`, so that `other` and `state` compare equal afterwards
 * `fill!(state, c)` must be defined
 * `LinearAlgebra.lmul!(c, state)` for a scalar `c` must be defined
 * `LinearAlgebra.axpy!(c, state, other)` must be defined
@@ -240,6 +241,7 @@ function check_state(
 
         has_similar = true
         similar_is_valid = true
+        copyto_is_valid = true
         try
             ϕ = similar(state)
             if typeof(ϕ) != typeof(state)
@@ -256,9 +258,39 @@ function check_state(
             success = false
         end
 
+        # `fill!` is checked before `copyto!`, on a `copy` of the state, so that
+        # the `copyto!` check below can use it to zero out the uninitialized
+        # data from `similar`
+        has_fill = true
+        try
+            χ = copy(state)
+            ϕ = fill!(χ, 0.0)
+            if !isa(ϕ, typeof(χ))
+                quiet || @error "$(px)`fill!(state, 0.0)` must return the filled state"
+                success = false
+            end
+            Δ = norm(ϕ)
+            if Δ > atol
+                quiet || @error "$(px)`fill!(state, 0.0)` must have norm 0" Δ atol
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`fill!(state, c)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            has_fill = false
+            success = false
+        end
+
         try
             if has_similar
                 ϕ = similar(state)
+                # Zeroing `ϕ` ensures it differs from `state`, so that a
+                # `copyto!` that does not write is detected. Otherwise, the
+                # uninitialized data from `similar` might match `state` by
+                # accident.
+                has_fill && fill!(ϕ, 0.0)
                 copyto!(ϕ, state)
                 if _check_similar
                     # we only check ϕ after `copyto!`, because just `similar`
@@ -281,6 +313,7 @@ function check_state(
                 if Δ > atol
                     quiet ||
                         @error "$(px)`ϕ - state` must have norm 0, where `ϕ = similar(state); copyto!(ϕ, state)`" Δ atol
+                    copyto_is_valid = false
                     success = false
                 end
             end
@@ -289,34 +322,12 @@ function check_state(
                 "$(px)`copyto!(other, state)` must be defined.",
                 exception = (exc, catch_abbreviated_backtrace())
             )
+            copyto_is_valid = false
             success = false
         end
 
         try
-            if has_similar && similar_is_valid
-                ϕ = similar(state)
-                copyto!(ϕ, state)
-                state_zero = fill!(ϕ, 0.0)
-                if !isa(state_zero, typeof(ϕ))
-                    quiet || @error "$(px)`fill!(state, 0.0)` must return the filled state"
-                    success = false
-                end
-                Δ = norm(state_zero)
-                if Δ > atol
-                    quiet || @error "$(px)`fill!(state, 0.0)` must have norm 0" Δ atol
-                    success = false
-                end
-            end
-        catch exc
-            quiet || @error(
-                "$(px)`fill!(state, c)` must be defined.",
-                exception = (exc, catch_abbreviated_backtrace())
-            )
-            success = false
-        end
-
-        try
-            if has_similar && similar_is_valid
+            if has_similar && similar_is_valid && copyto_is_valid
                 ϕ = similar(state)
                 copyto!(ϕ, state)
                 ϕ = lmul!(1im, ϕ)
@@ -336,7 +347,7 @@ function check_state(
         end
 
         try
-            if has_similar && similar_is_valid
+            if has_similar && similar_is_valid && copyto_is_valid
                 ϕ = similar(state)
                 copyto!(ϕ, state)
                 ϕ = lmul!(0.0, ϕ)
@@ -356,7 +367,7 @@ function check_state(
         end
 
         try
-            if has_similar && similar_is_valid
+            if has_similar && similar_is_valid && copyto_is_valid
                 ϕ = similar(state)
                 copyto!(ϕ, state)
                 ϕ = axpy!(1im, state, ϕ)

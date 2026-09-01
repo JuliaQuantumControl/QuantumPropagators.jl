@@ -226,6 +226,48 @@ end
 end
 
 
+@testset "Invalid operator with non-writing mul!" begin
+
+    # Operator whose 3-argument `mul!` writes nothing, checked against a state
+    # that the operator annihilates (a lowering operator and the ground state).
+    # The destination `ϕ` must not be seeded with the expected result, or the
+    # broken `mul!` goes unnoticed.
+    A = ComplexF64[0 1 0 0; 0 0 sqrt(2) 0; 0 0 0 sqrt(3); 0 0 0 0]
+
+    struct NonWritingMulOp end
+    QuantumPropagators.Interfaces.supports_inplace(::Type{NonWritingMulOp}) = true
+    Base.size(::NonWritingMulOp) = (4, 4)
+    Base.size(::NonWritingMulOp, d::Int) = 4
+    Base.eltype(::Type{NonWritingMulOp}) = ComplexF64
+    QuantumPropagators.Controls.get_controls(::NonWritingMulOp) = ()
+    QuantumPropagators.Controls.evaluate(op::NonWritingMulOp, args...; kwargs...) = op
+    Base.:(*)(::NonWritingMulOp, Ψ) = A * Ψ
+    LinearAlgebra.mul!(ϕ, ::NonWritingMulOp, Ψ) = ϕ  # doesn't write!
+    LinearAlgebra.mul!(ϕ, ::NonWritingMulOp, Ψ, α, β) = (lmul!(β, ϕ); axpy!(α, A * Ψ, ϕ))
+    LinearAlgebra.dot(a, ::NonWritingMulOp, b) = dot(a, A * b)
+
+    tlist = collect(range(0, 10, length = 101))
+    operator = NonWritingMulOp()
+
+    # `A * state ≡ 0`, so a zero-seeded `ϕ` would match the expected result
+    state = ComplexF64[1, 0, 0, 0]
+    captured = IOCapture.capture() do
+        check_operator(operator; state, tlist)
+    end
+    @test captured.value ≡ false
+    @test contains(captured.output, "`mul!(ϕ, op, state)` must match `op * state`")
+
+    # A state that the operator does not annihilate
+    state = ComplexF64[0, 1, 0, 0]
+    captured = IOCapture.capture() do
+        check_operator(operator; state, tlist)
+    end
+    @test captured.value ≡ false
+    @test contains(captured.output, "`mul!(ϕ, op, state)` must match `op * state`")
+
+end
+
+
 @testset "Invalid operator with wrong returns" begin
 
     # Operator where `*` returns wrong type, `mul!` returns wrong reference,
@@ -932,7 +974,14 @@ end
 
 @testset "Invalid state with unfaithful copyto!" begin
 
-    # State where copyto! doesn't actually copy the data
+    # State where copyto! doesn't actually copy the data.
+    #
+    # `check_state` detects this by zeroing `similar(state)` with `fill!` before
+    # the `copyto!`, so that the uninitialized data cannot match `state` by
+    # accident. Any fixture with a `copyto!` that does not write must therefore
+    # keep `fill!` working: if both are broken, the check silently depends on
+    # whatever `similar` happens to return, which makes the test pass or fail at
+    # random depending on the machine.
     struct BadCopytoState
         data::Vector{ComplexF64}
     end
@@ -952,6 +1001,45 @@ end
         (axpy!(c, a.data, b.data); b)
 
     state = BadCopytoState(ComplexF64[1, 0, 0, 0])
+    captured = IOCapture.capture() do
+        check_state(state; normalized = true)
+    end
+    @test captured.value ≡ false
+    @test contains(
+        captured.output,
+        "must have norm 0, where `ϕ = similar(state); copyto!(ϕ, state)`"
+    )
+
+end
+
+
+@testset "Invalid state with non-writing copyto!" begin
+
+    # State where `copyto!` doesn't write, and `similar` returns memory that
+    # already matches `state`. This is what uninitialized memory from `similar`
+    # may look like by accident, so the check must not depend on it.
+    struct NonWritingCopytoState
+        data::Vector{ComplexF64}
+    end
+    QuantumPropagators.Interfaces.supports_inplace(::Type{NonWritingCopytoState}) = true
+    Base.copy(s::NonWritingCopytoState) = NonWritingCopytoState(copy(s.data))
+    Base.similar(s::NonWritingCopytoState) = NonWritingCopytoState(copy(s.data))
+    Base.copyto!(a::NonWritingCopytoState, b::NonWritingCopytoState) = a  # doesn't write!
+    LinearAlgebra.dot(a::NonWritingCopytoState, b::NonWritingCopytoState) =
+        dot(a.data, b.data)
+    LinearAlgebra.norm(a::NonWritingCopytoState) = norm(a.data)
+    Base.:+(a::NonWritingCopytoState, b::NonWritingCopytoState) =
+        NonWritingCopytoState(a.data + b.data)
+    Base.:-(a::NonWritingCopytoState, b::NonWritingCopytoState) =
+        NonWritingCopytoState(a.data - b.data)
+    Base.:*(α::Number, s::NonWritingCopytoState) = NonWritingCopytoState(α * s.data)
+    Base.zero(s::NonWritingCopytoState) = NonWritingCopytoState(zero(s.data))
+    Base.fill!(s::NonWritingCopytoState, v) = (fill!(s.data, v); s)
+    LinearAlgebra.lmul!(c, s::NonWritingCopytoState) = (lmul!(c, s.data); s)
+    LinearAlgebra.axpy!(c, a::NonWritingCopytoState, b::NonWritingCopytoState) =
+        (axpy!(c, a.data, b.data); b)
+
+    state = NonWritingCopytoState(ComplexF64[1, 0, 0, 0])
     captured = IOCapture.capture() do
         check_state(state; normalized = true)
     end
