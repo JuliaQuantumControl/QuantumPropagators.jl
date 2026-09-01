@@ -22,7 +22,7 @@ verifies the following requirements:
   This is the *definition* of a Hilbert space, a.k.a a "complete inner product
   space" or more precisely a "Banach space (normed vector space) where the
   norm is induced by an inner product".
-* The [`QuantumPropagators.Interfaces.supports_inplace](@ref) method must be
+* The [`QuantumPropagators.Interfaces.supports_inplace`](@ref) method must be
   defined for `state`
 
 Any `state` must support the following not-in-place operations:
