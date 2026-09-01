@@ -152,7 +152,9 @@ function check_propagator(
 
     Ψ₀_ref = state
     Ψ₀ = copy(state)
-    Ψ₁ = similar(Ψ₀)
+    # `copy`, not `similar`: `Ψ₁` is compared against `propagator.state` further
+    # below, and keeps this initial value if `prop_step!` throws
+    Ψ₁ = copy(Ψ₀)
 
     try
         Ψ₁ = prop_step!(propagator)

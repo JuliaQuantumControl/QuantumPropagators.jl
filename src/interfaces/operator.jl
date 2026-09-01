@@ -189,12 +189,17 @@ function check_operator(
     if supports_inplace(state)
 
         try
-            ϕ = similar(Ψ)
+            χ = op * Ψ
+            # `ϕ` must start out different from `χ` (instead of being the
+            # uninitialized `similar(Ψ)`), so that a `mul!` which fails to write
+            # is detected. A zeroed `ϕ` serves for that, except when `op`
+            # annihilates `Ψ`, as for a lowering operator and the ground state.
+            ϕ = (norm(χ) > atol) ? 0.0 * Ψ : copy(Ψ)
             if mul!(ϕ, op, Ψ) ≢ ϕ
                 quiet || @error "$(px)`mul!(ϕ, op, state)` must return the resulting ϕ"
                 success = false
             end
-            Δ = norm(ϕ - op * Ψ)
+            Δ = norm(ϕ - χ)
             if Δ > atol
                 quiet || @error "$(px)`mul!(ϕ, op, state)` must match `op * state`" Δ atol
                 success = false
@@ -249,7 +254,8 @@ function check_operator(
                 success = false
             end
             if supports_inplace(state)
-                ϕ = similar(Ψ)
+                # see the 3-argument `mul!` check above for the choice of `ϕ`
+                ϕ = (norm(op * Ψ) > atol) ? 0.0 * Ψ : copy(Ψ)
                 mul!(ϕ, op, Ψ)
                 Δ = abs(dot(Ψ, op, Ψ) - dot(Ψ, ϕ))
                 if Δ > atol

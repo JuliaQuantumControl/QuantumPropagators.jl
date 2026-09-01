@@ -15,6 +15,7 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 
 * Added: `QuantumPropagators.Interfaces.check_storage`, which verifies that a storage implementation fulfills the storage contract [[#119], [#120]]
 * Fixed: `write_to_storage!` now stores a copy of any mutable data, so that the storage owns its data. Previously, storing the state of an in-place propagation at every time step could leave all slots aliasing a single buffer [[#119], [#120]]
+* Fixed: `check_state` now reliably detects a `copyto!` that does not overwrite its destination, and `check_operator` a `mul!` that does not write its result. Both checks previously read uninitialized memory and could pass silently
 
 ## [v0.9.0] — 2026-06-15
 
