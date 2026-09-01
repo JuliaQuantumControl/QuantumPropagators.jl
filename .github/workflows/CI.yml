@@ -14,6 +14,21 @@ on:
   pull_request:
     branches:
       - master
+  # Keep a warm `julia-actions/cache` entry on the default branch: Github
+  # evicts caches that have not been accessed for 7 days, and pull requests can
+  # only restore caches from their own ref or from the base branch. Without a
+  # scheduled run, the first run of every PR compiles the full dependency tree
+  # from scratch.
+  schedule:
+    - cron: '0 4 * * 1,4'
+  workflow_dispatch:
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+permissions:
+  contents: read
 env:
   GKSwstype: 100
   JULIA_PKG_PRECOMPILE_AUTO: false
@@ -21,6 +36,10 @@ jobs:
   test:
     name: Test ${{ matrix.title }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    permissions:
+      actions: write  # for julia-actions/cache to delete the caches it created
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -29,7 +48,7 @@ jobs:
             os: ubuntu-latest
             version: '1'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
@@ -52,8 +71,13 @@ jobs:
   docs:
     name: Documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      actions: write  # for julia-actions/cache to delete the caches it created
+      contents: write  # for Documenter to deploy to the `gh-pages` branch
+      statuses: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
@@ -87,15 +111,20 @@ jobs:
   codestyle:
     name: Codestyle
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      actions: write  # for julia-actions/cache to delete the caches it created
+      contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
+      - uses: julia-actions/cache@v3
       - name: Get typos settings
         run: wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/typos.toml
       - name: Spell Check
-        uses: crate-ci/typos@master
+        uses: crate-ci/typos@v1.50.0
       - name: Version Check
         shell: julia {0}
         run: |

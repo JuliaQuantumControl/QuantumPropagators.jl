@@ -86,7 +86,6 @@ makedocs(;
         prettyurls = true,
         canonical = "https://juliaquantumcontrol.github.io/QuantumPropagators.jl",
         assets = [
-            "assets/citations.css",
             asset(
                 "https://juliaquantumcontrol.github.io/QuantumControl.jl/dev/assets/topbar/topbar.css"
             ),

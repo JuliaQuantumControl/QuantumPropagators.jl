@@ -14,6 +14,17 @@ on:
   pull_request:
     branches:
       - master
+  # Keep a warm `julia-actions/cache` entry on the default branch (see CI.yml).
+  schedule:
+    - cron: '20 4 * * 1,4'
+  workflow_dispatch:
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+permissions:
+  contents: read
 env:
   GKSwstype: 100
   JULIA_PKG_PRECOMPILE_AUTO: false
@@ -21,9 +32,13 @@ jobs:
   test-grape:
     name: Test GRAPE
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     continue-on-error: true
+    permissions:
+      actions: write  # for julia-actions/cache to delete the caches it created
+      contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
@@ -33,7 +48,7 @@ jobs:
           wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/scripts/installorg.jl
           julia --project=test installorg.jl --no-precompile
       - name: "Run GRAPE tests"
-        shell: julia --color=yes --project=test --code-coverage="@" --depwarn="yes" --check-bounds="yes" {0}
+        shell: julia --color=yes --project=test --depwarn="yes" {0}
         run: |
           using Pkg
-          Pkg.test("GRAPE", coverage=true)
+          Pkg.test("GRAPE")
