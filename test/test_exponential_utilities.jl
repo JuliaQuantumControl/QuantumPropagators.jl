@@ -176,7 +176,10 @@ end
     t = -1im * dt
     Ψ = ExponentialUtilities.expv(t, A, Ψ₀)
     Ψ_expected = exp(t * Matrix(A)) * Vector(Ψ₀)
-    @test Ψ isa SVector{N}
+    if pkgversion(ExponentialUtilities) >= v"1.27"
+        # Older versions return an MVector
+        @test Ψ isa SVector{N}
+    end
     @test norm(Ψ - Ψ_expected) < 1e-12
 
 end

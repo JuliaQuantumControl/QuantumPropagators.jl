@@ -581,7 +581,7 @@ end
     LinearAlgebra.lmul!(c, s::InvalidVectorState) = (lmul!(c, s.data); s)
     LinearAlgebra.axpy!(c, a::InvalidVectorState, b::InvalidVectorState) =
         (axpy!(c, a.data, b.data); b)
-    # Deliberately don't define: eltype, getindex, setindex!, length, iterate, size
+    # Deliberately don't define: eltype, getindex, setindex!, length, iterate, size, eachindex
 
     state = InvalidVectorState(ComplexF64[1, 0, 0, 0])
     captured = IOCapture.capture() do
@@ -592,6 +592,7 @@ end
     @test contains(captured.output, "`getindex(state, i)` must be defined")
     @test contains(captured.output, "`length(state)` must be defined")
     @test contains(captured.output, "`iterate(state)` must be defined")
+    @test contains(captured.output, "`eachindex(state)` must be defined")
     @test contains(captured.output, "`setindex!(state, v, i)` must be defined")
 
 end
@@ -614,7 +615,7 @@ end
         InvalidVectorState2(a.data - b.data)
     Base.:*(α::Number, s::InvalidVectorState2) = InvalidVectorState2(α * s.data)
     Base.zero(s::InvalidVectorState2) = InvalidVectorState2(zero(s.data))
-    # Deliberately don't define: eltype, getindex, length, iterate, similar, size
+    # Deliberately don't define: eltype, getindex, length, iterate, similar, size, eachindex
 
     state = InvalidVectorState2(ComplexF64[1, 0, 0, 0])
     captured = IOCapture.capture() do
@@ -625,6 +626,7 @@ end
     @test contains(captured.output, "`getindex(state, i)` must be defined")
     @test contains(captured.output, "`length(state)` must be defined")
     @test contains(captured.output, "`iterate(state)` must be defined")
+    @test contains(captured.output, "`eachindex(state)` must be defined")
     @test contains(captured.output, "`similar(state)` must be defined")
     @test contains(captured.output, "`similar(state, ::Type{S})` must be defined")
     @test contains(captured.output, "`similar(state, dims::Dims)` must be defined")
@@ -662,6 +664,7 @@ end
     Base.getindex(s::BadSimilarVectorState3, i) = s.data[i]
     Base.length(s::BadSimilarVectorState3) = length(s.data)
     Base.iterate(s::BadSimilarVectorState3, args...) = iterate(s.data, args...)
+    Base.eachindex(s::BadSimilarVectorState3) = eachindex(s.data)
     Base.similar(::BadSimilarVectorState3, args...) = ImmutableResult()
 
     state = BadSimilarVectorState3(ComplexF64[1, 0, 0, 0])
@@ -731,7 +734,7 @@ end
 @testset "Invalid state with partial vector interface" begin
 
     # State that supports vector interface but getindex returns wrong type,
-    # length is wrong, and iterate returns nothing.
+    # length is wrong (and thus inconsistent with eachindex), and iterate returns nothing.
     struct PartialVectorState4
         data::Vector{ComplexF64}
     end
@@ -752,6 +755,7 @@ end
     Base.getindex(s::PartialVectorState4, i) = real(s.data[i])  # Float64, not ComplexF64!
     Base.length(::PartialVectorState4) = 99  # wrong: should be 4
     Base.iterate(::PartialVectorState4) = nothing  # wrong for non-empty
+    Base.eachindex(s::PartialVectorState4) = eachindex(s.data)
     Base.similar(::PartialVectorState4, args...) = zeros(ComplexF64, 4)
 
     state = PartialVectorState4(ComplexF64[1, 0, 0, 0])
@@ -767,6 +771,10 @@ end
     @test contains(
         captured.output,
         "`iterate(state)` must not return `nothing` for a non-empty state"
+    )
+    @test contains(
+        captured.output,
+        "`eachindex(state)` must have `length(state)=99` elements, not 4"
     )
 
 end

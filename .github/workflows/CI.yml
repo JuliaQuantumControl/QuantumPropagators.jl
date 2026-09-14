@@ -68,6 +68,64 @@ jobs:
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
+  testoldest:
+    name: Test Lower Compat Bounds
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      actions: write  # for julia-actions/cache to delete the caches it created
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: 'lts'
+      - uses: julia-actions/cache@v3
+      - name: "Resolve lowest compatible versions"
+        # Write a Manifest.toml for the package and the test environment with
+        # the lowest versions of all dependencies (including weak dependencies)
+        # that the `[compat]` bounds allow.
+        uses: julia-actions/julia-downgrade-compat@v2
+        with:
+          projects: ".,test"
+          mode: "alldeps"
+          julia_version: "lts"
+      - name: "Instantiate test environment"
+        # The resolver picks the oldest registered versions of the org packages
+        # in the test environment, which are incompatible with the current
+        # QuantumPropagators. Replace them with their master versions. This
+        # re-resolves the environment and upgrades other dependencies, so keep
+        # a copy of the lowest-version manifest for the next step.
+        run: |
+          cp test/Manifest.toml test/Manifest.lowest.toml
+          wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/scripts/installorg.jl
+          julia --project=test installorg.jl --no-precompile
+      - name: "Pin dependencies to lowest versions"
+        # Restore the lowest resolved versions of the dependencies and weak
+        # dependencies of QuantumPropagators. If this fails, the master version
+        # of an org package requires a newer dependency than the compat bounds
+        # of QuantumPropagators allow.
+        shell: julia --color=yes --project=test {0}
+        run: |
+          import Pkg
+          import TOML
+          project = TOML.parsefile("Project.toml")
+          names = union(keys(project["deps"]), keys(project["weakdeps"]))
+          lowest = TOML.parsefile("test/Manifest.lowest.toml")["deps"]
+          stdlibs = keys(Pkg.Types.stdlibs())
+          specs = Pkg.PackageSpec[]
+          for name in sort(collect(names))
+              haskey(lowest, name) || continue
+              entry = only(lowest[name])
+              Base.UUID(entry["uuid"]) in stdlibs && continue
+              push!(specs, Pkg.PackageSpec(; name, version = VersionNumber(entry["version"])))
+          end
+          Pkg.add(specs)
+          Pkg.status(; mode = Pkg.PKGMODE_MANIFEST)
+      - name: "Run tests"
+        shell: julia --color=yes --project=test --depwarn="yes" --check-bounds="yes" {0}
+        run: |
+          include(joinpath(pwd(), "test", "runtests.jl"))
   docs:
     name: Documentation
     runs-on: ubuntu-latest
