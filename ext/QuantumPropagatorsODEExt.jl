@@ -7,7 +7,7 @@ module QuantumPropagatorsODEExt
 using LinearAlgebra
 using TimerOutputs: @timeit_debug, reset_timer!, TimerOutput
 using OrdinaryDiffEq: OrdinaryDiffEq as ODE
-using OrdinaryDiffEq.SciMLBase: FullSpecialize
+using OrdinaryDiffEq.SciMLBase: SciMLBase, FullSpecialize
 using QuantumPropagators:
     QuantumPropagators,
     AbstractPropagator,
@@ -247,11 +247,11 @@ end
 function set_state!(propagator::ODEPropagator, state)
     if state ≢ propagator.state
         if propagator.inplace
-            # ODE.set_u! does not work in-place
+            # SciMLBase.set_u! does not work in-place
             copyto!(propagator.integrator.u, state)
-            ODE.u_modified!(propagator.integrator, true)
+            SciMLBase.u_modified!(propagator.integrator, true)
         else
-            ODE.set_u!(propagator.integrator, state)
+            SciMLBase.set_u!(propagator.integrator, state)
         end
     end
     return propagator.state
@@ -272,7 +272,7 @@ function set_t!(propagator::ODEPropagator, t)
     end
     (t ≈ tlist[n]) || (@warn ("Snapping t=$t to time grid value $(tlist[n])"))
     setfield!(propagator, :n, propagator.backward ? n - 1 : n)
-    ODE.set_t!(propagator.integrator, t)
+    SciMLBase.set_t!(propagator.integrator, t)
 end
 
 

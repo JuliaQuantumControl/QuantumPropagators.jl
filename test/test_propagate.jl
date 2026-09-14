@@ -9,7 +9,7 @@ using QuantumPropagators.Storage
 using ExponentialUtilities
 using LinearAlgebra
 using UnicodePlots
-using StaticArrays: @SMatrix, SVector, @SVector
+using StaticArrays: SMatrix, SVector, @SVector
 
 @testset "TLS Rabi Cycling" begin
 
@@ -83,10 +83,10 @@ end
     SHOWPLOT = false
 
     Ψ0 = @SVector ComplexF64[1, 0]
-    Ĥ = @SMatrix ComplexF64[
+    Ĥ = SMatrix{2,2}(ComplexF64[
          0   0.5
         0.5   0
-    ]
+    ])
     tlist = collect(range(0, 1.5π, length = 101)) # 3π/2 pulse
 
     generator = (Ĥ,)

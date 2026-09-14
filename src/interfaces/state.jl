@@ -65,6 +65,7 @@ for one-dimensional arrays:
 * `getindex(state, i)` must be defined and return elements matching `eltype`
 * `length(state)` must equal `prod(size(state))`
 * `iterate(state)` must be defined
+* `eachindex(state)` must be defined and have `length(state)` elements
 * `similar(state)` must be defined and return a mutable vector with the same
   length and element type. "Mutability" is determined by
   [`ArrayInterface.ismutable`](@extref).
@@ -467,6 +468,22 @@ function check_state(
         catch exc
             quiet || @error(
                 "$(px)`iterate(state)` must be defined.",
+                exception = (exc, catch_abbreviated_backtrace())
+            )
+            success = false
+        end
+
+        try
+            n = length(eachindex(state))
+            l = length(state)
+            if n != l
+                quiet ||
+                    @error "$(px)`eachindex(state)` must have `length(state)=$l` elements, not $n"
+                success = false
+            end
+        catch exc
+            quiet || @error(
+                "$(px)`eachindex(state)` must be defined.",
                 exception = (exc, catch_abbreviated_backtrace())
             )
             success = false

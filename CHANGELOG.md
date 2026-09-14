@@ -16,6 +16,9 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Added: `QuantumPropagators.Interfaces.check_storage`, which verifies that a storage implementation fulfills the storage contract [[#119], [#120]]
 * Fixed: `write_to_storage!` now stores a copy of any mutable data, so that the storage owns its data. Previously, storing the state of an in-place propagation at every time step could leave all slots aliasing a single buffer [[#119], [#120]]
 * Fixed: `check_state` now reliably detects a `copyto!` that does not overwrite its destination, and `check_operator` a `mul!` that does not write its result. Both checks previously read uninitialized memory and could pass silently
+* Changed: For states that support the vector interface, `check_state` now requires `eachindex(state)`. ExponentialUtilities ≥ 1.34 uses `eachindex` when propagating a state
+* Changed: The minimum supported versions of dependencies are now ArrayInterface 7.7.1, ProgressMeter 1.5, StaticArrays 1.2.4, OrdinaryDiffEq 6.62, and ExponentialUtilities 1.17.1. The previously declared minimum versions did not work: `propagate` uses a keyword argument that ProgressMeter only supports since version 1.5, StaticArrays before version 1.2.4 has method ambiguities with `LinearAlgebra` on Julia 1.10, older versions of ArrayInterface restrict the OrdinaryDiffEq dependencies to versions that fail to precompile on Julia 1.10, and OrdinaryDiffEq 6.59 and ExponentialUtilities 1.11 could not be installed together with the other dependencies
+* Fixed: Compatibility of the `OrdinaryDiffEq` propagator with OrdinaryDiffEq v7 [[#115]]
 
 ## [v0.9.0] — 2026-06-15
 
@@ -237,5 +240,6 @@ Initial public release
 [#108]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/108
 [#110]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/110
 [#111]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/111
+[#115]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/115
 [#119]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/119
 [#120]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/120
