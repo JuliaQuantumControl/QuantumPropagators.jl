@@ -19,6 +19,7 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Changed: For states that support the vector interface, `check_state` now requires `eachindex(state)`. ExponentialUtilities ≥ 1.34 uses `eachindex` when propagating a state
 * Changed: The minimum supported versions of dependencies are now ArrayInterface 7.7.1, ProgressMeter 1.5, StaticArrays 1.2.4, OrdinaryDiffEq 6.62, and ExponentialUtilities 1.17.1. The previously declared minimum versions did not work: `propagate` uses a keyword argument that ProgressMeter only supports since version 1.5, StaticArrays before version 1.2.4 has method ambiguities with `LinearAlgebra` on Julia 1.10, older versions of ArrayInterface restrict the OrdinaryDiffEq dependencies to versions that fail to precompile on Julia 1.10, and OrdinaryDiffEq 6.59 and ExponentialUtilities 1.11 could not be installed together with the other dependencies
 * Fixed: Compatibility of the `OrdinaryDiffEq` propagator with OrdinaryDiffEq v7 [[#115]]
+* Changed: The minimum supported Julia version is now 1.10 (LTS)
 
 ## [v0.9.0] — 2026-06-15
 
