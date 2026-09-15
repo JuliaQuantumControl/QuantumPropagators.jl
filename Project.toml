@@ -30,7 +30,7 @@ QuantumPropagatorsStaticArraysExt = "StaticArrays"
 [compat]
 ArrayInterface = "7.7.1"
 ExponentialUtilities = "1.17.1"
-LinearAlgebra = "1"
+LinearAlgebra = "1, < 0.0.1"
 OffsetArrays = "1"
 OrdinaryDiffEq = "6.62, 7"
 Printf = "1"
