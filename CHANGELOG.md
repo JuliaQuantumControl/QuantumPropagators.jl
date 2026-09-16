@@ -11,16 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases).
 
-## [Unreleased]
+## [v0.9.1] — 2026-09-16
 
-* Fixed: `QuantumPropagators.enable_timings()` now also enables the collection of timing data for the `ExponentialUtilitiesPropagator`, and `QuantumPropagators.timings_enabled()` returns `false` if any loaded package extension does not collect timing data [[#121]]
 * Added: `QuantumPropagators.Interfaces.check_storage`, which verifies that a storage implementation fulfills the storage contract [[#119], [#120]]
-* Fixed: `write_to_storage!` now stores a copy of any mutable data, so that the storage owns its data. Previously, storing the state of an in-place propagation at every time step could leave all slots aliasing a single buffer [[#119], [#120]]
-* Fixed: `check_state` now reliably detects a `copyto!` that does not overwrite its destination, and `check_operator` a `mul!` that does not write its result. Both checks previously read uninitialized memory and could pass silently
 * Changed: For states that support the vector interface, `check_state` now requires `eachindex(state)`. ExponentialUtilities ≥ 1.34 uses `eachindex` when propagating a state
 * Changed: The minimum supported versions of dependencies are now ArrayInterface 7.7.1, ProgressMeter 1.5, StaticArrays 1.2.4, OrdinaryDiffEq 6.62, and ExponentialUtilities 1.17.1. The previously declared minimum versions did not work: `propagate` uses a keyword argument that ProgressMeter only supports since version 1.5, StaticArrays before version 1.2.4 has method ambiguities with `LinearAlgebra` on Julia 1.10, older versions of ArrayInterface restrict the OrdinaryDiffEq dependencies to versions that fail to precompile on Julia 1.10, and OrdinaryDiffEq 6.59 and ExponentialUtilities 1.11 could not be installed together with the other dependencies
-* Fixed: Compatibility of the `OrdinaryDiffEq` propagator with OrdinaryDiffEq v7 [[#115]]
 * Changed: The minimum supported Julia version is now 1.10 (LTS)
+* Fixed: `QuantumPropagators.enable_timings()` now also enables the collection of timing data for the `ExponentialUtilitiesPropagator`, and `QuantumPropagators.timings_enabled()` returns `false` if any loaded package extension does not collect timing data [[#121]]
+* Fixed: `write_to_storage!` now stores a copy of any mutable data, so that the storage owns its data. Previously, storing the state of an in-place propagation at every time step could leave all slots aliasing a single buffer [[#119], [#120]]
+* Fixed: `check_state` now reliably detects a `copyto!` that does not overwrite its destination, and `check_operator` a `mul!` that does not write its result. Both checks previously read uninitialized memory and could pass silently
+* Fixed: Compatibility of the `OrdinaryDiffEq` propagator with OrdinaryDiffEq v7 [[#115]]
 
 ## [v0.9.0] — 2026-06-15
 
@@ -192,7 +192,8 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 
 Initial public release
 
-[Unreleased]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/compare/v0.9.0..HEAD
+[Unreleased]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/compare/v0.9.1..HEAD
+[v0.9.1]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.9.1
 [v0.9.0]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.9.0
 [v0.8.5]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.8.5
 [v0.8.4]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.8.4
