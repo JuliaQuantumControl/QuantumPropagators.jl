@@ -8,7 +8,7 @@ using Test
 using LinearAlgebra
 using StableRNGs: StableRNG
 using QuantumPropagators
-using QuantumPropagators: Cheby
+using QuantumPropagators: Cheby, hamiltonian
 using QuantumPropagators.Controls: get_controls, evaluate
 using QuantumPropagators.SpectralRange
 using QuantumControlTestUtils.RandomObjects:
@@ -158,13 +158,15 @@ end
     density = 0.1
     tlist = collect(range(0, 10; length = 501))
     Ψ = random_state_vector(N)
-    H_of_t = random_dynamic_generator(
-        N,
-        tlist;
-        hermitian = true,
-        spectral_envelope = ρ,
-        density,
-        rng
+    H_of_t = hamiltonian(
+        random_dynamic_generator(
+            N,
+            tlist;
+            hermitian = true,
+            spectral_envelope = ρ,
+            density,
+            rng
+        )...
     )
     control = get_controls(H_of_t)[1]
 

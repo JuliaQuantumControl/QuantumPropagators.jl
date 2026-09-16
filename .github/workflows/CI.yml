@@ -31,11 +31,11 @@ permissions:
   contents: read
 env:
   GKSwstype: 100
-  JULIA_PKG_PRECOMPILE_AUTO: false
+  ENVCHECK_URL: https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/refs/heads/master/scripts/envcheck.jl
 jobs:
   test:
-    name: Test ${{ matrix.title }}
-    runs-on: ${{ matrix.os }}
+    name: Test (Julia ${{ matrix.version }})
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       actions: write  # for julia-actions/cache to delete the caches it created
@@ -43,33 +43,38 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - title: 'Linux - Latest'
-            os: ubuntu-latest
-            version: '1'
+        version:
+          - '1'
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
       - uses: julia-actions/cache@v3
-      - name: "Instantiate test environment"
+      - name: "Check for unreleased sibling packages"
         run: |
-          wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/scripts/installorg.jl
-          julia --project=test installorg.jl --no-precompile
-      - name: "Run tests"
-        shell: julia --color=yes --project=test --code-coverage="@" --depwarn="yes" --check-bounds="yes" {0}
-        run: |
-          include(joinpath(pwd(), "test", "runtests.jl"))
+          curl -fsSL -o "$RUNNER_TEMP/envcheck.jl" "$ENVCHECK_URL"
+          julia --startup-file=no "$RUNNER_TEMP/envcheck.jl" warn-sources test
+      - uses: julia-actions/julia-runtest@v1
+      - name: "Check for held-back dependencies"
+        run: julia --startup-file=no "$RUNNER_TEMP/envcheck.jl" held-back test
       - uses: julia-actions/julia-processcoverage@v1
       - name: "Summarize coverage"
-        run: julia --project=test -e 'using QuantumControlTestUtils; show_coverage();'
+        shell: julia --startup-file=no {0}
+        run: |
+          import Pkg
+          Pkg.activate(; temp = true)
+          Pkg.add(["CoverageTools", "LocalCoverage"])
+          import CoverageTools
+          import LocalCoverage
+          coverage = CoverageTools.LCOV.readfile("lcov.info")
+          show(stdout, LocalCoverage.eval_coverage_metrics(coverage, pwd()))
       - uses: codecov/codecov-action@v7
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
   testoldest:
-    name: Test Lower Compat Bounds
+    name: Test (oldest Julia, lowest compat bounds)
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -79,53 +84,30 @@ jobs:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
-          version: 'lts'
+          version: 'min'
       - uses: julia-actions/cache@v3
+      - name: "Check for unreleased sibling packages"
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/envcheck.jl" "$ENVCHECK_URL"
+          julia --startup-file=no "$RUNNER_TEMP/envcheck.jl" warn-sources test
       - name: "Resolve lowest compatible versions"
-        # Write a Manifest.toml for the package and the test environment with
-        # the lowest versions of all dependencies (including weak dependencies)
-        # that the `[compat]` bounds allow.
         uses: julia-actions/julia-downgrade-compat@v2
         with:
           projects: ".,test"
           mode: "alldeps"
-          julia_version: "lts"
+          julia_version: "min"  # must match the Julia version of the job
       - name: "Instantiate test environment"
-        # The resolver picks the oldest registered versions of the org packages
-        # in the test environment, which are incompatible with the current
-        # QuantumPropagators. Replace them with their master versions. This
-        # re-resolves the environment and upgrades other dependencies, so keep
-        # a copy of the lowest-version manifest for the next step.
+        # Julia 1.10 ignores `[sources]`, so they are applied explicitly. The
+        # downgrade also floors the test-only dependencies (including sibling
+        # packages) to versions that may not be compatible with the package;
+        # pinning the dependencies of the package to their lowest versions
+        # re-resolves the remaining test dependencies.
         run: |
           cp test/Manifest.toml test/Manifest.lowest.toml
-          wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/scripts/installorg.jl
-          julia --project=test installorg.jl --no-precompile
-      - name: "Pin dependencies to lowest versions"
-        # Restore the lowest resolved versions of the dependencies and weak
-        # dependencies of QuantumPropagators. If this fails, the master version
-        # of an org package requires a newer dependency than the compat bounds
-        # of QuantumPropagators allow.
-        shell: julia --color=yes --project=test {0}
-        run: |
-          import Pkg
-          import TOML
-          project = TOML.parsefile("Project.toml")
-          names = union(keys(project["deps"]), keys(project["weakdeps"]))
-          lowest = TOML.parsefile("test/Manifest.lowest.toml")["deps"]
-          stdlibs = keys(Pkg.Types.stdlibs())
-          specs = Pkg.PackageSpec[]
-          for name in sort(collect(names))
-              haskey(lowest, name) || continue
-              entry = only(lowest[name])
-              Base.UUID(entry["uuid"]) in stdlibs && continue
-              push!(specs, Pkg.PackageSpec(; name, version = VersionNumber(entry["version"])))
-          end
-          Pkg.add(specs)
-          Pkg.status(; mode = Pkg.PKGMODE_MANIFEST)
+          julia --startup-file=no "$RUNNER_TEMP/envcheck.jl" apply-sources test
+          julia --startup-file=no "$RUNNER_TEMP/envcheck.jl" pin-lowest test test/Manifest.lowest.toml
       - name: "Run tests"
-        shell: julia --color=yes --project=test --depwarn="yes" --check-bounds="yes" {0}
-        run: |
-          include(joinpath(pwd(), "test", "runtests.jl"))
+        run: julia --color=yes --project=test --depwarn=yes --check-bounds=yes -e 'include("test/runtests.jl")'
   docs:
     name: Documentation
     runs-on: ubuntu-latest
@@ -140,21 +122,21 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v3
-      - name: "Install Python dependencies"
+      - name: "Check for unreleased sibling packages"
         run: |
-          set -x
-          /usr/bin/python3 -m pip install zip-files
+          curl -fsSL -o "$RUNNER_TEMP/envcheck.jl" "$ENVCHECK_URL"
+          julia --startup-file=no "$RUNNER_TEMP/envcheck.jl" warn-sources docs
       - name: "Instantiate build environment"
-        run: |
-          wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/scripts/installorg.jl
-          install -m 600 -D /dev/null ~/.ssh/known_hosts
-          ssh-keyscan -H github.com > ~/.ssh/known_hosts
-          julia --project=docs installorg.jl
+        run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'
       - name: "Build documentation"
         run: julia --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+      - name: "Install Python dependencies"
+        run: |
+          set -x
+          /usr/bin/python3 -m pip install zip-files
       - name: Zip the HTML documentation
         run: zip-folder --debug --auto-root --outfile "docs.zip" docs/build
       - uses: actions/upload-artifact@v7
@@ -201,7 +183,9 @@ jobs:
                   @error "Invalid version $VERSION on release branch"
                   exit(1)
               end
-          elseif (ENV["GITHUB_REF_TYPE"] == "branch") && (BRANCH != "master")
+          elseif ENV["GITHUB_REF_TYPE"] == "branch"
+              # Any branch other than a release branch (master included) must
+              # carry a dev suffix; release versions live only on release-* branches.
               if ("dev" in VERSION.prerelease) || ("dev" in VERSION.build)
                   println("Version $VERSION OK with dev-suffix on $BRANCH")
               else
@@ -212,17 +196,12 @@ jobs:
               println("Version $VERSION OK on $BRANCH")
           end
           exit(0)
-      - name: Changelog Check
-        run: julia test/check_changelog.jl
-      - name: Get codestyle settings
-        run: wget https://raw.githubusercontent.com/JuliaQuantumControl/JuliaQuantumControl/master/.JuliaFormatter.toml
-      - name: Install JuliaFormatter and format
-        shell: julia {0}
+      - name: "Check [sources]"
         run: |
-          using Pkg
-          Pkg.add(PackageSpec(name="JuliaFormatter", version="2.3.0"))
-          using JuliaFormatter
-          format(".", verbose=true)
+          curl -fsSL -o "$RUNNER_TEMP/envcheck.jl" "$ENVCHECK_URL"
+          julia --startup-file=no "$RUNNER_TEMP/envcheck.jl" lint
+      - name: "Apply code style and check changelog"
+        run: make codestyle
       - name: Format Check
         shell: julia {0}
         run: |

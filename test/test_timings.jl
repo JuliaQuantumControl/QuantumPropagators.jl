@@ -4,6 +4,7 @@
 
 using Test
 using QuantumPropagators
+using QuantumPropagators: hamiltonian
 using QuantumControlTestUtils.RandomObjects: random_state_vector, random_dynamic_generator
 using StableRNGs: StableRNG
 using TimerOutputs
@@ -23,7 +24,7 @@ using TimerOutputs
     tlist = collect(range(0, 10, length = 101))
     rng = StableRNG(677918056)
     Ψ = random_state_vector(N; rng)
-    Ĥ = random_dynamic_generator(N, tlist; rng)
+    Ĥ = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
     propagator = init_prop(Ψ, Ĥ, tlist; method = :cheby)
     for interval = 1:(length(tlist)-1)
         prop_step!(propagator)

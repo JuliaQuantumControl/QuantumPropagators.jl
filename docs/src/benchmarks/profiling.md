@@ -10,11 +10,12 @@ To choose an appropriate propagation method and parameters for a given problem, 
 Consider the following simple example:
 
 ```@example profiling
+using QuantumPropagators: hamiltonian
 using QuantumControlTestUtils.RandomObjects: random_dynamic_generator, random_state_vector
 
 tlist = collect(range(0, step=1.0, length=101));
 N = 200;  # size of Hilbert space
-H = random_dynamic_generator(N, tlist);
+H = hamiltonian(random_dynamic_generator(N, tlist)...);
 Ψ₀ = random_state_vector(N);
 nothing  # hide
 ```

@@ -7,7 +7,7 @@ using Logging: with_logger
 using IOCapture: IOCapture
 using QuantumControlTestUtils.RandomObjects: random_dynamic_generator, random_state_vector
 using StableRNGs: StableRNG
-using QuantumPropagators: QuantumPropagators, init_prop
+using QuantumPropagators: QuantumPropagators, init_prop, hamiltonian
 using LinearAlgebra
 import QuantumPropagators.Interfaces: supports_inplace
 using QuantumPropagators.Interfaces:
@@ -1144,7 +1144,7 @@ end
     N = 10
     tlist = collect(range(0, 100, length = 1001))
     rng = StableRNG(93655235)
-    Ĥ = random_dynamic_generator(N, tlist; rng)
+    Ĥ = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
     Ψ = random_state_vector(N; rng)
 
     propagator = init_prop(Ψ, Ĥ, tlist; method = :invalid_propagator_no_methods)
