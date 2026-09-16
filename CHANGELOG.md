@@ -26,6 +26,7 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Fixed: `check_state` now reliably detects a `copyto!` that does not overwrite its destination, and `check_operator` a `mul!` that does not write its result. Both checks previously read uninitialized memory and could pass silently
 * Fixed: Compatibility of the `OrdinaryDiffEq` propagator with OrdinaryDiffEq v7 [[#115]]
 
+
 ## [v0.9.0] — 2026-06-15
 
 * Added: `ExponentialUtilitiesPropagator`, a propagator based on `expv` from [ExponentialUtilities.jl](https://github.com/SciML/ExponentialUtilities.jl), with Krylov-subspace caching for in-place propagation [[#97]]
@@ -41,27 +42,33 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Fixed: The fallback for `supports_inplace` on `AbstractArray`/`AbstractVector` was obsolete and inconsistent [[#103]]
 * Added: Per-file copyright and licensing information following the [REUSE specification](https://reuse.software). Source code remains under the MIT License; documentation is additionally available under `CC-BY-4.0`, and trivial files under `CC0-1.0`.
 
+
 ## [v0.8.5] — 2025-10-30
 
 * Fixed: The Newton propagator no longer relies on broken Julia internals [[#91], [#93]]
+
 
 ## [v0.8.4] — 2025-10-07
 
 * Added: `CRABFunction` and `VariedFrequencyCRABFunction` parameterized controls, implementing the Chopped Random Basis (CRAB) ansatz, in a new `ParameterizedFunctions` submodule [[#90]]
 * Fixed: Removed a type instability in the Newton propagator
 
+
 ## [v0.8.3] — 2024-11-13
 
 * Added: Timing benchmarks for `ExpProp` [[#84]]
 * Fixed: Tests now pass on Julia 1.11
 
+
 ## [v0.8.2] — 2024-09-24
 
 * Fixed: The callback is now called before observables, matching the documented behavior [[#83]]
 
+
 ## [v0.8.1] — 2024-09-03
 
 * Removed: The dependency on `QuantumControlBase`; `QuantumPropagators` is now self-contained
+
 
 ## [v0.8.0] — 2024-07-27
 
@@ -69,14 +76,17 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Changed: The in-place versus not-in-place interface is now defined explicitly via the behavior guaranteed by `check_state`, `check_generator`, and `check_operator`, rather than relying on `ismutable`
 * Added: Documentation for in-place propagation
 
+
 ## [v0.7.6] — 2024-05-19
 
 * Fixed: Documentation links
+
 
 ## [v0.7.5] — 2024-04-21
 
 * Added: The `t_mid` function is now exposed
 * Changed: Improved support for immutable states and operators
+
 
 ## [v0.7.4] — 2024-04-17
 
@@ -84,18 +94,22 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Changed: Generalized and extended `get_parameters`
 * Changed: The `try`/`catch` in `_make_generator` is now hidden behind the `check` flag
 
+
 ## [v0.7.3] — 2024-01-22
 
 * Changed: Revised `show` for generators and operators
+
 
 ## [v0.7.2] — 2024-01-08
 
 * Changed: Documentation improvements
 
+
 ## [v0.7.1] — 2023-12-19
 
 * Added: `QuantumPropagators.VERSION`
 * Fixed: `Op * SVector`
+
 
 ## [v0.7.0] — 2023-12-13
 
@@ -109,6 +123,7 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Changed: All propagators now store `timer_data`
 * Changed: Interface-check routines now show a truncated backtrace to make problems easier to pinpoint
 
+
 ## [v0.6.1] — 2023-10-04
 
 * Added: Internal profiling via [TimerOutputs.jl](https://github.com/KristofferC/TimerOutputs.jl), with a `timings_enabled` function
@@ -116,33 +131,40 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Changed: The minimum supported Julia version is now 1.9
 * Changed: Refactored `discretize_on_midpoints`
 
+
 ## [v0.6.0] — 2023-05-15
 
 * Added: `Interfaces` submodule with interface-checking routines
 * Added: `check` argument to `propagate`
 * Changed: Relaxed the requirement of `similar` for states
 
+
 ## [v0.5.0] — 2023-04-04
 
 * Added: Support for time-dependent observables
 * Changed: Simplified the public `write_to_storage!` API to `write_to_storage!(storage, i, data)`
 
+
 ## [v0.4.2] — 2023-03-18
 
 * Fixed: The discretization routines now ensure a copy of their input
+
 
 ## [v0.4.1] — 2023-03-15
 
 * Fixed: `NaN` in `flattop` with `t_rise=0` [[#42]]
 
+
 ## [v0.4.0] — 2023-02-15
 
 * Changed: `set_state!` is now private
+
 
 ## [v0.3.1] — 2023-01-25
 
 * Added: `uniform_dt_tolerance` for the Cheby propagator
 * Changed: Improved the error message for `evaluate`
+
 
 ## [v0.3.0] — 2022-12-01
 
@@ -155,10 +177,12 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Changed: Renamed `substitute_controls` → `substitute` and generalized it to a wide range of objects
 * Changed: `get_control_deriv` now returns a generator, which can be converted into an `Operator` via `evaluate`
 
+
 ## [v0.2.1] — 2022-09-25
 
 * Changed: Refactored to support explicitly time-dependent generators
 * Fixed: Dispatch ambiguity
+
 
 ## [v0.2.0] — 2022-09-08
 
@@ -166,31 +190,38 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Removed: `get_control_parameters` (temporarily)
 * Fixed: `axpy!` incompatibility with Julia 1.9
 
+
 ## [v0.1.6] — 2022-03-30
 
 * Fixed: `specrange` now returns `Float64`
+
 
 ## [v0.1.5] — 2022-03-29
 
 * Added: Automatic choice of Cheby for generators with real eigenvalues
 * Changed: Minor performance improvements
 
+
 ## [v0.1.4] — 2022-03-23
 
 * Fixed: Spectral radius via diagonalization (`specrad`)
+
 
 ## [v0.1.3] — 2022-03-22
 
 * Added: Option to print an info message in `initpropwrk`
 
+
 ## [v0.1.2] — 2022-02-27
 
 * Fixed: Use of Cheby for backward propagation
+
 
 ## [v0.1.1] — 2022-02-24
 
 * Fixed: Calculation of the spectral range for Cheby
 * Fixed: Calculation of expectation values [[#13]]
+
 
 ## [v0.1.0] — 2022-02-06
 
