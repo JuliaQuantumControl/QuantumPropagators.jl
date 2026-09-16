@@ -13,6 +13,7 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 
 ## [Unreleased]
 
+* Fixed: `QuantumPropagators.enable_timings()` now also enables the collection of timing data for the `ExponentialUtilitiesPropagator`, and `QuantumPropagators.timings_enabled()` returns `false` if any loaded package extension does not collect timing data [[#121]]
 * Added: `QuantumPropagators.Interfaces.check_storage`, which verifies that a storage implementation fulfills the storage contract [[#119], [#120]]
 * Fixed: `write_to_storage!` now stores a copy of any mutable data, so that the storage owns its data. Previously, storing the state of an in-place propagation at every time step could leave all slots aliasing a single buffer [[#119], [#120]]
 * Fixed: `check_state` now reliably detects a `copyto!` that does not overwrite its destination, and `check_operator` a `mul!` that does not write its result. Both checks previously read uninitialized memory and could pass silently
@@ -244,3 +245,4 @@ Initial public release
 [#115]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/115
 [#119]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/119
 [#120]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/120
+[#121]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/121
