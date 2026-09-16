@@ -4,6 +4,7 @@
 
 using Test
 
+using QuantumPropagators: hamiltonian
 using QuantumPropagators.Controls: evaluate
 using QuantumPropagators.Generators: ScaledOperator
 using StableRNGs: StableRNG
@@ -154,7 +155,7 @@ end
     N = 10
     rng = StableRNG(677968056)
     tlist = collect(range(0, 10, length = 101))
-    H = random_dynamic_generator(N, tlist; rng)
+    H = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
     Ψ₀ = random_state_vector(N; rng)
     A = evaluate(H, tlist, 1)
     dt = tlist[2] - tlist[1]
@@ -292,7 +293,7 @@ end
     N = 10
     rng = StableRNG(1373376837)
     tlist = collect(range(0, 10, length = 101))
-    H = random_dynamic_generator(N, tlist; rng)
+    H = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
     Ψ₀ = random_state_vector(N; rng)
     dt = tlist[2] - tlist[1]
     t = -1im * dt
@@ -333,7 +334,7 @@ end
     N = 10
     rng = StableRNG(2266238742)
     tlist = collect(range(0, 10, length = 101))
-    H = random_dynamic_generator(N, tlist; rng)
+    H = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
     Ψ₀ = random_state_vector(N; rng)
     dt = tlist[2] - tlist[1]
     t = -1im * dt
@@ -385,7 +386,7 @@ end
     N = 10
     rng = StableRNG(1573710086)
     tlist = collect(range(0, 10, length = 101))
-    H = random_dynamic_generator(N, tlist; rng, hermitian = false)
+    H = hamiltonian(random_dynamic_generator(N, tlist; rng, hermitian = false)...)
     Ψ₀ = random_state_vector(N; rng)
     dt = tlist[2] - tlist[1]
     t = -1im * dt
@@ -433,7 +434,7 @@ end
     N = 10
     rng = StableRNG(106614078)
     tlist = collect(range(0, 10, length = 101))
-    H = random_dynamic_generator(N, tlist; rng)
+    H = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
     Ψ₀ = random_state_vector(N; rng)
     dt = tlist[2] - tlist[1]
     t = -1im * dt
@@ -471,7 +472,7 @@ end
     N = 10
     rng = StableRNG(1653744503)
     tlist = collect(range(0, 10, length = 101))
-    H = random_dynamic_generator(N, tlist; rng)
+    H = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
     Ψ₀ = random_state_vector(N; rng)
     dt = tlist[2] - tlist[1]
     t = -1im * dt
@@ -509,7 +510,7 @@ end
     N = 10
     rng = StableRNG(208995058)
     tlist = collect(range(0, 10, length = 101))
-    H = random_dynamic_generator(N, tlist; rng, hermitian = false)
+    H = hamiltonian(random_dynamic_generator(N, tlist; rng, hermitian = false)...)
     Ψ₀ = random_state_vector(N; rng)
     dt = tlist[2] - tlist[1]
     t = -1im * dt

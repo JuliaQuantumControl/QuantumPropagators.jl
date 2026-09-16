@@ -16,13 +16,16 @@ This package follows the organization-wide contributor workflow (running tests, 
 
 If the `@`-reference above did not load its contents (the org-wide `.github` checkout is not present), fetch the guidelines from <https://raw.githubusercontent.com/JuliaQuantumControl/.github/master/CONTRIBUTING.md> instead.
 
-Key commands:
+Key commands (see `make help`):
 
-- `make test` — run the full test suite (or `julia --project=test -e 'include("test/runtests.jl")'`)
-- `make devrepl` — start the development REPL (Revise, JuliaFormatter, coverage helpers); alternatively `julia -i --banner=no devrepl.jl`
-- `make docs` — build the documentation
-- `make codestyle` — apply JuliaFormatter (version pinned in `test/Project.toml`) and validate the changelog
-- `make clean` / `make distclean` — remove build/test artifacts
+- `make test`: run the full test suite in the `test` environment (or `julia --project=test -e 'include("test/runtests.jl")'`)
+- `make devrepl`: REPL with the `test` environment active and the `docs` environment stacked; run individual test files or `include("docs/make.jl")` from there
+- `make docs`: build the documentation in the `docs` environment
+- `make coverage` / `make htmlcoverage`: test coverage
+- `make codestyle`: apply JuliaFormatter (version pinned in the `Makefile`), check `CHANGELOG.md` and `[sources]`
+- `make clean` / `make distclean`: remove build/test artifacts
+
+Sibling packages (QuantumControlTestUtils, QuantumGradientGenerators, …) come from their registered releases, or temporarily from a GitHub branch via a URL `[sources]` entry in `test/Project.toml` / `docs/Project.toml`. Never commit a `path` source for a sibling (as written by `../scripts/installorg.jl`).
 
 ## Project Architecture
 
@@ -70,17 +73,17 @@ Uses SafeTestsets for isolated test execution. Tests are comprehensive and inclu
 - Individual propagator method tests
 - Integration tests for complete propagation workflows
 
-Running `make test` prints out coverage data in a table.
+Run `make coverage` to run the tests with coverage, write `lcov.info`, and print a coverage summary.
 
 Tips for writing tests:
 
-- Use functions like `random_state_vector`, `random_dynamic_generator`, `random_matrix` from `QuantumControlTestUtils.RandomObjects` to generate random objects. These should always be given an explicit `StableRNG` as `rng`, with a unique seed
+- Use functions like `random_state_vector`, `random_dynamic_generator`, `random_matrix` from `QuantumControlTestUtils.RandomObjects` to generate random objects. These should always be given an explicit `StableRNG` as `rng`, with a unique seed. The `random_dynamic_generator` function returns the terms of a generator, which must be passed to `hamiltonian`, e.g., `H = hamiltonian(random_dynamic_generator(N, tlist; rng)...)`
 
 - When a new seed is required, obtain one with `julia --project=test -e 'using QuantumControlTestUtils.RandomObjects: randseed; print(randseed())'`
 
 
-If necessary, detailed line-by-line coverage information can be obtained by running julia --project=test -e 'include("devrepl.jl"); generate_coverage_html()' after `make test`.
-This will produce html files inside the `coverage` subfolder, with `coverage/src` mirroring the structure of the `src` folder of `.jl` files. Lines with `<span class="tlaUNC">` are not covered. Ignore the raw tracefiles in the `.coverage` subfolder.
+If necessary, detailed line-by-line coverage information can be obtained with `make htmlcoverage` (requires `genhtml` from lcov).
+This will produce html files inside the `coverage` subfolder, with `coverage/src` mirroring the structure of the `src` folder of `.jl` files. Lines with `<span class="tlaUNC">` are not covered.
 
 ## Docstrings
 

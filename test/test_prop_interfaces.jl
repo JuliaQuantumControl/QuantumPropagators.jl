@@ -5,7 +5,8 @@
 using Test
 
 using QuantumControlTestUtils.RandomObjects: random_state_vector, random_dynamic_generator
-using QuantumPropagators: QuantumPropagators, ExponentialUtilitiesPropagator, init_prop
+using QuantumPropagators:
+    QuantumPropagators, ExponentialUtilitiesPropagator, init_prop, hamiltonian
 using QuantumPropagators.Interfaces: check_propagator
 using StableRNGs: StableRNG
 using ExponentialUtilities
@@ -19,7 +20,7 @@ using QuantumPropagators.Shapes: flattop
     tlist = collect(range(0, 10, length = 101))
     rng = StableRNG(677918056)
     Ψ = random_state_vector(N; rng)
-    Ĥ = random_dynamic_generator(N, tlist; rng)
+    Ĥ = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
 
     propagator = init_prop(
         Ψ,
@@ -66,7 +67,7 @@ end
     tlist = collect(range(0, 10, length = 101))
     rng = StableRNG(677918057)
     Ψ = random_state_vector(N; rng)
-    Ĥ = random_dynamic_generator(N, tlist; rng)
+    Ĥ = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
 
     propagator = init_prop(
         Ψ,
@@ -113,7 +114,7 @@ end
     rng = StableRNG(677918057)
     tlist = collect(range(0, 10, length = 101))
     Ψ = random_state_vector(N; rng)
-    Ĥ = random_dynamic_generator(N, tlist; rng)
+    Ĥ = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
 
     propagator = init_prop(
         Ψ,
@@ -160,7 +161,7 @@ end
     rng = StableRNG(677918057)
     tlist = collect(range(0, 10, length = 101))
     Ψ = random_state_vector(N; rng)
-    Ĥ = random_dynamic_generator(N, tlist; rng)
+    Ĥ = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
 
     propagator = init_prop(
         Ψ,
@@ -210,7 +211,7 @@ end
     rng = StableRNG(677918057)
     Ψ = random_state_vector(N; rng)
     amplitudes = [t -> flattop(t; T, t_rise = 0.3 * T),]
-    Ĥ = random_dynamic_generator(N, tlist; amplitudes, rng)
+    Ĥ = hamiltonian(random_dynamic_generator(N, tlist; amplitudes, rng)...)
 
     propagator = init_prop(
         Ψ,
@@ -255,7 +256,7 @@ end
     tlist = collect(range(0, T, length = 101))
     rng = StableRNG(677918057)
     Ψ = random_state_vector(N; rng)
-    Ĥ = random_dynamic_generator(N, tlist; rng)
+    Ĥ = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
 
     propagator = init_prop(
         Ψ,
@@ -316,7 +317,7 @@ end
     tlist = collect(range(0, 10, length = 101))
     rng = StableRNG(677918059)
     Ψ = random_state_vector(N; rng)
-    Ĥ = random_dynamic_generator(N, tlist; rng)
+    Ĥ = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
     propagator = init_prop(Ψ, Ĥ, tlist; method = :cheby)
 
     @test_throws ErrorException propagator.generator
@@ -345,7 +346,7 @@ end
     tlist = collect(range(0, 10, length = 101))
     rng = StableRNG(677918060)
     Ψ = random_state_vector(N; rng)
-    Ĥ = random_dynamic_generator(N, tlist; rng)
+    Ĥ = hamiltonian(random_dynamic_generator(N, tlist; rng)...)
 
     # piecewise=true with a PWC method works (ChebyPropagator isa PiecewisePropagator)
     propagator = init_prop(Ψ, Ĥ, tlist; method = :cheby, piecewise = true)
@@ -377,7 +378,7 @@ end
     tlist = collect(range(0, 10, length = 101))
     rng = StableRNG(677918061)
     Ψ = random_state_vector(10; rng)
-    Ĥ = random_dynamic_generator(10, tlist; rng)
+    Ĥ = hamiltonian(random_dynamic_generator(10, tlist; rng)...)
 
     @test_throws ArgumentError init_prop(Ψ, Ĥ, tlist; method = 42)
 

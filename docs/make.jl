@@ -69,7 +69,7 @@ include("generate_api.jl")
 bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style = :numeric)
 
 warnonly = [:linkcheck,]
-if get(ENV, "DOCUMENTER_WARN_ONLY", "0") == "1"  # cf. test/init.jl
+if get(ENV, "DOCUMENTER_WARN_ONLY", "0") == "1"
     warnonly = true
 end
 
@@ -78,7 +78,7 @@ makedocs(;
     plugins = [bib, links, externals],
     authors = AUTHORS,
     sitename = "QuantumPropagators.jl",
-    # Link checking is disabled in REPL, see `devrepl.jl`.
+    # Link checking is disabled in `make devrepl`.
     linkcheck = (get(ENV, "DOCUMENTER_CHECK_LINKS", "1") != "0"),
     warnonly,
     doctest = false,  # doctests run as part of test suite
