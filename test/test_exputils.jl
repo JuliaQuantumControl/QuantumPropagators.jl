@@ -158,12 +158,12 @@ end
     ϵ = 0.2 * ones(length(tlist))
 
     generator = hamiltonian(H₀, (H₁, ϵ))
-    G̃ = GradGenerator(generator)
-    Ψ̃₀ = GradVector(Ψ₀, 1)
+    G = GradGenerator(generator)
+    Ψ = GradVector(Ψ₀, 1)
 
-    Ψ̃_out = propagate(
-        Ψ̃₀,
-        G̃,
+    Ψ_out = propagate(
+        Ψ,
+        G,
         tlist;
         method = ExponentialUtilities,
         inplace = false,
@@ -171,6 +171,6 @@ end
     )
     Ψ_cheby = propagate(Ψ₀, generator, tlist; method = Cheby)
 
-    @test norm(Ψ̃_out.state - Ψ_cheby) < 1e-7
-    @test norm(Ψ̃_out.grad_states[1]) > 0
+    @test norm(Ψ_out.state - Ψ_cheby) < 1e-7
+    @test norm(Ψ_out.grad_states[1]) > 0
 end
