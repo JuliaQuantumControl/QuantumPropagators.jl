@@ -5,6 +5,8 @@
 using .Controls: get_controls, evaluate, discretize
 using .Interfaces: supports_inplace
 using TimerOutputs: reset_timer!, @timeit_debug, TimerOutput
+using LinearAlgebra: ishermitian, norm
+using .Generators: Operator, ScaledOperator
 
 """Propagator for Chebychev propagation (`method=QuantumPropagators.Cheby`).
 
@@ -78,8 +80,15 @@ initializes a [`ChebyPropagator`](@ref).
   should be treated as non-zero
 * `check_normalization`: Check whether the Hamiltonian has been properly
   normalized, i.e., that the spectral range of `generator` has not been
-  underestimated. This slowes down the propagation, but is advisable for novel
-  `generators`.
+  underestimated. This slows down the propagation, but is advisable for novel
+  `generators`. The check is only valid for a Hermitian `generator`. If the
+  operator of `generator` is not Hermitian, e.g., for a gradient generator,
+  `check_normalization=true` is ignored with a warning. An operator is treated
+  as non-Hermitian if `ishermitian` returns `false` and, for a matrix or an
+  [`Operator`](@ref) of matrices, the explicit matrix is not Hermitian up to
+  rounding errors. Note that the Chebychev propagation itself requires a
+  generator with a real spectrum: a gradient generator has one, but, e.g., the
+  Liouvillian of a dissipative system does not.
 * `uniform_dt_tolerance=1e-12`: How much the intervals of `tlist` are allowed
   to vary while still being considered constant.
 * `specrange_kwargs`: All further keyword arguments are passed to the
@@ -110,6 +119,11 @@ function init_prop(
     controlvals = [discretize(control, tlist) for control in controls]
 
     G = _pwc_get_max_genop(generator, controls, tlist)
+    if check_normalization && _is_known_nonhermitian(G)
+        @warn "Ignoring `check_normalization=true`: the check is only valid for a Hermitian generator" maxlog =
+            1
+        check_normalization = false
+    end
 
     parameters = _pwc_process_parameters(parameters, controls, tlist)
     if isnothing(control_ranges)
@@ -177,6 +191,46 @@ function init_prop(
         timing_data,
     )
 end
+
+# The `check_normalization` check in `Cheby.cheby!` bounds the Rayleigh
+# quotient of the normalized operator. That bound follows from the spectral
+# range only for a normal (with a real spectrum: Hermitian) operator. We keep
+# the check for operators that do not implement `ishermitian`. Since
+# `ishermitian` returning `false` may only mean "not known to be Hermitian"
+# (e.g., for an `Operator` of non-Hermitian terms like â and â† with complex
+# conjugate coefficients, or for a matrix that is Hermitian up to rounding
+# errors), we confirm it on the explicit matrix, if there is one.
+function _is_known_nonhermitian(G)
+    try
+        ishermitian(G) && return false
+    catch exc
+        exc isa MethodError || rethrow()
+        return false
+    end
+    A = _explicit_matrix(G)
+    isnothing(A) && return true
+    tol = sqrt(eps(float(real(eltype(A))))) * norm(A)
+    return norm(A - A') > tol
+end
+
+
+# The (possibly sparse) matrix of an operator, or `nothing` if the operator is
+# not a matrix, an `Operator` of matrices, or a `ScaledOperator` of either
+_explicit_matrix(::Any) = nothing
+_explicit_matrix(A::AbstractMatrix) = A
+function _explicit_matrix(O::Operator)
+    all(op -> op isa AbstractMatrix, O.ops) || return nothing
+    drift_offset = length(O.ops) - length(O.coeffs)
+    return sum(
+        (i > drift_offset ? O.coeffs[i-drift_offset] : true) * O.ops[i] for
+        i in eachindex(O.ops)
+    )
+end
+function _explicit_matrix(O::ScaledOperator)
+    A = _explicit_matrix(O.operator)
+    return isnothing(A) ? nothing : O.coeff * A
+end
+
 
 # Aliases (for backwards compatibility)
 init_prop(state, generator, tlist, method::Val{:cheby}; kwargs...) =

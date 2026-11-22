@@ -142,10 +142,14 @@ cheby!(Ψ, H, dt, wrk; E_min=nothing, check_normalization=false)
 * `wrk`: internal workspace
 * `E_min`: minimum eigenvalue of H, to be used instead of the `E_min` from the
    initialization of `wrk`. The same `wrk` may be used for different values
-   `E_min`, as long as the spectra radius `Δ` and the time step `dt` are the
+   `E_min`, as long as the spectral radius `Δ` and the time step `dt` are the
    same as those used for the initialization of `wrk`.
-* `check_normalizataion`: perform checks that the H does not exceed the
-  spectral radius for which the workspace was initialized.
+* `check_normalization`: perform checks that `H` does not exceed the
+  spectral radius for which the workspace was initialized. The check bounds
+  the Rayleigh quotient ⟨v|H|v⟩/⟨v|v⟩ of the iterates by the spectral range.
+  This is only valid for a Hermitian `H`: for a non-Hermitian operator (e.g., a
+  gradient generator), the Rayleigh quotient can exceed the spectral range, and
+  the check fails even if the spectral range is correct.
 
 The routine will not allocate any internal storage. This implementation
 requires `copyto!` `lmul!`, and `axpy!` to be implemented for `Ψ`, and the
