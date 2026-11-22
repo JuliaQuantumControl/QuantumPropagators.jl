@@ -17,7 +17,7 @@ using QuantumPropagators:
     _pwc_advance_time!,
     _pwc_process_parameters
 using QuantumPropagators.Controls: get_controls
-using QuantumPropagators.Interfaces: supports_inplace
+using QuantumPropagators.Interfaces: supports_inplace, supports_vector_interface
 import QuantumPropagators: init_prop, prop_step!
 
 
@@ -40,6 +40,12 @@ expv_propagator = init_prop(
 ```
 
 initializes an [`ExponentialUtilitiesPropagator`](@ref).
+
+For in-place propagation, `state` must either be an `AbstractVector`, or it must
+support the vector interface (see [`check_state`](@ref
+QuantumPropagators.Interfaces.check_state)). In the latter case, the propagator
+writes the result of each step into a flat output vector and copies it into the
+state, since `ExponentialUtilities` can only write to an `AbstractVector`.
 
 # Method-specific keyword arguments
 
@@ -101,10 +107,11 @@ function init_prop(
         t = float(tlist[n+1])
     end
 
-    if inplace
+    error_estimate = haskey(expv_kwargs, :mode) && expv_kwargs[:mode] == :error_estimate
+    if inplace || error_estimate
         A₀ = QuantumPropagators.Controls.evaluate(generator, tlist, n)
-        is_herm = get(expv_kwargs, :ishermitian, ishermitian(A₀))
-        if haskey(expv_kwargs, :mode) && expv_kwargs[:mode] == :error_estimate && !is_herm
+        is_herm = get(() -> ishermitian(A₀), expv_kwargs, :ishermitian)
+        if error_estimate && !is_herm
             throw(
                 ArgumentError(
                     "`mode=:error_estimate` in `expv_kwargs` requires a " *
@@ -113,8 +120,25 @@ function init_prop(
                 )
             )
         end
+    end
+
+    buffer = nothing
+    if inplace
+        if !(state isa AbstractVector)
+            if !supports_vector_interface(state)
+                throw(
+                    ArgumentError(
+                        "In-place propagation with `method=ExponentialUtilities` " *
+                        "requires a state that is an `AbstractVector` or that " *
+                        "supports the vector interface"
+                    )
+                )
+            end
+            # `ExponentialUtilities.expv!` can only write to an `AbstractVector`
+            buffer = similar(state, eltype(state), (length(state),))
+        end
         Ks = ExponentialUtilities.arnoldi(A₀, state; expv_kwargs...)
-        if haskey(expv_kwargs, :mode) && expv_kwargs[:mode] == :error_estimate
+        if error_estimate
             cache = ExponentialUtilities.get_subspace_cache(Ks)
         else
             T = promote_type(eltype(A₀), eltype(state))
@@ -131,8 +155,9 @@ function init_prop(
     ST = typeof(state)
     KST = typeof(Ks)
     CT = typeof(cache)
+    BT = typeof(buffer)
 
-    return ExponentialUtilitiesPropagator{GT,OT,ST,KST,CT}(
+    return ExponentialUtilitiesPropagator{GT,OT,ST,KST,CT,BT}(
         generator,
         inplace ? copy(state) : state,
         t,
@@ -143,6 +168,7 @@ function init_prop(
         G,
         Ks,
         cache,
+        buffer,
         backward,
         inplace,
         expv_kwargs,
@@ -168,11 +194,13 @@ function prop_step!(propagator::ExponentialUtilitiesPropagator)
             else
                 H = _pwc_get_genop(propagator, n)
             end
+            buffer = propagator.buffer
+            w = isnothing(buffer) ? propagator.state : buffer
             @timeit_debug propagator.timing_data "expv" begin
                 if haskey(propagator.expv_kwargs, :mode) &&
                    propagator.expv_kwargs[:mode] == :error_estimate
                     ExponentialUtilities.expv!(
-                        propagator.state,
+                        w,
                         -1im * dt,
                         H,
                         propagator.state,
@@ -188,13 +216,14 @@ function prop_step!(propagator::ExponentialUtilitiesPropagator)
                         propagator.expv_kwargs...,
                     )
                     ExponentialUtilities.expv!(
-                        propagator.state,
+                        w,
                         -1im * dt,
                         propagator.Ks;
                         cache = propagator.cache,
                     )
                 end
             end
+            isnothing(buffer) || _copy_from_flat!(propagator.state, buffer)
         else
             H = _pwc_get_genop(propagator, n)
             @timeit_debug propagator.timing_data "expv" begin
@@ -211,6 +240,16 @@ function prop_step!(propagator::ExponentialUtilitiesPropagator)
         _pwc_advance_time!(propagator)
         return propagator.state
     end
+end
+
+
+# Write the elements of the flat vector `buffer` into `state`, using only the
+# vector interface of `state`
+function _copy_from_flat!(state, buffer)
+    for (i, j) in zip(eachindex(state), eachindex(buffer))
+        state[i] = buffer[j]
+    end
+    return state
 end
 
 end
