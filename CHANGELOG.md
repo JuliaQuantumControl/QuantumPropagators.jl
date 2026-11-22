@@ -14,6 +14,8 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 
 ## [Unreleased]
 
+* Fixed: The Chebychev propagator now ignores `check_normalization=true` with a warning if the generator is not Hermitian, e.g., for a gradient generator. The check bounds the Rayleigh quotient of the normalized generator, which is valid only for Hermitian operators, so it failed for non-Hermitian generators even with a correct spectral range [[#138]]
+
 
 ## [v0.9.1] — 2026-09-16
 
@@ -282,3 +284,4 @@ Initial public release
 [#119]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/119
 [#120]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/120
 [#121]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/121
+[#138]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/138
