@@ -250,3 +250,59 @@ end
         )
     end
 end
+
+
+@testset "Error-estimate mode with Hermitian generator" begin
+    rng = StableRNG(2276357692)
+    N = 10
+    tlist = collect(range(0, 1.0, length = 11))
+    Ψ₀ = random_state_vector(N; rng)
+    H = random_matrix(N; rng, hermitian = true)
+    Ψ_expected = exp(-1im * H * tlist[end]) * Ψ₀
+    # With `tol=1e-12`, the relative tolerance is `rtol = √tol = 1e-6`
+    results = Dict{Bool,Vector{ComplexF64}}()
+    for inplace in (true, false)
+        Ψ = propagate(
+            Ψ₀,
+            H,
+            tlist;
+            method = ExponentialUtilities,
+            inplace,
+            expv_kwargs = (; mode = :error_estimate, tol = 1e-12)
+        )
+        @test norm(Ψ - Ψ_expected) < 1e-6
+        results[inplace] = Ψ
+        Ψ_bw = propagate(
+            Ψ,
+            H,
+            tlist;
+            method = ExponentialUtilities,
+            inplace,
+            backward = true,
+            expv_kwargs = (; mode = :error_estimate, tol = 1e-12)
+        )
+        @test norm(Ψ_bw - Ψ₀) < 1e-6
+    end
+    @test norm(results[true] - results[false]) < 1e-12
+    # An explicit `mode=:happy_breakdown` works in-place, too
+    Ψ = propagate(
+        Ψ₀,
+        H,
+        tlist;
+        method = ExponentialUtilities,
+        inplace = true,
+        expv_kwargs = (; mode = :happy_breakdown)
+    )
+    @test norm(Ψ - Ψ_expected) < 1e-6
+    # In-place error-estimate mode requires an `AbstractVector` state
+    tlist = collect(range(0, 10.0, length = 201))
+    generator = hamiltonian(ComplexF64[0 0; 0 1], (ComplexF64[0 1; 1 0], 0.2 * ones(201)))
+    @test_throws ArgumentError init_prop(
+        GradVector(ComplexF64[1, 0], 1),
+        GradGenerator(generator),
+        tlist;
+        method = ExponentialUtilities,
+        inplace = true,
+        expv_kwargs = (; mode = :error_estimate, ishermitian = true)
+    )
+end

@@ -17,6 +17,7 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 * Fixed: The Chebychev propagator now ignores `check_normalization=true` with a warning if the generator is not Hermitian, e.g., for a gradient generator. The check bounds the Rayleigh quotient of the normalized generator, which is valid only for Hermitian operators, so it failed for non-Hermitian generators even with a correct spectral range [[#138]]
 * Fixed: In-place propagation with `method=ExponentialUtilities` now works for states that support the vector interface but are not an `AbstractVector`, e.g., a `GradVector` from QuantumGradientGenerators, at the cost of one extra copy per step [[#139]]
 * Fixed: `init_prop` with `method=ExponentialUtilities` and `expv_kwargs=(; mode=:error_estimate)` for a non-Hermitian generator now throws an `ArgumentError` also for out-of-place propagation, instead of failing inside ExponentialUtilities [[#139]]
+* Fixed: In-place propagation with `method=ExponentialUtilities` failed with a `MethodError` if `expv_kwargs` contained `mode` (e.g., `mode=:error_estimate`) or `rtol` [[#139]]
 
 
 ## [v0.9.1] — 2026-09-16

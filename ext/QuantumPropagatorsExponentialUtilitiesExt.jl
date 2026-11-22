@@ -124,6 +124,14 @@ function init_prop(
 
     buffer = nothing
     if inplace
+        if error_estimate && !(state isa AbstractVector)
+            throw(
+                ArgumentError(
+                    "`mode=:error_estimate` in `expv_kwargs` requires a state " *
+                    "that is an `AbstractVector` for in-place propagation."
+                )
+            )
+        end
         if !(state isa AbstractVector)
             if !supports_vector_interface(state)
                 throw(
@@ -137,7 +145,7 @@ function init_prop(
             # `ExponentialUtilities.expv!` can only write to an `AbstractVector`
             buffer = similar(state, eltype(state), (length(state),))
         end
-        Ks = ExponentialUtilities.arnoldi(A₀, state; expv_kwargs...)
+        Ks = ExponentialUtilities.arnoldi(A₀, state; _arnoldi_kwargs(expv_kwargs)...)
         if error_estimate
             cache = ExponentialUtilities.get_subspace_cache(Ks)
         else
@@ -199,21 +207,22 @@ function prop_step!(propagator::ExponentialUtilitiesPropagator)
             @timeit_debug propagator.timing_data "expv" begin
                 if haskey(propagator.expv_kwargs, :mode) &&
                    propagator.expv_kwargs[:mode] == :error_estimate
+                    # The state is an `AbstractVector` (checked in `init_prop`)
                     ExponentialUtilities.expv!(
-                        w,
+                        propagator.state,
                         -1im * dt,
                         H,
                         propagator.state,
                         propagator.Ks,
                         propagator.cache;
-                        propagator.expv_kwargs...,
+                        _expv_ee_kwargs(propagator.expv_kwargs)...,
                     )
                 else
                     ExponentialUtilities.arnoldi!(
                         propagator.Ks,
                         H,
                         propagator.state;
-                        propagator.expv_kwargs...,
+                        _arnoldi_kwargs(propagator.expv_kwargs)...,
                     )
                     ExponentialUtilities.expv!(
                         w,
@@ -240,6 +249,25 @@ function prop_step!(propagator::ExponentialUtilitiesPropagator)
         _pwc_advance_time!(propagator)
         return propagator.state
     end
+end
+
+
+# The `expv_kwargs` that `arnoldi`/`arnoldi!` accept (`mode` and `rtol` are
+# only for `expv`)
+_arnoldi_kwargs(expv_kwargs) = Base.structdiff(expv_kwargs, NamedTuple{(:mode, :rtol)})
+
+
+# The keyword arguments for the error-estimate `expv!`, from `expv_kwargs`,
+# with the same defaults as for `expv(…; mode=:error_estimate)`. We only pass
+# `ishermitian` if it is in `expv_kwargs`, since older versions of
+# ExponentialUtilities do not accept it.
+function _expv_ee_kwargs(expv_kwargs)
+    tol = get(expv_kwargs, :tol, 1.0e-7)
+    ee_kwargs = (; atol = tol, rtol = get(expv_kwargs, :rtol, sqrt(tol)))
+    if haskey(expv_kwargs, :ishermitian)
+        ee_kwargs = merge(ee_kwargs, (; ishermitian = expv_kwargs[:ishermitian]))
+    end
+    return ee_kwargs
 end
 
 
