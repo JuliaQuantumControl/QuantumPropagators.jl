@@ -14,6 +14,7 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 
 ## [Unreleased]
 
+* Changed: For states that support the vector interface, `check_state` now verifies that the norm is induced by the inner product also for a state that is not parallel to the given `state`. It checks `norm(ϕ) ≈ √(ϕ⋅ϕ)` and the polarization identity. Previously, a norm inconsistent with the inner product could go undetected if it was consistent for all states parallel to the given `state`, e.g., for a state with zero components. Custom state types whose `norm` is inconsistent with `dot` now fail `check_state`, and thus also `propagate` with the default `check=true`. This includes `GradVector` from QuantumGradientGenerators < 0.2; upgrade to QuantumGradientGenerators 0.2 [[#140]]
 * Fixed: The Chebychev propagator now ignores `check_normalization=true` with a warning if the generator is not Hermitian, e.g., for a gradient generator. The check bounds the Rayleigh quotient of the normalized generator, which is valid only for Hermitian operators, so it failed for non-Hermitian generators even with a correct spectral range [[#138]]
 * Fixed: In-place propagation with `method=ExponentialUtilities` now works for states that support the vector interface but are not an `AbstractVector`, e.g., a `GradVector` from QuantumGradientGenerators, at the cost of one extra copy per step [[#139]]
 * Fixed: `init_prop` with `method=ExponentialUtilities` and `expv_kwargs=(; mode=:error_estimate)` for a non-Hermitian generator now throws an `ArgumentError` also for out-of-place propagation, instead of failing inside ExponentialUtilities [[#139]]
@@ -289,3 +290,4 @@ Initial public release
 [#121]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/121
 [#138]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/138
 [#139]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/139
+[#140]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/140
