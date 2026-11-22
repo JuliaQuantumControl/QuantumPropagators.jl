@@ -21,7 +21,10 @@ and ``t > T``, the shape is zero.
 The default switch-on/-off shape is half of a Blackman window (see
 [`blackman`](@ref)).
 
-For `func=:sinsq`, the switch-on/-off shape is a sine-squared curve.
+For `func=:sinsq`, the switch-on/-off shape is a sine-squared curve. With
+`t_fall = t_rise`, this is a Tukey window with taper fraction
+``α = 2 t_{\text{rise}} / (T - t_0)``, see
+<https://en.wikipedia.org/wiki/Window_function#Tukey_window>
 """
 function flattop(t; T, t_rise, t₀ = 0.0, t_fall = t_rise, func = :blackman)
     if func == :blackman
