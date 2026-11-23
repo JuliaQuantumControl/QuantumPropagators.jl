@@ -15,6 +15,7 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 ## [Unreleased]
 
 * Fixed: `hamiltonian` (and `liouvillian`) combined time-dependent terms whose amplitudes were equal by value, not only terms sharing the same amplitude object. Separate controls with identical values, e.g., two guess pulses `zeros(N_T)`, were merged into a single control with the sum of their operators. Only terms with identical (`===`) amplitudes are now combined [[#141], [#142]]
+* Fixed: With `QuantumPropagators.enable_timings()`, `specrange` with `method=:arnoldi` recorded the timing of its matrix-vector products in a global `TimerOutput` that was never read or reset, so it grew for the lifetime of the Julia session. Timing data is now only collected for propagators [[#131]]
 
 
 ## [v0.9.2] — 2026-11-23
@@ -294,6 +295,7 @@ Initial public release
 [#119]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/119
 [#120]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/120
 [#121]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/121
+[#131]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/131
 [#138]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/138
 [#139]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/139
 [#140]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/140
