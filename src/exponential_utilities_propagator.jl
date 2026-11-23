@@ -10,7 +10,7 @@ using TimerOutputs: TimerOutput
 This is a [`PWCPropagator`](@ref). Methods that depend on
 `ExponentialUtilities` are loaded via Julia package extensions.
 """
-mutable struct ExponentialUtilitiesPropagator{GT,OT,ST,KST,CT} <: PWCPropagator
+mutable struct ExponentialUtilitiesPropagator{GT,OT,ST,KST,CT,BT} <: PWCPropagator
     const generator::GT
     state::ST
     t::Float64  # time at which current `state` is defined
@@ -21,6 +21,9 @@ mutable struct ExponentialUtilitiesPropagator{GT,OT,ST,KST,CT} <: PWCPropagator
     genop::OT
     Ks::KST
     cache::CT
+    # For in-place propagation of a state that is not an `AbstractVector`:
+    # flat output vector for `ExponentialUtilities.expv!` (`nothing` otherwise)
+    buffer::BT
     backward::Bool
     inplace::Bool
     expv_kwargs::NamedTuple

@@ -11,6 +11,7 @@ using QuantumPropagators: Cheby
 using ExponentialUtilities
 using QuantumGradientGenerators: GradGenerator, GradVector
 using StableRNGs: StableRNG
+using QuantumControlTestUtils.RandomObjects: random_state_vector, random_matrix
 
 
 @testset "Forward propagation (Hermitian)" begin
@@ -173,4 +174,135 @@ end
 
     @test norm(Ψ_out.state - Ψ_cheby) < 1e-7
     @test norm(Ψ_out.grad_states[1]) > 0
+
+    # `ExponentialUtilities.expv!` can only write to an `AbstractVector`, so
+    # the in-place propagation of a `GradVector` goes through a flat buffer
+    propagator = init_prop(
+        GradVector(Ψ₀, 1),
+        G,
+        tlist;
+        method = ExponentialUtilities,
+        inplace = true,
+        expv_kwargs = (; ishermitian = false, tol = 1e-12)
+    )
+    @test propagator.buffer isa Vector{ComplexF64}
+    @test length(propagator.buffer) == 4
+    Ψ_out_inplace = propagate(
+        GradVector(Ψ₀, 1),
+        G,
+        tlist;
+        method = ExponentialUtilities,
+        inplace = true,
+        expv_kwargs = (; ishermitian = false, tol = 1e-12)
+    )
+    @test Ψ_out_inplace isa GradVector
+    @test norm(Ψ_out_inplace - Ψ_out) < 1e-12
+
+    # Backward propagation (dt < 0) through the buffer matches out-of-place
+    Ψ_bw = Dict(
+        inplace => propagate(
+            GradVector(Ψ_cheby, 1),
+            G,
+            tlist;
+            method = ExponentialUtilities,
+            inplace,
+            backward = true,
+            expv_kwargs = (; ishermitian = false, tol = 1e-12)
+        ) for inplace in (true, false)
+    )
+    @test Ψ_bw[true] isa GradVector
+    @test norm(Ψ_bw[true] - Ψ_bw[false]) < 1e-12
+    @test norm(Ψ_bw[true].state - Ψ₀) < 1e-6
+end
+
+
+@testset "In-place propagation of state without vector interface" begin
+    struct NoVectorInterfaceState
+        data::Vector{ComplexF64}
+    end
+    tlist = collect(range(0, 1.0, length = 11))
+    @test_throws ArgumentError init_prop(
+        NoVectorInterfaceState(ComplexF64[1, 0]),
+        ComplexF64[0 1; 1 0],
+        tlist;
+        method = ExponentialUtilities,
+        inplace = true
+    )
+end
+
+
+@testset "Error-estimate mode with non-Hermitian generator" begin
+    rng = StableRNG(3864141668)
+    N = 10
+    tlist = collect(range(0, 1.0, length = 11))
+    Ψ₀ = random_state_vector(N; rng)
+    H = random_matrix(N; rng, hermitian = false)
+    for inplace in (true, false)
+        @test_throws ArgumentError(
+            "`mode=:error_estimate` in `expv_kwargs` requires a Hermitian generator. Use the default `mode=:happy_breakdown` for non-Hermitian generators."
+        ) init_prop(
+            Ψ₀,
+            H,
+            tlist;
+            method = ExponentialUtilities,
+            inplace,
+            expv_kwargs = (; mode = :error_estimate)
+        )
+    end
+end
+
+
+@testset "Error-estimate mode with Hermitian generator" begin
+    rng = StableRNG(2276357692)
+    N = 10
+    tlist = collect(range(0, 1.0, length = 11))
+    Ψ₀ = random_state_vector(N; rng)
+    H = random_matrix(N; rng, hermitian = true)
+    Ψ_expected = exp(-1im * H * tlist[end]) * Ψ₀
+    # With `tol=1e-12`, the relative tolerance is `rtol = √tol = 1e-6`
+    results = Dict{Bool,Vector{ComplexF64}}()
+    for inplace in (true, false)
+        Ψ = propagate(
+            Ψ₀,
+            H,
+            tlist;
+            method = ExponentialUtilities,
+            inplace,
+            expv_kwargs = (; mode = :error_estimate, tol = 1e-12)
+        )
+        @test norm(Ψ - Ψ_expected) < 1e-6
+        results[inplace] = Ψ
+        Ψ_bw = propagate(
+            Ψ,
+            H,
+            tlist;
+            method = ExponentialUtilities,
+            inplace,
+            backward = true,
+            expv_kwargs = (; mode = :error_estimate, tol = 1e-12)
+        )
+        @test norm(Ψ_bw - Ψ₀) < 1e-6
+    end
+    @test norm(results[true] - results[false]) < 1e-12
+    # An explicit `mode=:happy_breakdown` works in-place, too
+    Ψ = propagate(
+        Ψ₀,
+        H,
+        tlist;
+        method = ExponentialUtilities,
+        inplace = true,
+        expv_kwargs = (; mode = :happy_breakdown)
+    )
+    @test norm(Ψ - Ψ_expected) < 1e-6
+    # In-place error-estimate mode requires an `AbstractVector` state
+    tlist = collect(range(0, 10.0, length = 201))
+    generator = hamiltonian(ComplexF64[0 0; 0 1], (ComplexF64[0 1; 1 0], 0.2 * ones(201)))
+    @test_throws ArgumentError init_prop(
+        GradVector(ComplexF64[1, 0], 1),
+        GradGenerator(generator),
+        tlist;
+        method = ExponentialUtilities,
+        inplace = true,
+        expv_kwargs = (; mode = :error_estimate, ishermitian = true)
+    )
 end
