@@ -75,6 +75,15 @@ for one-dimensional arrays:
   element type and the given dimensions
 * `similar(state, ::Type{S}, dims::Dims)` must return a mutable array with the
   given element type and dimensions
+* The norm must be induced by the inner product also for a state `ϕ` that is
+  not parallel to `state`: `norm(ϕ) = √(ϕ⋅ϕ)`, and `x⋅ϕ = ¼ ∑ₖ 𝕚⁻ᵏ ‖x + 𝕚ᵏ ϕ‖²`
+  (polarization identity) for `x = state / norm(state)`. The state `ϕ` is
+  `similar(state)` with values written by `setindex!`, converted with
+  `convert(typeof(state), …)`.
+
+The checks for `ϕ` allow for rounding errors with a tolerance of `atol + N ε`,
+where `N` is the length of `state` and `ε` is the machine epsilon of its element
+type.
 
 If additionally [`QuantumPropagators.Interfaces.supports_inplace(state)`](@ref
 QuantumPropagators.Interfaces.supports_inplace) is `true` (read-write vector):
@@ -593,12 +602,14 @@ function check_state(
             success = false
         end
 
+        has_convert = true
         try
             mutable_state = similar(state)
             converted = convert(typeof(state), mutable_state)
             if !(converted isa typeof(state))
                 quiet ||
                     @error "$(px)`convert($(typeof(state)), similar(state))` must return a `$(typeof(state))`, not $(typeof(converted))"
+                has_convert = false
                 success = false
             end
         catch exc
@@ -606,7 +617,51 @@ function check_state(
                 "$(px)`convert(typeof(state), mutable_state)` for `mutable_state = similar(state)` must be defined.",
                 exception = (exc, catch_abbreviated_backtrace())
             )
+            has_convert = false
             success = false
+        end
+
+        # The checks for a state `ϕ` that is not parallel to `state` need
+        # `similar` and `convert` (checked above). All other checks only use
+        # states parallel to `state`, which cannot detect, e.g., a norm that is
+        # inconsistent with the inner product only for components that are
+        # zero in `state`. In the recursive call for `similar(state)`, these
+        # checks would only repeat those for `state`, so we skip them.
+        if _check_similar && has_convert
+            try
+                ϕ = _non_parallel_state(state)
+                # `norm` and `dot` sum over all elements, with a rounding
+                # error that grows with the length of the state (for
+                # normalized states)
+                tol = atol + length(state) * eps(float(real(eltype(state))))
+                r1 = norm(ϕ)
+                r2 = sqrt(real(ϕ ⋅ ϕ))
+                Δ = abs(r1 - r2)
+                if Δ > tol
+                    quiet ||
+                        @error "$(px)`norm(ϕ)=$r1` must match `√(ϕ⋅ϕ)=$r2` for a state `ϕ` that is not parallel to `state`" Δ tol
+                    success = false
+                end
+                # Normalizing `state` keeps the error of the polarization
+                # identity at the level of `tol`
+                η = norm(state)
+                x = (η > 0) ? ((1 / η) * state) : state
+                c = x ⋅ ϕ
+                c_polar =
+                    sum(conj(ω) * norm(x + ω * ϕ)^2 for ω in (1.0, 1.0im, -1.0, -1.0im)) / 4
+                Δ = abs(c - c_polar)
+                if Δ > tol
+                    quiet ||
+                        @error "$(px)`x⋅ϕ=$c` must match the polarization identity `¼ ∑ₖ 𝕚⁻ᵏ ‖x + 𝕚ᵏ ϕ‖²=$c_polar` for `x = state / norm(state)` and a state `ϕ` that is not parallel to `state`" Δ tol
+                    success = false
+                end
+            catch exc
+                quiet || @error(
+                    "$(px)the norm must be induced by the inner product for a state `ϕ` that is not parallel to `state`, where `ϕ` is `similar(state)` with values written by `setindex!`, converted to `typeof(state)`.",
+                    exception = (exc, catch_abbreviated_backtrace())
+                )
+                success = false
+            end
         end
 
         if supports_inplace(state)
@@ -631,4 +686,21 @@ function check_state(
 
     return success
 
+end
+
+
+# A normalized state that is not parallel to `state` (unless by a very unlikely
+# accident), for a `state` that supports the vector interface. The values are
+# deterministic, so that `check_state` gives reproducible results, and non-zero
+# in every element.
+function _non_parallel_state(state)
+    T = eltype(state)
+    value(k) = (T <: Real) ? sin(k) : complex(sin(k), cos(√2 * k))
+    mutable_state = similar(state)
+    indices = eachindex(mutable_state)
+    nrm = sqrt(sum(abs2(value(k)) for k = 1:length(indices)))
+    for (k, i) in enumerate(indices)
+        mutable_state[i] = value(k) / nrm
+    end
+    return convert(typeof(state), mutable_state)
 end

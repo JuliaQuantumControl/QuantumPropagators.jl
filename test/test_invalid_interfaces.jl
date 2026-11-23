@@ -943,6 +943,76 @@ end
 end
 
 
+@testset "Invalid state with norm inconsistent for non-parallel states" begin
+
+    # State composed of two blocks, with a norm that is the sum of the norms
+    # of the blocks (like an old version of `GradVector` in
+    # QuantumGradientGenerators). For a state with a zero block, that norm is
+    # consistent with `dot` for all states parallel to it.
+    struct BlockNormState <: AbstractVector{ComplexF64}
+        data::Vector{ComplexF64}
+    end
+    QuantumPropagators.Interfaces.supports_inplace(::Type{BlockNormState}) = false
+    Base.size(s::BlockNormState) = size(s.data)
+    Base.getindex(s::BlockNormState, i::Int) = s.data[i]
+    Base.setindex!(s::BlockNormState, v, i::Int) = (s.data[i] = v)
+    Base.similar(s::BlockNormState) = BlockNormState(similar(s.data))
+    Base.copy(s::BlockNormState) = BlockNormState(copy(s.data))
+    LinearAlgebra.dot(a::BlockNormState, b::BlockNormState) = dot(a.data, b.data)
+    function LinearAlgebra.norm(s::BlockNormState)
+        n = length(s.data) ÷ 2
+        return norm(s.data[1:n]) + norm(s.data[(n+1):end])
+    end
+    Base.:+(a::BlockNormState, b::BlockNormState) = BlockNormState(a.data + b.data)
+    Base.:-(a::BlockNormState, b::BlockNormState) = BlockNormState(a.data - b.data)
+    Base.:*(α::Number, s::BlockNormState) = BlockNormState(α * s.data)
+    Base.zero(s::BlockNormState) = BlockNormState(zero(s.data))
+
+    state = BlockNormState(ComplexF64[1, 1, 0, 0] / √2)
+    @test norm(state) ≈ √(real(state ⋅ state))
+    captured = IOCapture.capture() do
+        check_state(state; normalized = true)
+    end
+    @test captured.value ≡ false
+    @test contains(captured.output, "for a state `ϕ` that is not parallel to `state`")
+    @test contains(captured.output, "must match the polarization identity")
+
+end
+
+
+@testset "Invalid state with conjugation of dot swapped" begin
+
+    # State with a correct norm, but with a `dot` that is conjugate-linear in
+    # the second argument instead of the first. For states parallel to
+    # `state`, and for `ϕ⋅ϕ`, the result is the same, so only the polarization
+    # identity detects it.
+    struct ConjDotState <: AbstractVector{ComplexF64}
+        data::Vector{ComplexF64}
+    end
+    QuantumPropagators.Interfaces.supports_inplace(::Type{ConjDotState}) = false
+    Base.size(s::ConjDotState) = size(s.data)
+    Base.getindex(s::ConjDotState, i::Int) = s.data[i]
+    Base.setindex!(s::ConjDotState, v, i::Int) = (s.data[i] = v)
+    Base.similar(s::ConjDotState) = ConjDotState(similar(s.data))
+    Base.copy(s::ConjDotState) = ConjDotState(copy(s.data))
+    LinearAlgebra.dot(a::ConjDotState, b::ConjDotState) = dot(b.data, a.data)
+    LinearAlgebra.norm(s::ConjDotState) = norm(s.data)
+    Base.:+(a::ConjDotState, b::ConjDotState) = ConjDotState(a.data + b.data)
+    Base.:-(a::ConjDotState, b::ConjDotState) = ConjDotState(a.data - b.data)
+    Base.:*(α::Number, s::ConjDotState) = ConjDotState(α * s.data)
+    Base.zero(s::ConjDotState) = ConjDotState(zero(s.data))
+
+    state = ConjDotState(ComplexF64[1, 1im, 0, 0] / √2)
+    captured = IOCapture.capture() do
+        check_state(state; normalized = true)
+    end
+    @test captured.value ≡ false
+    @test contains(captured.output, "must match the polarization identity")
+    @test !contains(captured.output, "`norm(ϕ)=")
+
+end
+
+
 @testset "Invalid state with similar returning wrong type" begin
 
     # State where similar returns a plain Vector (wrong type) in inplace section

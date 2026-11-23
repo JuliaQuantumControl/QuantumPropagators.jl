@@ -29,5 +29,5 @@ QuantumPropagators = {path = ".."}
 [compat]
 Documenter = "1.4"
 QuantumControlTestUtils = "0.4"
-QuantumGradientGenerators = "0.1.10"
+QuantumGradientGenerators = "0.2"
 julia = "1.10"
