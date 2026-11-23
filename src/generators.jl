@@ -355,7 +355,10 @@ H = hamiltonian(terms...; check=true)
 
 constructs a Hamiltonian based on the given `terms`. Each term must be an
 operator or a tuple `(op, ampl)` of an operator and a control amplitude. Single
-operators are considered "drift" terms.
+operators are considered "drift" terms. Terms that share the same amplitude
+object (`===`) are combined into a single term with the sum of their
+operators. Amplitudes that are only equal by value, e.g., two separate vectors
+of pulse values `zeros(N_T)`, remain separate terms.
 
 In most cases, each control amplitude will simply be a control function or
 vector of pulse values. In general, `ampl` can be an arbitrary object that
@@ -410,7 +413,7 @@ function _make_generator(terms...; check = false)
                     @warn("It looks like (op, ampl) in term are reversed")
                 end
             end
-            i = findfirst(a -> a == ampl, amplitudes)
+            i = findfirst(a -> a === ampl, amplitudes)
             if isnothing(i)
                 push!(ops, op)
                 push!(amplitudes, ampl)

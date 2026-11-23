@@ -14,6 +14,8 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 
 ## [Unreleased]
 
+* Fixed: `hamiltonian` (and `liouvillian`) combined time-dependent terms whose amplitudes were equal by value, not only terms sharing the same amplitude object. Separate controls with identical values, e.g., two guess pulses `zeros(N_T)`, were merged into a single control with the sum of their operators. Only terms with identical (`===`) amplitudes are now combined [[#141], [#142]]
+
 
 ## [v0.9.2] — 2026-11-23
 
@@ -295,3 +297,5 @@ Initial public release
 [#138]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/138
 [#139]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/139
 [#140]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/140
+[#141]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/141
+[#142]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/pull/142

@@ -9,6 +9,7 @@ using IOCapture: IOCapture
 
 using QuantumPropagators
 using QuantumPropagators: Generator, Operator
+using QuantumPropagators.Controls: get_controls
 using QuantumPropagators.Interfaces: check_generator, check_state
 using QuantumControlTestUtils.RandomObjects: random_matrix, random_state_vector
 _OT(::Generator{OT,AT}) where {OT,AT} = OT
@@ -105,6 +106,34 @@ end
     tlist = collect(range(0, 2; length = 20))
     @test check_state(Ψ; normalized = true)
     @test check_generator(H; state = Ψ, tlist, for_parameterization = true)
+end
+
+
+@testset "vector controls with equal values" begin
+
+    # Separate controls with the same values must not be merged [#141]
+    σx = ComplexF64[0 1; 1 0]
+    σy = ComplexF64[0 -im; im 0]
+    σz = ComplexF64[1 0; 0 -1]
+    ϵ₁ = zeros(10)
+    ϵ₂ = zeros(10)
+    H = hamiltonian(σz, (σx, ϵ₁), (σy, ϵ₂))
+    @test H isa Generator
+    @test H.ops == [σz, σx, σy]
+    @test length(H.amplitudes) == 2
+    @test H.amplitudes[1] === ϵ₁
+    @test H.amplitudes[2] === ϵ₂
+    controls = get_controls(H)
+    @test length(controls) == 2
+    @test controls[1] === ϵ₁
+    @test controls[2] === ϵ₂
+
+    # Terms that share the same control are combined
+    H = hamiltonian(σz, (σx, ϵ₁), (σy, ϵ₁))
+    @test H.ops == [σz, σx + σy]
+    @test length(H.amplitudes) == 1
+    @test H.amplitudes[1] === ϵ₁
+
 end
 
 
