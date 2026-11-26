@@ -5,7 +5,10 @@
 using Test
 using QuantumPropagators
 using QuantumPropagators: hamiltonian
-using QuantumControlTestUtils.RandomObjects: random_state_vector, random_dynamic_generator
+using QuantumPropagators.Arnoldi: arnoldi!
+using QuantumPropagators.SpectralRange: specrange
+using QuantumControlTestUtils.RandomObjects:
+    random_matrix, random_state_vector, random_dynamic_generator
 using StableRNGs: StableRNG
 using TimerOutputs
 using ExponentialUtilities
@@ -71,6 +74,39 @@ end
     # `timings_enabled` must detect a loaded extension without timings
     TimerOutputs.disable_debug_timings(extmod)
     @test QuantumPropagators.timings_enabled() ≡ false
+
+    @test QuantumPropagators.disable_timings() ≡ false
+
+end
+
+
+@testset "Arnoldi timings without global fallback" begin
+
+    # https://github.com/JuliaQuantumControl/QuantumPropagators.jl/issues/131
+
+    @test !isdefined(QuantumPropagators.Arnoldi, :_DEFAULT_TIMING_DATA)
+
+    @test QuantumPropagators.enable_timings() ≡ true
+
+    N = 10
+    m = 5
+    rng = StableRNG(3261956410)
+    H = random_matrix(N; hermitian = true, rng)
+    Ψ = random_state_vector(N; rng)
+
+    Hess1 = zeros(ComplexF64, m + 1, m + 1)
+    q1 = [similar(Ψ) for _ = 1:(m+1)]
+    timing_data = TimerOutput()
+    @test arnoldi!(Hess1, q1, m, Ψ, H; _timing_data = timing_data) == m
+    @test TimerOutputs.ncalls(timing_data["matrix-vector product"]) == m
+
+    Hess2 = zeros(ComplexF64, m + 1, m + 1)
+    q2 = [similar(Ψ) for _ = 1:(m+1)]
+    @test arnoldi!(Hess2, q2, m, Ψ, H) == m
+    @test Hess2 == Hess1
+
+    E_min, E_max = specrange(H; method = :arnoldi)
+    @test E_min < E_max
 
     @test QuantumPropagators.disable_timings() ≡ false
 
