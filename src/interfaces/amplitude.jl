@@ -24,12 +24,12 @@ of a [`Generator`](@ref) object. Specifically:
 * [`evaluate(ampl, tlist, n; vals_dict)`](@ref evaluate) must be defined and
   return a Number
 
-If `for_parameterization` (may require the `RecursiveArrayTools` package to be
-loaded):
+If `for_parameterization`:
 
-* [`get_parameters(ampl)`](@ref get_parameters) must be defined and return a
-  vector of floats. Mutating that vector must mutate the controls inside the
-  `ampl`.
+* `ampl` must pass [`check_parameterized`](@ref):
+  [`get_parameters(ampl)`](@ref get_parameters) must contain the
+  [parameter blocks](@ref ParameterBlocks) of the controls inside `ampl`, and
+  writing to it must mutate those blocks.
 
 
 The function returns `true` for a valid amplitude and `false` for an invalid
@@ -63,7 +63,7 @@ function check_amplitude(
     end
 
     if for_parameterization
-        success &= check_parameterized(ampl; _message_prefix = px)
+        success &= check_parameterized(ampl; quiet, _message_prefix = px)
     end
 
     try

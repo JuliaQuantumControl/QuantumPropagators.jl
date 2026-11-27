@@ -12,6 +12,8 @@ import OrdinaryDiffEq  # ensure ODE extension is loaded
 using DocumenterCitations
 using DocumenterInterLinks
 
+include("control_diagrams.jl")  # module `ControlDiagrams`, used in controls.md
+
 
 PROJECT_TOML = Pkg.TOML.parsefile(joinpath(@__DIR__, "..", "Project.toml"))
 VERSION = PROJECT_TOML["version"]
@@ -88,6 +90,7 @@ makedocs(;
         prettyurls = true,
         canonical = "https://juliaquantumcontrol.github.io/QuantumPropagators.jl",
         assets = [
+            "assets/control_diagrams.css",
             asset(
                 "https://juliaquantumcontrol.github.io/QuantumControl.jl/dev/assets/topbar/topbar.css"
             ),
@@ -102,6 +105,7 @@ makedocs(;
         "Home" => "index.md",
         "Overview" => "overview.md",
         "Dynamical Generators" => "generators.md",
+        "Time-Dependent Controls" => "controls.md",
         "Propagation Methods" => "methods.md",
         "Expectation Values" => "storage.md",
         "How-to Guides" => "howto.md",

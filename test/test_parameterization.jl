@@ -4,7 +4,6 @@
 
 using Test
 using ComponentArrays
-using RecursiveArrayTools  # to ensure extension is loaded
 using UnPack: @unpack
 using QuantumPropagators: hamiltonian
 using QuantumPropagators.Controls: ParameterizedFunction, get_parameters, get_controls
@@ -242,6 +241,7 @@ _tanhfield(t; E₀, t₁, t₂, a) = (E₀ / 2) * (tanh(a * (t - t₁)) - tanh(a
     gaussian = GaussianControl(A = 1.0, t₀ = 0.5, σ = 0.2)
     p = get_parameters(gaussian)
     @test p isa AbstractVector
+    @test p.x === (gaussian.parameters,)
     @test eltype(p) == Float64
     @test length(p) == 3
     @test Array(p) == [1.0, 0.5, 0.2]
@@ -271,7 +271,7 @@ end
     Ψ₀ = ComplexF64[1, 0, 0]
     @test check_generator(H; state = Ψ₀, tlist, for_parameterization = true)
     @test check_parameterized(H)
-    @test get_parameters(H) === parameters
+    @test get_parameters(H).x === (parameters,)
 
 end
 

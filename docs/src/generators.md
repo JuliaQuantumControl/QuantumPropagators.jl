@@ -44,7 +44,7 @@ The [`evaluate`](@ref QuantumPropagators.Controls.evaluate) function evaluates t
 
 ## [Control Amplitudes](@id ControlAmplitudes)
 
-The distinction between control amplitudes and control functions becomes important only in the context of optimal control, where the control functions are directly modified by optimal control, whereas the control amplitudes determine how the control functions couple to the control operators, or account for explicit time dependencies in the Hamiltonian.
+The distinction between control amplitudes and control functions becomes important only in the context of optimal control, where the control functions are directly modified by optimal control, whereas the control amplitudes determine how the control functions couple to the control operators, or account for explicit time dependencies in the Hamiltonian. See [Time-Dependent Controls](@ref TimeDependentControls) for how generators, amplitudes, and controls are structured, and how an optimal control method tunes the controls, either as functions or through control parameters.
 
 Just as the [`evaluate`](@ref QuantumPropagators.Controls.evaluate) function evaluates time-dependent generators into static operators, it also evaluates control amplitudes or control functions to scalar values.
 

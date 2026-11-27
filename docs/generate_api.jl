@@ -34,6 +34,10 @@ _parentmodule(m::Number, pkg) = pkg
 _parentmodule(m::VersionNumber, pkg) = pkg
 
 
+# A label for a public name that is not exported (declared with `public`)
+_not_exported(mod, name) = Base.isexported(mod, name) ? "" : " (not exported)"
+
+
 """Return a list of Module instances for all the sub-modules of `pkg`.
 """
 function get_submodules(pkg)
@@ -69,7 +73,7 @@ function summarize_submodules(pkg)
     for mod in get_submodules(pkg)
         push!(lines, "* [`$mod`](@ref $(module_api_id(mod)))")
         for name in get_local_members(mod, all=false)
-            push!(lines, "    * [`$name`](@ref $mod.$name)")
+            push!(lines, "    * [`$name`](@ref $mod.$name)$(_not_exported(mod, name))")
         end
     end
     return join(lines, "\n")
@@ -149,7 +153,7 @@ function write_module_api(out, mod, description; reference_title="Reference")
     if length(public_members) > 0
         write(out, "\nPublic Members:\n\n")
         for name ∈ public_members
-            println(out, "* [`$name`](@ref $mod.$name)")
+            println(out, "* [`$name`](@ref $mod.$name)$(_not_exported(mod, name))")
         end
         write(out, "\n")
     end
