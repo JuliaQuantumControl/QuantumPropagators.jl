@@ -43,12 +43,13 @@ If `for_time_continuous`:
 * If `QuantumPropagators.Interfaces.supports_inplace(op)` is `true`,
   [`evaluate!(op, generator, t)`](@ref evaluate!) must be defined
 
-If `for_parameterization` (may require the `RecursiveArrayTools` package to be
-loaded):
+If `for_parameterization`:
 
-* [`get_parameters(generator)`](@ref get_parameters) must be defined and return
-  a vector of floats. Mutating that vector must mutate the controls inside the
-  `generator`.
+* `generator` must pass [`check_parameterized`](@ref):
+  [`get_parameters(generator)`](@ref get_parameters) must contain the
+  [parameter blocks](@ref ParameterBlocks) that `generator` holds in its own
+  fields or inherits from the controls inside it, and writing to it must
+  mutate those blocks.
 
 The function returns `true` for a valid generator and `false` for an invalid
 generator. Unless `quiet=true`, it will log an error to indicate which of the
@@ -91,7 +92,7 @@ function check_generator(
     end
 
     if for_parameterization
-        success &= check_parameterized(generator; _message_prefix = px)
+        success &= check_parameterized(generator; quiet, _message_prefix = px)
     end
 
     try

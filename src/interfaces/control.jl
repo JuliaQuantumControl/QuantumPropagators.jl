@@ -45,8 +45,9 @@ If `for_time_continuous`:
 
 If `for_parameterization`:
 
-* [`get_parameters(control)`](@ref get_parameters) must be defined and return a
-  vector of floats. Mutating that vector must mutate the control.
+* `control` must pass [`check_parameterized_function`](@ref) if it is a
+  [`ParameterizedFunction`](@ref), and [`check_parameterized`](@ref)
+  otherwise.
 
 The function returns `true` for a valid control and `false` for an invalid
 control. Unless `quiet=true`, it will log an error to indicate which of the

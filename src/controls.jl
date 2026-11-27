@@ -6,11 +6,17 @@ module Controls
 
 export discretize, discretize_on_midpoints
 export get_controls, get_parameters
-export ParameterizedFunction
+export ParameterizedFunction, StaticParameter
 export get_tlist_midpoints, t_mid
 export evaluate, evaluate!, substitute
 
 using LinearAlgebra
+using RecursiveArrayTools: ArrayPartition
+
+# Public, but not exported (for implementing `get_parameters` of custom types)
+@static if VERSION >= v"1.11.0-DEV.469"
+    eval(Meta.parse("public combine_parameters"))
+end
 
 
 """Evaluate `control` at every point of `tlist`.
@@ -240,6 +246,25 @@ function get_controls(operator::AbstractMatrix)
 end
 
 
+# Empty `vals_dict`, the default in all `evaluate` methods. Unlike a new
+# `IdDict()`, it does not allocate, and lookups in it infer as "not found".
+struct _EmptyValsDict <: AbstractDict{Any,Any} end
+Base.length(::_EmptyValsDict) = 0
+Base.isempty(::_EmptyValsDict) = true
+Base.iterate(::_EmptyValsDict, state...) = nothing
+Base.haskey(::_EmptyValsDict, key) = false
+Base.get(::_EmptyValsDict, key, default) = default
+Base.getindex(::_EmptyValsDict, key) = throw(KeyError(key))
+const _NO_VALS = _EmptyValsDict()
+
+struct _NotFound end
+
+# Look up `key` in `vals_dict` (`_NotFound()` if missing). Checking `isempty`
+# first avoids boxing an immutable `key` (e.g., a `StaticParameter`) for the
+# `IdDict` lookup.
+@inline _lookup(vals_dict, key) =
+    isempty(vals_dict) ? _NotFound() : get(vals_dict, key, _NotFound())
+
 
 """Evaluate all controls.
 
@@ -303,7 +328,7 @@ in `generator`.
 * [`evaluate!`](@ref) — update an existing operator with a re-evaluation of a
 generator at a different point in time.
 """
-function evaluate(object, args...; vals_dict = IdDict())
+function evaluate(object, args...; vals_dict = _NO_VALS)
     # Fallback: If `object` has to components, just look up `object` in
     # `vals_dict`
     return get(vals_dict, object, object)
@@ -347,27 +372,30 @@ function t_mid(tlist, n)
 end
 
 
-function evaluate(func::Function, tlist::Vector, n::Int64; vals_dict = IdDict())
-    if haskey(vals_dict, func)
-        return vals_dict[func]
-    else
+function evaluate(func::Function, tlist::Vector, n::Int64; vals_dict = _NO_VALS)
+    val = _lookup(vals_dict, func)
+    if val isa _NotFound
         return func(t_mid(tlist, n))
-    end
-end
-
-
-function evaluate(func::Function, t::Float64; vals_dict = IdDict())
-    if haskey(vals_dict, func)
-        return vals_dict[func]
     else
-        return func(t)
+        return val
     end
 end
 
 
-function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict = IdDict())
-    if haskey(vals_dict, control)
-        return vals_dict[control]
+function evaluate(func::Function, t::Float64; vals_dict = _NO_VALS)
+    val = _lookup(vals_dict, func)
+    if val isa _NotFound
+        return func(t)
+    else
+        return val
+    end
+end
+
+
+function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict = _NO_VALS)
+    val = _lookup(vals_dict, control)
+    if !(val isa _NotFound)
+        return val
     else
         if length(control) == length(tlist) - 1
             return control[n]
@@ -389,9 +417,10 @@ function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict = IdDict()
 end
 
 
-function evaluate(control::Vector, t::Float64; vals_dict = IdDict())
-    if haskey(vals_dict, control)
-        return vals_dict[control]
+function evaluate(control::Vector, t::Float64; vals_dict = _NO_VALS)
+    val = _lookup(vals_dict, control)
+    if !(val isa _NotFound)
+        return val
     else
         error(
             "`evaluate(control::Vector, t::Float64)` is invalid. Use e.g. `evaluate(…, tlist, n)`."
@@ -400,7 +429,7 @@ function evaluate(control::Vector, t::Float64; vals_dict = IdDict())
 end
 
 
-function evaluate(generator::Tuple, args...; vals_dict = IdDict())
+function evaluate(generator::Tuple, args...; vals_dict = _NO_VALS)
     if isa(generator[1], Tuple)
         control = generator[1][2]
         coeff = evaluate(control, args...; vals_dict)
@@ -443,7 +472,7 @@ performs an in-place update on an `op` the was obtained from a previous call to
 [`evaluate`](@ref) with the same `generator`, but for a different point in time
 and/or different values in `vals_dict`.
 """
-function evaluate!(op, generator::Tuple, args...; vals_dict = IdDict())
+function evaluate!(op, generator::Tuple, args...; vals_dict = _NO_VALS)
     if generator[1] isa Tuple
         control = generator[1][2]
         copyto!(op, generator[1][1])
@@ -519,110 +548,117 @@ function substitute(generator::Tuple, replacements::AbstractDict)
 end
 
 
-"""Obtain analytic parameters of the given `control`.
-
-```julia
-parameters = get_parameters(control)
-```
-
-obtains `parameters` as an `AbstractVector{Float64}` containing any tunable
-analytic parameters associated with the `control`. The specific type of
-`parameters` depends on how `control` is defined, but a
-[`ComponentArrays.ComponentVector`](@extref) should be a common array type.
-
-Mutating the resulting vector must directly affect the control in any
-subsequent call to [`evaluate`](@ref). That is, the values in `parameters`
-must alias values inside the `control`.
-
-Note that the `control` must be an object specifically designed to have
-analytic parameters. Typically, it should be implemented as a subtype of
-[`ParameterizedFunction`](@ref). For a simple function `ϵ(t)` or a vector of
-pulse values, which are the default types of controls discussed in the
-documentation of
-[`hamiltonian`](@ref QuantumPropagators.Generators.hamiltonian),
-the `get_parameters` function will return an empty vector.
-
-More generally,
+"""Obtain the analytic parameters of an object.
 
 ```julia
 parameters = get_parameters(object)
 ```
 
-collects and combines all unique parameter arrays from the controls inside the
-`object`. The `object` may be a
+returns a [`RecursiveArrayTools.ArrayPartition`](@extref) of the
+[parameter blocks](@ref ParameterBlocks) that `object` holds or inherits from
+the controls it contains, each block once, in order of first occurrence.
+Writing to `parameters` writes into the blocks, and thus changes what
+[`evaluate`](@ref) returns for `object`. As long as `object` holds and
+contains the same blocks, repeated calls return identical (`===`) results.
+
+The `object` may be a control, an amplitude, a
 [`Generator`](@ref QuantumPropagators.Generators.Generator),
-[`Trajectory`](@ref QuantumControl.Trajectory),
-[`ControlProblem`](@ref QuantumControl.ControlProblem), or
-any other object for which [`get_controls(object)`](@ref get_controls) is
-defined. If there are multiple controls with different parameter arrays, these
-are combined in a [`RecursiveArrayTools.ArrayPartition`](@extref).
-This requires the `RecursiveArrayTools` package to be loaded. Again, mutating
-`parameters` directly affects the underlying controls.
+a [`Trajectory`](@ref QuantumControl.Trajectory),
+a [`ControlProblem`](@ref QuantumControl.ControlProblem), or any other object
+for which [`get_controls`](@ref) is defined. A
+[`ParameterizedFunction`](@ref) holds its `parameters` field as a single block.
+A plain function `ϵ(t)` or a pulse holds no block. A custom type that holds
+blocks in its own fields must implement its own `get_parameters` method, see
+[How to implement a generator with its own parameters](@ref howto_custom_parameters).
 
-The `parameters` may be used as part of the `parameters`
-attribute of a propagator for time-continuous dynamics, like a general ODE
-solver, or in an optimization that tunes analytic control parameters, e.g.,
-with a Nelder-Mead method. Examples might include the widths, peak amplitudes,
-and times of a superposition of Gaussians [MachnesPRL2018](@cite), cf. the
-[example of a `ParameterizedFunction`](@ref howto_parameterized),
-or the amplitudes associated with spectral components in a random truncated
-basis [CanevaPRA2011](@cite).
+The blocks are `parameters.x`, a tuple in the order of the index ranges that
+the blocks occupy in `parameters`. Use it, e.g., to access the named fields of
+a [`ComponentArrays.ComponentVector`](@extref) block.
 
-The `parameters` are not intended for optimization methods such as
-[GRAPE](https://juliaquantumcontrol.github.io/GRAPE.jl/stable/) or
-[Krotov](https://juliaquantumcontrol.github.io/Krotov.jl/stable/) that
-fundamentally use a piecewise-constant control ansatz. In the context of such
-methods, the "control parameters" are always the amplitudes of the `control` at
-the mid-points of the time grid, as obtained by
-[`discretize_on_midpoints`](@ref), and `get_parameters` is ignored.
+The `parameters` are for methods that tune analytic parameters, e.g., the
+widths and peak amplitudes of a superposition of Gaussians
+[MachnesPRL2018](@cite), or the amplitudes of spectral components in a random
+truncated basis [CanevaPRA2011](@cite). Methods that tune pulses, like
+[GRAPE](@extref GRAPE :doc:`index`) and
+[Krotov's method](@extref Krotov :doc:`index`), use
+[`discretize_on_midpoints`](@ref) instead, and ignore `get_parameters`.
+
+Each call goes through all controls and allocates, so call `get_parameters`
+once when setting up a propagation or an optimization, and keep the result.
+See [Time-Dependent Controls](@ref TimeDependentControls) for the definition of
+the terms, and the how-to on
+[working with control parameters](@ref howto_parameters) for examples.
 """
 function get_parameters(object)
-    return _get_parameters(object; via = get_controls)
-end
-
-function _get_parameters(object; via = get_controls)
-    parameter_arrays = []
-    seen_parameter_array = IdDict{Any,Bool}()
-    seen_component = IdDict{Any,Bool}()
-    for component in via(object)
-        if component !== object  # E.g., get_controls(control) -> control
-            if !haskey(seen_component, component)
-                parameter_array = get_parameters(component)
-                if isempty(parameter_array)
-                    continue
-                end
-                if !haskey(seen_parameter_array, parameter_array)
-                    push!(parameter_arrays, parameter_array)
-                    seen_parameter_array[parameter_array] = true
-                end
-            end
-            seen_component[component] = true
+    parameters = Any[]
+    seen_control = IdDict{Any,Bool}()
+    for control in get_controls(object)
+        if (control !== object) && !haskey(seen_control, control)
+            # `control !== object`: E.g., get_controls(ϵ) -> (ϵ,)
+            push!(parameters, get_parameters(control))
+            seen_control[control] = true
         end
     end
-    if isempty(parameter_arrays)
-        return Float64[]
-    elseif length(parameter_arrays) == 1
-        return parameter_arrays[1]
+    return combine_parameters(parameters...)
+end
+
+
+"""Combine the control `parameters` of several objects.
+
+```julia
+parameters = combine_parameters(parameters_1, parameters_2, …)
+```
+
+returns a [`RecursiveArrayTools.ArrayPartition`](@extref) of the
+[parameter blocks](@ref ParameterBlocks) in the arguments, each block once, in
+order of first occurrence. Each argument is the result of
+[`get_parameters`](@ref) for some object, or a single block. Thus,
+`combine_parameters(block).x === (block,)` for a non-empty block. An empty
+block, and a block that is identical (`===`) to an earlier block, are dropped.
+Two remaining blocks that may share memory, e.g., two overlapping views of the
+same array, throw an `ArgumentError`. This check is not exhaustive: use
+separate arrays for separate blocks, and verify with
+[`check_parameterized`](@ref QuantumPropagators.Interfaces.check_parameterized).
+
+This is a helper function for implementing [`get_parameters`](@ref) for a
+custom type that holds blocks in its own fields, e.g.,
+
+```julia
+get_parameters(generator::MyGenerator) = combine_parameters(
+    generator.parameters,
+    (get_parameters(control) for control in get_controls(generator))...
+)
+```
+
+See [How to implement a generator with its own parameters](@ref howto_custom_parameters).
+"""
+function combine_parameters(parameters...)
+    blocks = Any[]
+    for p in parameters
+        # `p` is the result of `get_parameters` or a single block
+        for block in ((p isa ArrayPartition) ? p.x : (p,))
+            if block isa ArrayPartition
+                msg = "A parameter block must not be an `ArrayPartition`. That type is reserved for the parameters of an object."
+                throw(ArgumentError(msg))
+            end
+            if !isempty(block) && !any(b -> b === block, blocks)
+                push!(blocks, block)
+            end
+        end
+    end
+    N = length(blocks)
+    for i = 1:N, j = (i+1):N
+        if Base.mightalias(blocks[i], blocks[j])
+            msg = "Parameter blocks $i and $j (of $N) may share memory. Any two parameter blocks must either be identical (`===`) or share no memory."
+            throw(ArgumentError(msg))
+        end
+    end
+    if N == 0
+        return ArrayPartition{Float64,Tuple{}}(())
     else
-        try
-            return _combine_parameter_arrays(parameter_arrays)
-        catch exception
-            if exception isa MethodError
-                msg = "In order for parameter arrays to be combined from multiple components, the `RecursiveArrayTools` package must be loaded"
-                @error msg exception
-            else
-                rethrow()
-            end
-        end
+        return ArrayPartition(blocks...)
     end
 end
-
-
-# Defined in extension module as
-#
-#   return ArrayPartition(parameter_arrays...)
-#
-function _combine_parameter_arrays end
 
 
 """
@@ -630,26 +666,82 @@ Abstract type for function-like objects with [`parameters`](@ref get_parameters)
 
 A struct that is an implementation of a `ParameterizedFunction`:
 
-* must have a `parameters` field that is an `AbstractVector` of
-  floats (e.g., a [`ComponentArrays.ComponentVector`](@extref))
+* must have a `parameters` field that is a
+  [parameter block](@ref ParameterBlocks) (e.g., a
+  [`ComponentArrays.ComponentVector`](@extref))
 * must be [callable](@extref Julia Function-like-objects) with a single float
   argument `t`,
 * may define getters and setters for referencing the values in `parameters`
   with convenient names.
 
-The `parameters` field of any `ParameterizedFunction` can be accessed via
-[`get_parameters`](@ref).
+The `parameters` field of a `ParameterizedFunction` is the single block that
+it holds: [`get_parameters`](@ref) returns an `ArrayPartition` that wraps it.
+As a parameter block, it must meet four requirements:
+
+1. It is an `AbstractVector{Float64}` with one-based indexing.
+2. It can be mutated in place, and the function reads its values when it is
+   evaluated, so that writing to it changes the value of `f(t)`.
+3. It is not a [`RecursiveArrayTools.ArrayPartition`](@extref). That type is
+   reserved for the parameters of an object with several blocks, see
+   [`get_parameters`](@ref).
+4. Any two blocks are either identical (`===`) or share no memory. Two
+   parameterized functions share parameters by holding the same block.
 
 See [How to define a parameterized control](@ref howto_parameterized)
 for an example. You may use the
 [`QuantumPropagators.Interfaces.check_parameterized_function`](@ref) to check
-the implementation of a `ParameterizedFunction` subtype.
+the implementation of a `ParameterizedFunction` subtype. See
+[Time-Dependent Controls](@ref TimeDependentControls) for the rationale.
 """
 abstract type ParameterizedFunction <: Function end
 
 
 function get_parameters(control::ParameterizedFunction)
-    return getfield(control, :parameters)
+    return combine_parameters(getfield(control, :parameters))
+end
+
+
+"""A tunable parameter that is constant in time.
+
+```julia
+f = StaticParameter(parameters, i)
+```
+
+is a [`ParameterizedFunction`](@ref) that holds the
+[parameter block](@ref ParameterBlocks) `parameters` and returns
+`parameters[i]` for any time `t`, i.e., `f(t) == parameters[i]`. The index
+`i` is optional, with a default of `1`.
+
+This allows for tunable parameters of the drift or of a dissipator in a
+[`Generator`](@ref QuantumPropagators.Generators.Generator), which does not hold
+blocks itself, e.g.,
+
+```julia
+w = [ν, α]  # frequency and anharmonicity of a transmon
+H = hamiltonian(
+    (n̂, StaticParameter(w, 1)),
+    (n̂ * (n̂ - I) / 2, StaticParameter(w, 2)),
+    (a + a', ϵ)
+)
+```
+
+where `w` is the only block in `get_parameters(H)` (if `ϵ` has no parameters).
+"""
+struct StaticParameter{P<:AbstractVector} <: ParameterizedFunction
+    parameters::P
+    index::Int
+    function StaticParameter(parameters::P, i::Integer = 1) where {P<:AbstractVector}
+        checkbounds(parameters, i)
+        return new{P}(parameters, i)
+    end
+end
+
+(f::StaticParameter)(t) = f.parameters[f.index]
+
+function Base.show(io::IO, f::StaticParameter)
+    print(io, "StaticParameter(")
+    show(io, f.parameters)
+    print(io, ", $(f.index))")
 end
 
 end

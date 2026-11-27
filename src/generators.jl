@@ -10,6 +10,7 @@ using SparseArrays
 export Generator, Operator, ScaledOperator
 export hamiltonian, liouvillian
 import ..Controls: get_controls, evaluate, evaluate!, substitute
+using ..Controls: _NO_VALS
 
 
 @doc raw"""A time-dependent generator.
@@ -744,7 +745,7 @@ get_controls(operator::Operator) = Tuple([])
 get_controls(operator::ScaledOperator) = Tuple([])
 
 
-function evaluate(generator::Generator, args...; vals_dict = IdDict())
+function evaluate(generator::Generator, args...; vals_dict = _NO_VALS)
     coeffs = []
     for (i, ampl) in enumerate(generator.amplitudes)
         coeff = evaluate(ampl, args...; vals_dict)
@@ -761,7 +762,7 @@ function evaluate(generator::Generator, args...; vals_dict = IdDict())
 end
 
 
-function evaluate!(op::Operator, generator::Generator, args...; vals_dict = IdDict())
+function evaluate!(op::Operator, generator::Generator, args...; vals_dict = _NO_VALS)
     @assert length(op.ops) == length(generator.ops)
     @assert all(O ≡ P for (O, P) in zip(op.ops, generator.ops))
     for (i, ampl) in enumerate(generator.amplitudes)

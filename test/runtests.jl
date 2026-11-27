@@ -52,6 +52,16 @@ using SafeTestsets
         include("test_parameterization.jl")
     end
 
+    println("\n* Parameter Blocks (test_parameter_blocks.jl):")
+    @time @safetestset "Parameter Blocks" begin
+        include("test_parameter_blocks.jl")
+    end
+
+    println("\n* Evaluate Allocations (test_evaluate_allocations.jl):")
+    @time @safetestset "Evaluate Allocations" begin
+        include("test_evaluate_allocations.jl")
+    end
+
     println("\n* CRAB Functions (test_crab_functions.jl):")
     @time @safetestset "CRAB Functions" begin
         include("test_crab_functions.jl")

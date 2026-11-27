@@ -18,7 +18,7 @@ function get_local_members(pkg; all=true)
     return [
         m for m in names(pkg, all=all) if !(
             (startswith(String(m), "#")) ||       # compiler-generated names
-            (getfield(pkg, m) isa Union{Dict,Array,Set}) ||  # global variable
+            (getfield(pkg, m) isa Union{AbstractDict,Array,Set}) ||  # global variable
             (m == Symbol(pkg)) ||                 # the package itself
             (m == :eval) ||                       # compiler-injected "eval"
             (m == :include) ||                    # compiler-injected "include"
@@ -32,6 +32,10 @@ _parentmodule(m, pkg) = parentmodule(m)
 _parentmodule(m::TimerOutputs.TimerOutput, pkg) = pkg
 _parentmodule(m::Number, pkg) = pkg
 _parentmodule(m::VersionNumber, pkg) = pkg
+
+
+# A label for a public name that is not exported (declared with `public`)
+_not_exported(mod, name) = Base.isexported(mod, name) ? "" : " (not exported)"
 
 
 """Return a list of Module instances for all the sub-modules of `pkg`.
@@ -69,7 +73,7 @@ function summarize_submodules(pkg)
     for mod in get_submodules(pkg)
         push!(lines, "* [`$mod`](@ref $(module_api_id(mod)))")
         for name in get_local_members(mod, all=false)
-            push!(lines, "    * [`$name`](@ref $mod.$name)")
+            push!(lines, "    * [`$name`](@ref $mod.$name)$(_not_exported(mod, name))")
         end
     end
     return join(lines, "\n")
@@ -149,7 +153,7 @@ function write_module_api(out, mod, description; reference_title="Reference")
     if length(public_members) > 0
         write(out, "\nPublic Members:\n\n")
         for name ∈ public_members
-            println(out, "* [`$name`](@ref $mod.$name)")
+            println(out, "* [`$name`](@ref $mod.$name)$(_not_exported(mod, name))")
         end
         write(out, "\n")
     end
