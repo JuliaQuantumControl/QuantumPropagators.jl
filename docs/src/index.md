@@ -13,7 +13,7 @@ VERSION = Pkg.dependencies()[Base.UUID("7bf12567-5742-4b91-a078-644e72a65fc1")].
 
 github_badge = "[![Github](https://img.shields.io/badge/JuliaQuantumControl-QuantumPropagators.jl-blue.svg?logo=github)](https://github.com/JuliaQuantumControl/QuantumPropagators.jl)"
 
-version_badge = "![v$VERSION](https://img.shields.io/badge/version-v$VERSION-green.svg)"
+version_badge = "![v$VERSION](https://img.shields.io/badge/version-v$(replace(string(VERSION), "-" => "--"))-green.svg)"
 
 Markdown.parse("$github_badge $version_badge")
 ```
