@@ -47,6 +47,8 @@ links = InterLinks(
         joinpath(@__DIR__, "src", "inventories", "TimerOutputs.toml"),
     ),
     "QuantumControl" => org_inv("QuantumControl"),
+    "Krotov" => org_inv("Krotov"),
+    "GRAPE" => org_inv("GRAPE"),
     "StaticArrays" => "https://juliaarrays.github.io/StaticArrays.jl/stable/",
     "ComponentArrays" => "https://sciml.github.io/ComponentArrays.jl/stable/",
     "RecursiveArrayTools" => "https://docs.sciml.ai/RecursiveArrayTools/stable/",

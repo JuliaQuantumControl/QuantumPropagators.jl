@@ -569,8 +569,8 @@ or the amplitudes associated with spectral components in a random truncated
 basis [CanevaPRA2011](@cite).
 
 The `parameters` are not intended for optimization methods such as
-[GRAPE](https://juliaquantumcontrol.github.io/GRAPE.jl/stable/) or
-[Krotov](https://juliaquantumcontrol.github.io/Krotov.jl/stable/) that
+[GRAPE](@extref GRAPE :doc:`index`) or
+[Krotov](@extref Krotov :doc:`index`) that
 fundamentally use a piecewise-constant control ansatz. In the context of such
 methods, the "control parameters" are always the amplitudes of the `control` at
 the mid-points of the time grid, as obtained by

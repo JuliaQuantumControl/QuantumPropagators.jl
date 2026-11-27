@@ -17,7 +17,7 @@ As discussed in the [Overview](@ref overview_approaches), time propagation can b
 
 1. By *analytically* solving the equation of motion and numerically evaluating the application time evolution operator.
 
-   We consider this especially in the piecewise-constant case (`pwc=true` in [`propagate`](@ref)/[`init_prop`](@ref)), which is required for the traditional optimization methods [GRAPE](https://juliaquantumcontrol.github.io/GRAPE.jl/stable/) and [Krotov](https://juliaquantumcontrol.github.io/Krotov.jl/stable/). In these propagations, the time-dependent generator ``\op{H}(t)`` is [evaluated](@ref QuantumPropagators.Controls.evaluate) to a constant operator ``\op{H}`` on each interval of the time grid. The analytical solution to the Schrödinger or Liouville equation is well known, and propagation step simply has to evaluate the application of the time evolution operator ``\op{U} = \exp[-i \op{H} dt]`` to the state ``|Ψ⟩``. The following methods are built in to `QuantumPropagators`:
+   We consider this especially in the piecewise-constant case (`pwc=true` in [`propagate`](@ref)/[`init_prop`](@ref)), which is required for the traditional optimization methods [GRAPE](@extref GRAPE :doc:`index`) and [Krotov](@extref Krotov :doc:`index`). In these propagations, the time-dependent generator ``\op{H}(t)`` is [evaluated](@ref QuantumPropagators.Controls.evaluate) to a constant operator ``\op{H}`` on each interval of the time grid. The analytical solution to the Schrödinger or Liouville equation is well known, and propagation step simply has to evaluate the application of the time evolution operator ``\op{U} = \exp[-i \op{H} dt]`` to the state ``|Ψ⟩``. The following methods are built in to `QuantumPropagators`:
 
    * [`ExpProp`](@ref method_expprop) – constructs ``\op{U}`` explicitly and then applies it to ``|Ψ⟩``
    * [`Cheby`](@ref method_cheby) — expansion of ``\op{U} |Ψ⟩`` into Chebychev polynomials, valid if ``\op{H}`` has real eigenvalues
@@ -37,7 +37,7 @@ As discussed in the [Overview](@ref overview_approaches), time propagation can b
 
    * [`OrdinaryDiffEq`](@ref method_ode) – solve the equation of motion as an ODE
 
-   The main benefit of using an ODE solver is that the generator ``\op{H}(t)`` can be treated as time-continuous, and thus avoid the time discretization error. While this is not compatible with traditional optimal control method like [GRAPE](https://juliaquantumcontrol.github.io/GRAPE.jl/stable/) and [Krotov](https://juliaquantumcontrol.github.io/Krotov.jl/stable/), it is suitable for control methods for tuning analytical control parameters [LucarelliPRA2018,MachnesPRL2018,SorensenPRA2018](@cite).
+   The main benefit of using an ODE solver is that the generator ``\op{H}(t)`` can be treated as time-continuous, and thus avoid the time discretization error. While this is not compatible with traditional optimal control method like [GRAPE](@extref GRAPE :doc:`index`) and [Krotov](@extref Krotov :doc:`index`), it is suitable for control methods for tuning analytical control parameters [LucarelliPRA2018,MachnesPRL2018,SorensenPRA2018](@cite).
 
    The `method=OrdinaryDiffEq` is also available in a piecewise-constant mode by setting `pwc=true`, for comparison with `method=Cheby` and `method=Newton`.
 
