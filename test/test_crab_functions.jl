@@ -63,11 +63,13 @@ end
     N = 10
 
     ϵ = F(N; parity = :odd, max_frequency = 2.0, rng)
-    @test ϵ.i_sin == 0
+    @test isempty(ϵ.cos_indices)
+    @test ϵ.sin_indices == 1:N
     @test (ϵ(-T) + ϵ(T)) ≈ 0.0
 
     ϵ = F(N; parity = :odd, guess = (t->1.0), scale_guess = true, max_frequency = 2.0, rng)
-    @test ϵ.i_sin == 1
+    @test isempty(ϵ.cos_indices)
+    @test ϵ.sin_indices == 2:(N+1)
     if F == CRABFunction
         @test length(ϵ.parameters) == N + 1
     elseif F == VariedFrequencyCRABFunction
@@ -75,7 +77,8 @@ end
     end
 
     ϵ = F(N; parity = :even, max_frequency = 2.0, rng)
-    @test ϵ.i_cos == 0
+    @test ϵ.cos_indices == 1:N
+    @test isempty(ϵ.sin_indices)
     if F == CRABFunction
         @test length(ϵ.parameters) == N
     elseif F == VariedFrequencyCRABFunction
@@ -91,8 +94,8 @@ end
     end
 
     ϵ = F(N; parity = :evenodd, max_frequency = 2.0, rng)
-    @test ϵ.i_cos == 0
-    @test ϵ.i_sin == N
+    @test ϵ.cos_indices == 1:N
+    @test ϵ.sin_indices == (N+1):2N
     @test ϵ(-T) ≠ ϵ(T)
 
     ϵ = F(
@@ -103,8 +106,8 @@ end
         max_frequency = 2.0,
         rng
     )
-    @test ϵ.i_cos == 1
-    @test ϵ.i_sin == N+1
+    @test ϵ.cos_indices == 2:(N+1)
+    @test ϵ.sin_indices == (N+2):(2N+1)
     if F == CRABFunction
         @test length(ϵ.parameters) == 2N + 1
     elseif F == VariedFrequencyCRABFunction
@@ -121,6 +124,50 @@ end
     @test c.error
     msg = "parity must be one of `:evenodd`, `:odd`, `:even`, not `:oddevn`"
     @test c.value.msg == msg
+
+end
+
+
+# The CRAB formula, evaluated from the documented layout of the parameters
+function crab_reference(ϵ, t)
+    N = length(ϵ.frequencies)
+    p = copy(ϵ.parameters)
+    c₀ = ϵ.scale_guess ? popfirst!(p) : 1.0
+    c_plus = (ϵ.parity == :odd) ? zeros(N) : splice!(p, 1:N)
+    c_minus = (ϵ.parity == :even) ? zeros(N) : splice!(p, 1:N)
+    r = (ϵ isa VariedFrequencyCRABFunction) ? splice!(p, 1:N) : ones(N)
+    @assert isempty(p)
+    ω = ϵ.frequencies
+    S = isnothing(ϵ.shape) ? 1.0 : ϵ.shape(t)
+    g = isnothing(ϵ.guess) ? 0.0 : ϵ.guess(t)
+    return c₀ * g + S * sum(c_plus .* cos.(r .* ω .* t) .+ c_minus .* sin.(r .* ω .* t))
+end
+
+function allocations(f, t)
+    f(t)  # compile
+    return @allocated f(t)
+end
+
+
+@testset "$(nameof(F)): evaluation" for F in (CRABFunction, VariedFrequencyCRABFunction)
+
+    rng = StableRNG(3167069968)
+    N = 5
+    T = 1.0
+    tlist = collect(range(0, T; length = 21))
+    S(t) = flattop(t; T, t_rise = 0.3T)
+    guess(t) = 0.2 + t
+
+    for parity in (:evenodd, :even, :odd), scale_guess in (true, false)
+        ϵ = F(N; max_frequency = 20.0, shape = S, guess, scale_guess, parity, rng)
+        ϵ.parameters .= 1.0 .- 2.0 .* rand(rng, length(ϵ.parameters))
+        if F == VariedFrequencyCRABFunction
+            @test ϵ.r_indices == (length(ϵ.parameters)-N+1):length(ϵ.parameters)
+            ϵ.parameters[ϵ.r_indices] .= 0.5 .+ rand(rng, N)
+        end
+        @test ϵ.(tlist) ≈ crab_reference.(Ref(ϵ), tlist)
+        @test allocations(ϵ, 0.5) == 0
+    end
 
 end
 
