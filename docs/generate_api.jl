@@ -18,7 +18,7 @@ function get_local_members(pkg; all=true)
     return [
         m for m in names(pkg, all=all) if !(
             (startswith(String(m), "#")) ||       # compiler-generated names
-            (getfield(pkg, m) isa Union{Dict,Array,Set}) ||  # global variable
+            (getfield(pkg, m) isa Union{AbstractDict,Array,Set}) ||  # global variable
             (m == Symbol(pkg)) ||                 # the package itself
             (m == :eval) ||                       # compiler-injected "eval"
             (m == :include) ||                    # compiler-injected "include"

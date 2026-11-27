@@ -7,7 +7,7 @@ module Amplitudes
 export LockedAmplitude, ShapedAmplitude, GuidedAmplitude
 
 import ..Controls: get_controls, evaluate, substitute, discretize_on_midpoints
-using ..Controls: t_mid
+using ..Controls: t_mid, _NO_VALS
 
 
 #### LockedAmplitude ##########################################################
@@ -213,7 +213,7 @@ function evaluate(
     ampl::ShapedAmplitude{CT,Vector{Float64}},
     tlist::Vector{Float64},
     n::Int;
-    vals_dict = IdDict()
+    vals_dict = _NO_VALS
 ) where {CT}
     S_t = ampl.shape[n]
     ϵ_t = evaluate(ampl.control, tlist, n; vals_dict)
@@ -225,7 +225,7 @@ function evaluate(
     ampl::ShapedAmplitude,
     tlist::Vector{Float64},
     n::Int;
-    vals_dict = IdDict()
+    vals_dict = _NO_VALS
 )
     S_t = ampl.shape(t_mid(tlist, n))
     ϵ_t = evaluate(ampl.control, tlist, n; vals_dict)
@@ -233,7 +233,7 @@ function evaluate(
 end
 
 # Callable shape and callable control: call both directly at t
-function evaluate(ampl::ShapedAmplitude, t::Float64; vals_dict = IdDict())
+function evaluate(ampl::ShapedAmplitude, t::Float64; vals_dict = _NO_VALS)
     S_t = ampl.shape(t)
     ϵ_t = evaluate(ampl.control, t; vals_dict)
     return S_t * ϵ_t
@@ -255,7 +255,7 @@ function evaluate(ampl::ShapedAmplitude{CT,Vector{Float64}}, t::Float64; _...) w
 end
 
 
-function evaluate(ampl::ShapedAmplitude, args...; vals_dict = IdDict())
+function evaluate(ampl::ShapedAmplitude, args...; vals_dict = _NO_VALS)
     S_t = evaluate(ampl.shape, args...; vals_dict)
     ϵ_t = evaluate(ampl.control, args...; vals_dict)
     return S_t * ϵ_t
@@ -409,7 +409,7 @@ function evaluate(
     ampl::GuidedAmplitude{CT,Vector{Float64},Vector{Float64}},
     tlist::Vector{Float64},
     n::Int;
-    vals_dict = IdDict()
+    vals_dict = _NO_VALS
 ) where {CT}
     G_t = ampl.guide[n]
     S_t = ampl.shape[n]
@@ -422,7 +422,7 @@ function evaluate(
     ampl::GuidedAmplitude{CT,ST,Vector{Float64}},
     tlist::Vector{Float64},
     n::Int;
-    vals_dict = IdDict()
+    vals_dict = _NO_VALS
 ) where {CT,ST}
     G_t = ampl.guide[n]
     S_t = ampl.shape(t_mid(tlist, n))
@@ -435,7 +435,7 @@ function evaluate(
     ampl::GuidedAmplitude{CT,Vector{Float64},GT},
     tlist::Vector{Float64},
     n::Int;
-    vals_dict = IdDict()
+    vals_dict = _NO_VALS
 ) where {CT,GT}
     G_t = ampl.guide(t_mid(tlist, n))
     S_t = ampl.shape[n]
@@ -448,7 +448,7 @@ function evaluate(
     ampl::GuidedAmplitude,
     tlist::Vector{Float64},
     n::Int;
-    vals_dict = IdDict()
+    vals_dict = _NO_VALS
 )
     t = t_mid(tlist, n)
     G_t = ampl.guide(t)
@@ -460,7 +460,7 @@ end
 function evaluate(
     ampl::GuidedAmplitude{CT,ST,GT},
     t::Float64;
-    vals_dict = IdDict()
+    vals_dict = _NO_VALS
 ) where {CT<:Function,ST<:Function,GT<:Function}
     G_t = ampl.guide(t)
     S_t = ampl.shape(t)
@@ -468,7 +468,7 @@ function evaluate(
     return G_t + S_t * ϵ_t
 end
 
-function evaluate(ampl::GuidedAmplitude, t::Float64; vals_dict = IdDict())
+function evaluate(ampl::GuidedAmplitude, t::Float64; vals_dict = _NO_VALS)
     if ampl.control isa Vector{Float64}
         msg = "A GuidedAmplitude with a vector control can only be evaluated with (tlist, n)."
         error(msg)

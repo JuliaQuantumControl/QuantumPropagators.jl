@@ -246,6 +246,25 @@ function get_controls(operator::AbstractMatrix)
 end
 
 
+# Empty `vals_dict`, the default in all `evaluate` methods. Unlike a new
+# `IdDict()`, it does not allocate, and lookups in it infer as "not found".
+struct _EmptyValsDict <: AbstractDict{Any,Any} end
+Base.length(::_EmptyValsDict) = 0
+Base.isempty(::_EmptyValsDict) = true
+Base.iterate(::_EmptyValsDict, state...) = nothing
+Base.haskey(::_EmptyValsDict, key) = false
+Base.get(::_EmptyValsDict, key, default) = default
+Base.getindex(::_EmptyValsDict, key) = throw(KeyError(key))
+const _NO_VALS = _EmptyValsDict()
+
+struct _NotFound end
+
+# Look up `key` in `vals_dict` (`_NotFound()` if missing). Checking `isempty`
+# first avoids boxing an immutable `key` (e.g., a `StaticParameter`) for the
+# `IdDict` lookup.
+@inline _lookup(vals_dict, key) =
+    isempty(vals_dict) ? _NotFound() : get(vals_dict, key, _NotFound())
+
 
 """Evaluate all controls.
 
@@ -309,7 +328,7 @@ in `generator`.
 * [`evaluate!`](@ref) — update an existing operator with a re-evaluation of a
 generator at a different point in time.
 """
-function evaluate(object, args...; vals_dict = IdDict())
+function evaluate(object, args...; vals_dict = _NO_VALS)
     # Fallback: If `object` has to components, just look up `object` in
     # `vals_dict`
     return get(vals_dict, object, object)
@@ -353,27 +372,30 @@ function t_mid(tlist, n)
 end
 
 
-function evaluate(func::Function, tlist::Vector, n::Int64; vals_dict = IdDict())
-    if haskey(vals_dict, func)
-        return vals_dict[func]
-    else
+function evaluate(func::Function, tlist::Vector, n::Int64; vals_dict = _NO_VALS)
+    val = _lookup(vals_dict, func)
+    if val isa _NotFound
         return func(t_mid(tlist, n))
-    end
-end
-
-
-function evaluate(func::Function, t::Float64; vals_dict = IdDict())
-    if haskey(vals_dict, func)
-        return vals_dict[func]
     else
-        return func(t)
+        return val
     end
 end
 
 
-function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict = IdDict())
-    if haskey(vals_dict, control)
-        return vals_dict[control]
+function evaluate(func::Function, t::Float64; vals_dict = _NO_VALS)
+    val = _lookup(vals_dict, func)
+    if val isa _NotFound
+        return func(t)
+    else
+        return val
+    end
+end
+
+
+function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict = _NO_VALS)
+    val = _lookup(vals_dict, control)
+    if !(val isa _NotFound)
+        return val
     else
         if length(control) == length(tlist) - 1
             return control[n]
@@ -395,9 +417,10 @@ function evaluate(control::Vector, tlist::Vector, n::Int64; vals_dict = IdDict()
 end
 
 
-function evaluate(control::Vector, t::Float64; vals_dict = IdDict())
-    if haskey(vals_dict, control)
-        return vals_dict[control]
+function evaluate(control::Vector, t::Float64; vals_dict = _NO_VALS)
+    val = _lookup(vals_dict, control)
+    if !(val isa _NotFound)
+        return val
     else
         error(
             "`evaluate(control::Vector, t::Float64)` is invalid. Use e.g. `evaluate(…, tlist, n)`."
@@ -406,7 +429,7 @@ function evaluate(control::Vector, t::Float64; vals_dict = IdDict())
 end
 
 
-function evaluate(generator::Tuple, args...; vals_dict = IdDict())
+function evaluate(generator::Tuple, args...; vals_dict = _NO_VALS)
     if isa(generator[1], Tuple)
         control = generator[1][2]
         coeff = evaluate(control, args...; vals_dict)
@@ -449,7 +472,7 @@ performs an in-place update on an `op` the was obtained from a previous call to
 [`evaluate`](@ref) with the same `generator`, but for a different point in time
 and/or different values in `vals_dict`.
 """
-function evaluate!(op, generator::Tuple, args...; vals_dict = IdDict())
+function evaluate!(op, generator::Tuple, args...; vals_dict = _NO_VALS)
     if generator[1] isa Tuple
         control = generator[1][2]
         copyto!(op, generator[1][1])
