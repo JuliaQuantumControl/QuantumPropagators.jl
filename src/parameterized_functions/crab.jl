@@ -76,9 +76,12 @@ randomly chosen frequencies, and ``c_0``, ``c^{(+)}_i``,
 After instantiation, the coefficients ``c_0``, ``c^{(+)}_i``,
 ``c^{(-)}_i`` (if applicable, see [`crab_initial_parameters`](@ref), and
 concatenated in that order) are accessible
-via the `parameters` property. Specifically, `f.parameters[f.i_cos + i]` is the
-parameter ``c^{(+)}_i`` and `f.parameters[f.i_sin + i]` is the parameter
-``c^{(-)}_i``, with the offset properties `i_cos` and `i_sin`.
+via the `parameters` property. The properties `cos_indices` and `sin_indices`
+are the ranges of indices of the ``c^{(+)}_i`` and ``c^{(-)}_i`` in
+`parameters`, that is, `f.parameters[f.cos_indices[i]]` is ``c^{(+)}_i`` and
+`f.parameters[f.sin_indices[i]]` is ``c^{(-)}_i``. A range is empty if
+`parity` excludes the respective coefficients. If `scale_guess` is `true`,
+``c_0`` is `f.parameters[1]`.
 """
 struct CRABFunction{G,S} <: ParameterizedFunction
     parameters::Vector{Float64}
@@ -87,8 +90,8 @@ struct CRABFunction{G,S} <: ParameterizedFunction
     shape::S
     scale_guess::Bool
     parity::Symbol
-    i_sin::Int64
-    i_cos::Int64
+    cos_indices::UnitRange{Int64}
+    sin_indices::UnitRange{Int64}
 end
 
 
@@ -216,10 +219,16 @@ function _instantiate_crab_function(
         msg = "$F cannot be instantiated with a vector of pulse values as a guess"
         error(msg)
     end
-    i_cos = 0 + scale_guess
-    i_sin = i_cos
-    if parity != :odd
-        i_sin += N
+    # The parameters are [c₀; c⁽⁺⁾; c⁽⁻⁾; r], each block only if applicable
+    n_cos = (parity == :odd) ? 0 : N
+    n_sin = (parity == :even) ? 0 : N
+    cos_indices = (1+scale_guess):(scale_guess+n_cos)
+    sin_indices = (last(cos_indices)+1):(last(cos_indices)+n_sin)
+    r_indices = (last(sin_indices)+1):(last(sin_indices)+N)
+    index_ranges = if vary_frequencies
+        (cos_indices, sin_indices, r_indices)
+    else
+        (cos_indices, sin_indices)
     end
     auto_parameters =
         crab_initial_parameters(N; guess, scale_guess, vary_frequencies, parity)
@@ -230,34 +239,7 @@ function _instantiate_crab_function(
         msg = "Number of parameters must be $N_parameters, not $(length(parameters))"
         error(msg)
     end
-    return F(parameters, frequencies, guess, shape, scale_guess, parity, i_sin, i_cos)
-end
-
-
-function (crab::CRABFunction)(t)
-    f = 0.0
-    c₀ = crab.parameters[begin]  # get c₀ early, so we don't have to go back
-    if crab.parity == :even || crab.parity == :evenodd
-        for (i, ωᵢ) in enumerate(crab.frequencies)
-            f += crab.parameters[crab.i_cos+i] * cos(ωᵢ * t)
-        end
-    end
-    if crab.parity == :odd || crab.parity == :evenodd
-        for (i, ωᵢ) in enumerate(crab.frequencies)
-            f += crab.parameters[crab.i_sin+i] * sin(ωᵢ * t)
-        end
-    end
-    if !isnothing(crab.shape)
-        f *= crab.shape(t)
-    end
-    if !isnothing(crab.guess)
-        if crab.scale_guess
-            f += c₀ * crab.guess(t)
-        else
-            f += crab.guess(t)
-        end
-    end
-    return f
+    return F(parameters, frequencies, guess, shape, scale_guess, parity, index_ranges...)
 end
 
 
@@ -279,10 +261,12 @@ f(t)
 ```
 
 The only difference to the equation in [`CRABFunction`](@ref) is the presence
-of the parameters `r_i`. The keyword arguments are the same as for
+of the parameters ``r_i``. The keyword arguments are the same as for
 [`CRABFunction`](@ref), but the default `parameters` are initialized with
 `vary_frequencies=true`, and thus the last `N` elements of the `parameters`
-contain the values ``r_i``.
+contain the values ``r_i``. In addition to `cos_indices` and `sin_indices`,
+the property `r_indices` is the range of indices of the ``r_i`` in
+`parameters`, that is, `f.parameters[f.r_indices[i]]` is ``r_i``.
 """
 struct VariedFrequencyCRABFunction{G,S} <: ParameterizedFunction
     parameters::Vector{Float64}
@@ -291,8 +275,9 @@ struct VariedFrequencyCRABFunction{G,S} <: ParameterizedFunction
     shape::S
     scale_guess::Bool
     parity::Symbol
-    i_sin::Int64
-    i_cos::Int64
+    cos_indices::UnitRange{Int64}
+    sin_indices::UnitRange{Int64}
+    r_indices::UnitRange{Int64}
 end
 
 
@@ -331,29 +316,44 @@ function VariedFrequencyCRABFunction(
 end
 
 
+# The frequency of the i'th term (ωᵢ or rᵢ ωᵢ)
+_crab_frequency(crab::CRABFunction, i) = crab.frequencies[i]
+_crab_frequency(crab::VariedFrequencyCRABFunction, i) =
+    crab.parameters[crab.r_indices[i]] * crab.frequencies[i]
 
-function (crab::VariedFrequencyCRABFunction)(t)
+
+# Evaluate a `CRABFunction` or `VariedFrequencyCRABFunction` at time `t`. For
+# `parity=:evenodd`, `sincos` evaluates both basis functions of a frequency at
+# about the cost of one. The type parameter `C` forces specialization: since
+# both types are subtypes of `Function`, Julia would otherwise not specialize
+# on `crab`, which this method passes on without calling it.
+function _evaluate_crab(
+    crab::C,
+    t
+) where {C<:Union{CRABFunction,VariedFrequencyCRABFunction}}
+    p = crab.parameters
     f = 0.0
-    c₀ = crab.parameters[begin]  # get c₀ early, so we don't have to go back
-    N = length(crab.frequencies)
-    for (i, ωᵢ) in enumerate(crab.frequencies)
-        rᵢ = crab.parameters[end-N+i]
-        if crab.parity == :even || crab.parity == :evenodd
-            f += crab.parameters[crab.i_cos+i] * cos(rᵢ * ωᵢ * t)
+    if crab.parity == :evenodd
+        for i in eachindex(crab.frequencies)
+            (s, c) = sincos(_crab_frequency(crab, i) * t)
+            f += p[crab.cos_indices[i]] * c + p[crab.sin_indices[i]] * s
         end
-        if crab.parity == :odd || crab.parity == :evenodd
-            f += crab.parameters[crab.i_sin+i] * sin(rᵢ * ωᵢ * t)
+    elseif crab.parity == :even
+        for i in eachindex(crab.frequencies)
+            f += p[crab.cos_indices[i]] * cos(_crab_frequency(crab, i) * t)
+        end
+    else  # :odd
+        for i in eachindex(crab.frequencies)
+            f += p[crab.sin_indices[i]] * sin(_crab_frequency(crab, i) * t)
         end
     end
-    if !isnothing(crab.shape)
-        f *= crab.shape(t)
-    end
+    isnothing(crab.shape) || (f *= crab.shape(t))
     if !isnothing(crab.guess)
-        if crab.scale_guess
-            f += c₀ * crab.guess(t)
-        else
-            f += crab.guess(t)
-        end
+        g = crab.guess(t)
+        f += crab.scale_guess ? p[1] * g : g
     end
     return f
 end
+
+(crab::CRABFunction)(t) = _evaluate_crab(crab, t)
+(crab::VariedFrequencyCRABFunction)(t) = _evaluate_crab(crab, t)
