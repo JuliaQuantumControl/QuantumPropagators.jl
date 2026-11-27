@@ -133,12 +133,6 @@ jobs:
         run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'
       - name: "Build documentation"
         run: julia --project=docs docs/make.jl
-        env:
-          # TEMPORARY: the page "Time-Dependent Controls" links to
-          # documentation of QuantumControl that is not deployed yet. Remove
-          # this once QuantumControl has deployed its page "Controls and
-          # Derivatives".
-          DOCUMENTER_WARN_ONLY: "1"
       - uses: actions/upload-artifact@v7
         # For the `docs-deploy` job, and for reviewing pull requests from forks,
         # which get no preview
