@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases).
 
 
-## [Unreleased]
+## [v0.10.0] — 2026-11-27
 
 * Added: Documentation page "Time-Dependent Controls" that explains how controls are tuned as functions (Krotov, GRAPE) or through control parameters, and defines *parameter blocks* and the requirements on them [[#148], [#150]]
 * Added: `QuantumPropagators.Controls.combine_parameters(parameters...)` (public, but not exported), which combines the parameters of several objects, dropping repeated blocks. A custom generator type that holds parameter blocks in its own fields should implement `get_parameters` with `combine_parameters`, see the new how-to "How to implement a generator with its own parameters" [[#148], [#150]]
@@ -251,7 +251,8 @@ Also see the [GitHub Releases](https://github.com/JuliaQuantumControl/QuantumPro
 
 Initial public release
 
-[Unreleased]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/compare/v0.9.2..HEAD
+[Unreleased]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/compare/v0.10.0..HEAD
+[v0.10.0]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.10.0
 [v0.9.2]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.9.2
 [v0.9.1]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.9.1
 [v0.9.0]: https://github.com/JuliaQuantumControl/QuantumPropagators.jl/releases/tag/v0.9.0

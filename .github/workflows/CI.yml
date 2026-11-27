@@ -132,6 +132,11 @@ jobs:
         run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'
       - name: "Build documentation"
         run: julia --project=docs docs/make.jl
+        env:
+          # RELEASE 0.10.0 ONLY: the page "Time-Dependent Controls" links to
+          # documentation of QuantumControl 0.12, which is not released yet,
+          # so the stable inventory of QuantumControl lacks its labels.
+          DOCUMENTER_WARN_ONLY: "1"
       - uses: actions/upload-artifact@v7
         # For the `docs-deploy` job, and for reviewing pull requests from forks,
         # which get no preview
