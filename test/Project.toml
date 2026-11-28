@@ -10,7 +10,6 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
-QuantumControl = "8a270532-f23f-47a8-83a9-b33d10cad486"
 QuantumControlTestUtils = "d3fd27c9-1dfb-4e67-b0c0-90d0d87a1e48"
 QuantumGradientGenerators = "a563f35e-61db-434d-8c01-8b9e3ccdfd85"
 QuantumPropagators = "7bf12567-5742-4b91-a078-644e72a65fc1"
@@ -25,8 +24,6 @@ UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
 
 [sources]
-QuantumControl = {rev = "master", url = "https://github.com/JuliaQuantumControl/QuantumControl.jl"}
-QuantumGradientGenerators = {rev = "master", url = "https://github.com/JuliaQuantumControl/QuantumGradientGenerators.jl"}
 QuantumPropagators = {path = ".."}
 
 [compat]
